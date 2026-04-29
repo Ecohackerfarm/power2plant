@@ -6,6 +6,12 @@ describe('confidenceToFloat', () => {
   it('maps ANECDOTAL to 0.25', () => {
     expect(confidenceToFloat(ConfidenceLevel.ANECDOTAL)).toBe(0.25)
   })
+  it('maps TRADITIONAL to 0.5', () => {
+    expect(confidenceToFloat(ConfidenceLevel.TRADITIONAL)).toBe(0.5)
+  })
+  it('maps OBSERVED to 0.75', () => {
+    expect(confidenceToFloat(ConfidenceLevel.OBSERVED)).toBe(0.75)
+  })
   it('maps PEER_REVIEWED to 1.0', () => {
     expect(confidenceToFloat(ConfidenceLevel.PEER_REVIEWED)).toBe(1.0)
   })
