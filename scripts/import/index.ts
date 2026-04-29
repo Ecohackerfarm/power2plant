@@ -24,34 +24,30 @@ const ALL_IMPORTERS: Importer[] = [
 async function upsertCrop(importer: Importer, raw: RawCrop, stats: ImportStats): Promise<void> {
   const slug = raw.slug ?? toSlug(raw.botanicalName)
 
-  const existing = await prisma.crop.findUnique({ where: { botanicalName: raw.botanicalName } })
+  const crop = await prisma.crop.upsert({
+    where: { botanicalName: raw.botanicalName },
+    create: {
+      botanicalName: raw.botanicalName,
+      name: raw.name,
+      slug,
+      minTempC: raw.minTempC ?? null,
+      imageUrl: raw.imageUrl ?? null,
+      isNitrogenFixer: raw.isNitrogenFixer ?? false,
+    },
+    update: {
+      name: raw.name,
+      minTempC: raw.minTempC ?? undefined,
+      imageUrl: raw.imageUrl ?? undefined,
+      isNitrogenFixer: raw.isNitrogenFixer ?? undefined,
+    },
+  })
 
-  if (existing) {
-    await prisma.crop.update({
-      where: { id: existing.id },
-      data: {
-        name: raw.name || existing.name,
-        minTempC: raw.minTempC ?? existing.minTempC,
-        imageUrl: raw.imageUrl ?? existing.imageUrl,
-        isNitrogenFixer: raw.isNitrogenFixer ?? existing.isNitrogenFixer,
-      },
-    })
-    stats.cropsUpdated++
-  } else {
-    await prisma.crop.create({
-      data: {
-        botanicalName: raw.botanicalName,
-        name: raw.name,
-        slug,
-        minTempC: raw.minTempC ?? null,
-        imageUrl: raw.imageUrl ?? null,
-        isNitrogenFixer: raw.isNitrogenFixer ?? false,
-      },
-    })
-    stats.cropsCreated++
-  }
+  // Track which was created vs updated (upsert doesn't tell us directly)
+  // Use a heuristic: if createdAt ≈ updatedAt it was just created
+  const wasCreated = crop.createdAt.getTime() === crop.updatedAt.getTime()
+  if (wasCreated) stats.cropsCreated++
+  else stats.cropsUpdated++
 
-  const crop = await prisma.crop.findUniqueOrThrow({ where: { botanicalName: raw.botanicalName } })
   await prisma.cropSource.upsert({
     where: { cropId_source: { cropId: crop.id, source: importer.source } },
     create: {
@@ -103,6 +99,7 @@ async function upsertRelationship(importer: Importer, raw: RawRelationship, stat
       reason: raw.reason ?? null,
       confidence: 0.5,
     },
+    // First source wins for type/direction/reason — subsequent sources only add provenance
     update: {},
     include: { sources: true },
   })
@@ -147,13 +144,21 @@ async function runImporter(importer: Importer): Promise<ImportStats> {
 
   if (importer.fetchCrops) {
     for await (const raw of importer.fetchCrops()) {
-      await upsertCrop(importer, raw, stats)
+      try {
+        await upsertCrop(importer, raw, stats)
+      } catch (err) {
+        console.error(`[${importer.source}] Error upserting crop "${raw.botanicalName}":`, err)
+      }
     }
   }
 
   if (importer.fetchRelationships) {
     for await (const raw of importer.fetchRelationships()) {
-      await upsertRelationship(importer, raw, stats)
+      try {
+        await upsertRelationship(importer, raw, stats)
+      } catch (err) {
+        console.error(`[${importer.source}] Error upserting relationship "${raw.cropNameA}" <-> "${raw.cropNameB}":`, err)
+      }
     }
   }
 
