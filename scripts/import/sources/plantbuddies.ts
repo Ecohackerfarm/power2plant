@@ -8,16 +8,28 @@ const DATA_PATH = resolve(process.cwd(), 'data/plantbuddies/relations-data.js')
 type PBRelation = { id: number; p1: string; p2: string; b: 1 | -1 }
 
 export function parseRelationsJs(js: string): PBRelation[] {
-  // Extract the array literal from e.g. "window.gRelationsArray = [...]"
   const match = js.match(/\[[\s\S]*\]/)
   if (!match) throw new Error('Cannot find array in PlantBuddies JS')
 
-  // Quote unquoted object keys: id: → "id":
-  const quoted = match[0].replace(/(\b\w+)(?=\s*:)/g, '"$1"')
-  // Remove trailing commas before ] or }
-  const clean = quoted.replace(/,(\s*[}\]])/g, '$1')
+  let raw = match[0]
 
-  const parsed: Array<{ id: number; p1: string; p2: string; b: number | string }> = JSON.parse(clean)
+  // Protect string values from key-quoting by replacing them with placeholders
+  const strings: string[] = []
+  raw = raw.replace(/"[^"]*"/g, m => {
+    strings.push(m)
+    return `"__STR${strings.length - 1}__"`
+  })
+
+  // Quote unquoted object keys
+  raw = raw.replace(/(\b\w+)(?=\s*:)/g, '"$1"')
+
+  // Remove trailing commas before ] or }
+  raw = raw.replace(/,(\s*[}\]])/g, '$1')
+
+  // Restore protected string values
+  raw = raw.replace(/"__STR(\d+)__"/g, (_, i) => strings[parseInt(i, 10)])
+
+  const parsed: Array<{ id: number; p1: string; p2: string; b: number | string }> = JSON.parse(raw)
 
   return parsed
     .filter((r): r is PBRelation => r.b === 1 || r.b === -1)
