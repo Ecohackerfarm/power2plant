@@ -31,7 +31,7 @@ model CropSource {
   rawData    Json
   fetchedAt  DateTime   @default(now())
   cropId     String
-  crop       Crop       @relation(fields: [cropId], references: [id])
+  crop       Crop       @relation(fields: [cropId], references: [id], onDelete: Cascade)
 
   @@unique([cropId, source])
 }
@@ -45,13 +45,14 @@ model CropRelationship {
   notes      String?
   cropAId    String
   cropBId    String
-  cropA      Crop                 @relation("CropA", fields: [cropAId], references: [id])
-  cropB      Crop                 @relation("CropB", fields: [cropBId], references: [id])
+  cropA      Crop                 @relation("CropA", fields: [cropAId], references: [id], onDelete: Cascade)
+  cropB      Crop                 @relation("CropB", fields: [cropBId], references: [id], onDelete: Cascade)
   sources    RelationshipSource[]
   createdAt  DateTime             @default(now())
   updatedAt  DateTime             @updatedAt
 
   @@unique([cropAId, cropBId])
+  @@index([cropBId])
 }
 
 model RelationshipSource {
@@ -62,7 +63,9 @@ model RelationshipSource {
   notes          String?
   fetchedAt      DateTime         @default(now())
   relationshipId String
-  relationship   CropRelationship @relation(fields: [relationshipId], references: [id])
+  relationship   CropRelationship @relation(fields: [relationshipId], references: [id], onDelete: Cascade)
+
+  @@index([relationshipId])
 }
 
 model UserGarden {
@@ -77,16 +80,19 @@ model Bed {
   id        String     @id @default(cuid())
   name      String
   gardenId  String
-  garden    UserGarden @relation(fields: [gardenId], references: [id])
+  garden    UserGarden @relation(fields: [gardenId], references: [id], onDelete: Cascade)
   plantings Planting[]
 }
 
 model Planting {
   id     String @id @default(cuid())
   bedId  String
-  bed    Bed    @relation(fields: [bedId], references: [id])
+  bed    Bed    @relation(fields: [bedId], references: [id], onDelete: Cascade)
   cropId String
-  crop   Crop   @relation(fields: [cropId], references: [id])
+  crop   Crop   @relation(fields: [cropId], references: [id], onDelete: Restrict)
+
+  @@index([bedId])
+  @@index([cropId])
 }
 
 enum RelationshipType {
