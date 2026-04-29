@@ -1,0 +1,133 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Crop {
+  id              String             @id @default(cuid())
+  botanicalName   String             @unique
+  name            String
+  slug            String             @unique
+  isNitrogenFixer Boolean            @default(false)
+  minTempC        Float?
+  imageUrl        String?
+  sources         CropSource[]
+  plantings       Planting[]
+  relationshipsA  CropRelationship[] @relation("CropA")
+  relationshipsB  CropRelationship[] @relation("CropB")
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+}
+
+model CropSource {
+  id         String     @id @default(cuid())
+  source     SourceType
+  externalId String?
+  url        String?
+  rawData    Json
+  fetchedAt  DateTime   @default(now())
+  cropId     String
+  crop       Crop       @relation(fields: [cropId], references: [id])
+
+  @@unique([cropId, source])
+}
+
+model CropRelationship {
+  id         String               @id @default(cuid())
+  type       RelationshipType
+  direction  Direction            @default(MUTUAL)
+  reason     RelationshipReason?
+  confidence Float                @default(0.5)
+  notes      String?
+  cropAId    String
+  cropBId    String
+  cropA      Crop                 @relation("CropA", fields: [cropAId], references: [id])
+  cropB      Crop                 @relation("CropB", fields: [cropBId], references: [id])
+  sources    RelationshipSource[]
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
+
+  @@unique([cropAId, cropBId])
+}
+
+model RelationshipSource {
+  id             String           @id @default(cuid())
+  source         SourceType
+  confidence     ConfidenceLevel  @default(ANECDOTAL)
+  url            String?
+  notes          String?
+  fetchedAt      DateTime         @default(now())
+  relationshipId String
+  relationship   CropRelationship @relation(fields: [relationshipId], references: [id])
+}
+
+model UserGarden {
+  id        String   @id @default(cuid())
+  userId    String
+  beds      Bed[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Bed {
+  id        String     @id @default(cuid())
+  name      String
+  gardenId  String
+  garden    UserGarden @relation(fields: [gardenId], references: [id])
+  plantings Planting[]
+}
+
+model Planting {
+  id     String @id @default(cuid())
+  bedId  String
+  bed    Bed    @relation(fields: [bedId], references: [id])
+  cropId String
+  crop   Crop   @relation(fields: [cropId], references: [id])
+}
+
+enum RelationshipType {
+  COMPANION
+  AVOID
+  ATTRACTS
+  REPELS
+  NURSE
+  TRAP_CROP
+}
+
+enum Direction {
+  MUTUAL
+  ONE_WAY
+  UNKNOWN
+}
+
+enum RelationshipReason {
+  PEST_CONTROL
+  POLLINATION
+  NUTRIENT
+  SHADE
+  ALLELOPATHY
+  OTHER
+}
+
+enum ConfidenceLevel {
+  ANECDOTAL
+  TRADITIONAL
+  OBSERVED
+  PEER_REVIEWED
+}
+
+enum SourceType {
+  TREFLE
+  USDA
+  OPENFARM_DUMP
+  PLANTBUDDIES
+  PFAF
+  WIKIDATA
+  GBIF
+  COMMUNITY
+  MANUAL
+}
