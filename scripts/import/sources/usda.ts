@@ -39,6 +39,7 @@ export const usdaImporter: Importer = {
         botanicalName,
         name: commonName?.trim() || botanicalName,
         slug: toSlug(botanicalName),
+        externalId: row['Accepted Symbol']?.trim() || row['Symbol']?.trim(),
         rawData: row,
       }
     }

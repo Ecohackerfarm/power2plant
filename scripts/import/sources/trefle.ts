@@ -38,7 +38,9 @@ export const trefleImporter: Importer = {
     let page = 1
 
     while (page <= maxPages) {
-      const res = await fetch(`${BASE_URL}/plants?token=${token}&page=${page}`)
+      const res = await fetch(`${BASE_URL}/plants?page=${page}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
       if (!res.ok) throw new Error(`Trefle API ${res.status}: ${await res.text()}`)
 
       const json = await res.json() as TrefleResponse
