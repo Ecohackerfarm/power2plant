@@ -21,8 +21,24 @@ const ALL_IMPORTERS: Importer[] = [
   pfafImporter,
 ]
 
+async function uniqueSlug(baseSlug: string): Promise<string> {
+  const existing = await prisma.crop.findUnique({ where: { slug: baseSlug } })
+  if (!existing) return baseSlug
+  // Collision — append numeric suffix until unique
+  for (let i = 2; i < 1000; i++) {
+    const candidate = `${baseSlug}-${i}`
+    const clash = await prisma.crop.findUnique({ where: { slug: candidate } })
+    if (!clash) return candidate
+  }
+  throw new Error(`Cannot generate unique slug for base: ${baseSlug}`)
+}
+
 async function upsertCrop(importer: Importer, raw: RawCrop, stats: ImportStats): Promise<void> {
-  const slug = raw.slug ?? toSlug(raw.botanicalName)
+  const baseSlug = raw.slug ?? toSlug(raw.botanicalName)
+
+  // Check if the record already exists — if so, skip slug resolution (update path won't touch slug)
+  const existing = await prisma.crop.findUnique({ where: { botanicalName: raw.botanicalName } })
+  const slug = existing ? existing.slug : await uniqueSlug(baseSlug)
 
   const crop = await prisma.crop.upsert({
     where: { botanicalName: raw.botanicalName },

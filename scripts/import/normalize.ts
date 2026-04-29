@@ -67,6 +67,18 @@ export const synonyms: Record<string, string> = {
   'hyssop': 'Hyssopus officinalis',
   'lemon balm': 'Melissa officinalis',
   'currant': 'Ribes rubrum',
+  // High-frequency PlantBuddies unresolved names
+  'dwarf french bean': 'Phaseolus vulgaris',
+  'pole bean': 'Phaseolus vulgaris',
+  'kohlrabi': 'Brassica oleracea',
+  'sweetcorn': 'Zea mays',
+  'marjoram': 'Origanum majorana',
+  'soya bean': 'Glycine max',
+  'soybean': 'Glycine max',
+  'horseradish': 'Armoracia rusticana',
+  'broad bean': 'Vicia faba',
+  'fava bean': 'Vicia faba',
+  'apple': 'Malus domestica',
 }
 
 export function resolveCommonName(commonName: string): string | null {
