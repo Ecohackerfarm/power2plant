@@ -12,7 +12,9 @@
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
     "db:import": "tsx scripts/import/index.ts",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "db:dump": "bash db/dump.sh",
+    "db:restore": "bash db/restore.sh"
   },
   "dependencies": {
     "next": "^15.0.0",
