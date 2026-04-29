@@ -61,6 +61,8 @@ function parseCompanions(html: string): { companions: string[]; avoid: string[] 
   let companionText = ''
   let avoidText = ''
 
+  // Scans all table rows for "companion"/"avoid" labels.
+  // Fragile against PFAF page layout changes — refine selector against live pages before production use.
   $('tr').each((_, row) => {
     const cells = $(row).find('td')
     if (cells.length >= 2) {
@@ -87,8 +89,12 @@ export const pfafImporter: Importer = {
 
   async *fetchCrops(): AsyncIterable<RawCrop> {
     const prisma = new PrismaClient()
-    const crops = await prisma.crop.findMany({ select: { botanicalName: true } })
-    await prisma.$disconnect()
+    let crops: { botanicalName: string }[]
+    try {
+      crops = await prisma.crop.findMany({ select: { botanicalName: true } })
+    } finally {
+      await prisma.$disconnect()
+    }
 
     for (const { botanicalName } of crops) {
       const html = await fetchPage(botanicalName)
@@ -113,8 +119,12 @@ export const pfafImporter: Importer = {
 
   async *fetchRelationships(): AsyncIterable<RawRelationship> {
     const prisma = new PrismaClient()
-    const crops = await prisma.crop.findMany({ select: { botanicalName: true } })
-    await prisma.$disconnect()
+    let crops: { botanicalName: string }[]
+    try {
+      crops = await prisma.crop.findMany({ select: { botanicalName: true } })
+    } finally {
+      await prisma.$disconnect()
+    }
 
     for (const { botanicalName } of crops) {
       const html = await fetchPage(botanicalName)
