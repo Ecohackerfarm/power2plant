@@ -8,6 +8,7 @@ import { RecommendationDisplay } from '@/components/recommendation-display'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import type { RecommendResult } from '@/lib/recommend'
+import { AuthPanel } from '@/components/auth-panel'
 
 export default function Home() {
   const { state, setZone, addToWishlist, removeFromWishlist, setBeds } = useGarden()
@@ -43,11 +44,14 @@ export default function Home() {
 
   return (
     <main className="max-w-3xl mx-auto px-4 py-8 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">power2plant</h1>
-        <p className="text-muted-foreground mt-1">
-          Companion planting recommendations for your garden beds.
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold">power2plant</h1>
+          <p className="text-muted-foreground mt-1">
+            Companion planting recommendations for your garden beds.
+          </p>
+        </div>
+        <AuthPanel />
       </div>
 
       <Separator />
