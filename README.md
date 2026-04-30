@@ -104,6 +104,29 @@ Plant data is seeded from multiple open sources:
 
 > **Note:** PlantBuddies data is used as non-commercial fair use pending license clarification with [Serlo](https://github.com/Serlo). Do not use in a commercial deployment until resolved.
 
+## Docker
+
+### Development (hot reload)
+
+```bash
+cp .env.example .env
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+```
+
+Edit files in `src/` — Next.js hot reloads automatically.
+
+### Production
+
+```bash
+export BETTER_AUTH_SECRET="your-secret-here"
+export BETTER_AUTH_URL="https://your-domain.com"
+export NEXT_PUBLIC_APP_URL="https://your-domain.com"
+
+docker compose up --build
+```
+
+Migrations run automatically on container start.
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
