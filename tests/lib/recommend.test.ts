@@ -93,7 +93,7 @@ describe('recommend()', () => {
 
 describe('minTempCToZoneName()', () => {
   it('maps -30°C to Zone 4', () => expect(minTempCToZoneName(-30)).toBe('Zone 4'))
-  it('maps -1°C to Zone 9', () => expect(minTempCToZoneName(-1)).toBe('Zone 9'))
+  it('maps -1°C to Zone 10', () => expect(minTempCToZoneName(-1)).toBe('Zone 10'))
   it('maps -50°C to Zone 1', () => expect(minTempCToZoneName(-50)).toBe('Zone 1'))
   it('maps 20°C to Zone 13', () => expect(minTempCToZoneName(20)).toBe('Zone 13'))
   it('maps -17.8°C to Zone 7 boundary', () => expect(minTempCToZoneName(-17.8)).toBe('Zone 7'))
