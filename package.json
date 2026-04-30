@@ -1,7 +1,8 @@
 {
   "name": "power2plant",
   "version": "0.1.0",
-  "private": true,
+  "description": "Companion planting recommendations for your garden beds",
+  "license": "MIT",
   "scripts": {
     "dev": "next dev",
     "build": "NODE_ENV=production next build",
