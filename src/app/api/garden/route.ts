@@ -36,12 +36,37 @@ export async function PUT(request: Request) {
 
   const { lat, lng, minTempC, bedCount, bedCapacity } = body
 
+  // Type validation
+  if (lat !== undefined && typeof lat !== 'number') {
+    return NextResponse.json({ error: 'lat must be a number' }, { status: 400 })
+  }
+  if (lng !== undefined && typeof lng !== 'number') {
+    return NextResponse.json({ error: 'lng must be a number' }, { status: 400 })
+  }
+  if (minTempC !== undefined && typeof minTempC !== 'number') {
+    return NextResponse.json({ error: 'minTempC must be a number' }, { status: 400 })
+  }
+  if (bedCount !== undefined && (typeof bedCount !== 'number' || bedCount < 1)) {
+    return NextResponse.json({ error: 'bedCount must be a number >= 1' }, { status: 400 })
+  }
+  if (bedCapacity !== undefined && (typeof bedCapacity !== 'number' || bedCapacity < 1)) {
+    return NextResponse.json({ error: 'bedCapacity must be a number >= 1' }, { status: 400 })
+  }
+
+  // Bounds validation
+  if (lat !== undefined && (lat < -90 || lat > 90)) {
+    return NextResponse.json({ error: 'lat must be between -90 and 90' }, { status: 400 })
+  }
+  if (lng !== undefined && (lng < -180 || lng > 180)) {
+    return NextResponse.json({ error: 'lng must be between -180 and 180' }, { status: 400 })
+  }
+
   const data = {
     ...(lat !== undefined && { lat }),
     ...(lng !== undefined && { lng }),
     ...(minTempC !== undefined && { minTempC }),
-    ...(bedCount !== undefined && bedCount >= 1 && { bedCount }),
-    ...(bedCapacity !== undefined && bedCapacity >= 1 && { bedCapacity }),
+    ...(bedCount !== undefined && { bedCount }),
+    ...(bedCapacity !== undefined && { bedCapacity }),
   }
 
   const garden = await prisma.userGarden.upsert({

@@ -88,6 +88,28 @@ describe('PUT /api/garden', () => {
     expect(res.status).toBe(401)
   })
 
+  it('returns 400 for invalid lat bounds', async () => {
+    vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as any)
+    const req = new Request('http://localhost/api/garden', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lat: 200, lng: -0.1 }),
+    })
+    const res = await PUT(req)
+    expect(res.status).toBe(400)
+  })
+
+  it('returns 400 for invalid bedCount', async () => {
+    vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as any)
+    const req = new Request('http://localhost/api/garden', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bedCount: 0 }),
+    })
+    const res = await PUT(req)
+    expect(res.status).toBe(400)
+  })
+
   it('upserts garden and returns updated data', async () => {
     vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as any)
     vi.mocked(prisma.userGarden.upsert).mockResolvedValue(fakeGarden as any)
