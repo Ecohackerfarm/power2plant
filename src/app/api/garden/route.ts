@@ -46,11 +46,11 @@ export async function PUT(request: Request) {
   if (minTempC !== undefined && typeof minTempC !== 'number') {
     return NextResponse.json({ error: 'minTempC must be a number' }, { status: 400 })
   }
-  if (bedCount !== undefined && (typeof bedCount !== 'number' || bedCount < 1)) {
-    return NextResponse.json({ error: 'bedCount must be a number >= 1' }, { status: 400 })
+  if (bedCount !== undefined && (!Number.isInteger(bedCount) || bedCount < 1)) {
+    return NextResponse.json({ error: 'bedCount must be an integer >= 1' }, { status: 400 })
   }
-  if (bedCapacity !== undefined && (typeof bedCapacity !== 'number' || bedCapacity < 1)) {
-    return NextResponse.json({ error: 'bedCapacity must be a number >= 1' }, { status: 400 })
+  if (bedCapacity !== undefined && (!Number.isInteger(bedCapacity) || bedCapacity < 1)) {
+    return NextResponse.json({ error: 'bedCapacity must be an integer >= 1' }, { status: 400 })
   }
 
   // Bounds validation

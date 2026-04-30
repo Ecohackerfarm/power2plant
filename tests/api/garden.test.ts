@@ -110,6 +110,17 @@ describe('PUT /api/garden', () => {
     expect(res.status).toBe(400)
   })
 
+  it('returns 400 for fractional bedCount', async () => {
+    vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as any)
+    const req = new Request('http://localhost/api/garden', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bedCount: 1.5 }),
+    })
+    const res = await PUT(req)
+    expect(res.status).toBe(400)
+  })
+
   it('upserts garden and returns updated data', async () => {
     vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as any)
     vi.mocked(prisma.userGarden.upsert).mockResolvedValue(fakeGarden as any)
