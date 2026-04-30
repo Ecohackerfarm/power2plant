@@ -7,17 +7,6 @@ interface MeteoResponse {
   }
 }
 
-function averageAnnualMin(times: string[], temps: number[]): number {
-  const byYear: Record<number, number> = {}
-  times.forEach((t, i) => {
-    const year = new Date(t).getUTCFullYear()
-    if (byYear[year] === undefined || temps[i] < byYear[year]) {
-      byYear[year] = temps[i]
-    }
-  })
-  const mins = Object.values(byYear)
-  return mins.reduce((a, b) => a + b, 0) / mins.length
-}
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -31,8 +20,8 @@ export async function GET(request: Request) {
   const lat = parseFloat(latStr)
   const lng = parseFloat(lngStr)
 
-  if (isNaN(lat) || isNaN(lng)) {
-    return NextResponse.json({ error: 'lat and lng must be numbers' }, { status: 400 })
+  if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+    return NextResponse.json({ error: 'lat must be -90..90 and lng must be -180..180' }, { status: 400 })
   }
 
   const url = new URL('https://archive-api.open-meteo.com/v1/archive')
@@ -49,7 +38,18 @@ export async function GET(request: Request) {
   }
 
   const data: MeteoResponse = await upstream.json()
-  const minTempC = averageAnnualMin(data.daily.time, data.daily.temperature_2m_min)
+  const mins = Object.values(
+    (data.daily.time ?? []).reduce<Record<number, number>>((acc, t, i) => {
+      const year = new Date(t).getUTCFullYear()
+      const temp = data.daily.temperature_2m_min[i]
+      if (acc[year] === undefined || temp < acc[year]) acc[year] = temp
+      return acc
+    }, {}),
+  )
+  if (mins.length === 0) {
+    return NextResponse.json({ error: 'climate data unavailable' }, { status: 502 })
+  }
+  const minTempC = mins.reduce((a, b) => a + b, 0) / mins.length
 
   return NextResponse.json({ minTempC: Math.round(minTempC * 10) / 10 })
 }

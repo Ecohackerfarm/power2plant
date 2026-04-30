@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
-import { recommend } from '@/lib/recommend'
+import { recommend, type RelationshipInput } from '@/lib/recommend'
 
 interface RecommendBody {
   cropIds: string[]
@@ -22,12 +22,14 @@ export async function POST(request: Request) {
   if (
     !Array.isArray(cropIds) ||
     cropIds.length === 0 ||
-    typeof bedCount !== 'number' ||
-    typeof bedCapacity !== 'number' ||
+    cropIds.length > 50 ||
+    cropIds.some(id => typeof id !== 'string') ||
+    typeof bedCount !== 'number' || bedCount < 1 ||
+    typeof bedCapacity !== 'number' || bedCapacity < 1 ||
     typeof minTempC !== 'number'
   ) {
     return NextResponse.json(
-      { error: 'cropIds (non-empty array), bedCount, bedCapacity, minTempC are required' },
+      { error: 'cropIds (1–50 strings), bedCount (≥1), bedCapacity (≥1), minTempC required' },
       { status: 400 },
     )
   }
@@ -48,7 +50,7 @@ export async function POST(request: Request) {
     }),
   ])
 
-  const result = recommend(crops, relationships as any, bedCount, bedCapacity, minTempC)
+  const result = recommend(crops, relationships as RelationshipInput[], bedCount, bedCapacity, minTempC)
 
   return NextResponse.json(result)
 }
