@@ -167,6 +167,8 @@ model session {
   userAgent String?
   userId    String
   user      user     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model account {
@@ -184,6 +186,9 @@ model account {
   password              String?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([accountId, providerId])
 }
 
 model verification {
