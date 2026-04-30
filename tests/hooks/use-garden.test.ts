@@ -1,10 +1,19 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
-import { useGarden } from '@/hooks/use-garden'
 
+vi.mock('@/lib/auth-client', () => ({
+  useSession: vi.fn(() => ({ data: null, isPending: false, error: null })),
+}))
+
+import { useGarden } from '@/hooks/use-garden'
+import { useSession } from '@/lib/auth-client'
+
+// Reset localStorage before each test
 beforeEach(() => {
   localStorage.clear()
+  vi.clearAllMocks()
+  vi.mocked(useSession).mockReturnValue({ data: null, isPending: false, error: null } as any)
 })
 
 describe('useGarden()', () => {
@@ -62,5 +71,44 @@ describe('useGarden()', () => {
     // Re-render as if page reloaded
     const { result: result2 } = renderHook(() => useGarden())
     expect(result2.current.state.wishlist).toContain('crop-persist')
+  })
+
+  it('fetches garden from DB when session exists', async () => {
+    vi.mocked(useSession).mockReturnValue({
+      data: { user: { id: 'u1', email: 'a@b.com', name: 'A' }, session: { id: 's1' } as any },
+      isPending: false,
+      error: null,
+    } as any)
+
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ lat: 48.8, lng: 2.3, minTempC: -8.0, bedCount: 4, bedCapacity: 5 }),
+    } as Response)
+    vi.stubGlobal('fetch', fetchMock)
+
+    const { result } = renderHook(() => useGarden())
+    await act(async () => {
+      await new Promise(r => setTimeout(r, 50))
+    })
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/garden')
+    expect(result.current.state.lat).toBeCloseTo(48.8)
+    expect(result.current.state.bedCount).toBe(4)
+  })
+
+  it('does not fetch from DB when no session', async () => {
+    vi.mocked(useSession).mockReturnValue({ data: null, isPending: false, error: null } as any)
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+
+    renderHook(() => useGarden())
+    await act(async () => {
+      await new Promise(r => setTimeout(r, 50))
+    })
+
+    const gardenFetches = fetchMock.mock.calls.filter(
+      (args: unknown[]) => args[0] === '/api/garden',
+    )
+    expect(gardenFetches).toHaveLength(0)
   })
 })
