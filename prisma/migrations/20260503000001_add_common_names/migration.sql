@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Crop" ADD COLUMN "commonNames" TEXT[] NOT NULL DEFAULT '{}';
+ALTER TABLE "Crop" ADD COLUMN "isCommonCrop" BOOLEAN NOT NULL DEFAULT false;

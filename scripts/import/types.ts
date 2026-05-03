@@ -2,7 +2,7 @@ import type { ConfidenceLevel, Direction, RelationshipReason, RelationshipType, 
 
 export interface RawCrop {
   botanicalName: string
-  name: string
+  name?: string
   slug?: string
   minTempC?: number | null
   isNitrogenFixer?: boolean

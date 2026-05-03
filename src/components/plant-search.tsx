@@ -1,18 +1,14 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
+import { cn } from '@/lib/utils'
+import type { CropRow } from '@/lib/crop-rank'
 
-interface Crop {
-  id: string
-  name: string
-  botanicalName: string
-  minTempC: number | null
-}
+type Crop = CropRow
 
 interface PlantSearchProps {
   wishlistIds: string[]
@@ -20,16 +16,40 @@ interface PlantSearchProps {
   onRemove: (cropId: string) => void
 }
 
+function getDisplayName(crop: Crop): string {
+  if (crop.name !== crop.botanicalName) return crop.name
+  return crop.commonNames[0] ?? crop.name
+}
+
 export function PlantSearch({ wishlistIds, onAdd, onRemove }: PlantSearchProps) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<Crop[]>([])
   const [wishlistCrops, setWishlistCrops] = useState<Crop[]>([])
   const [searching, setSearching] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(-1)
+  const listRef = useRef<HTMLUListElement>(null)
 
-  // Debounced search
+  // Rehydrate wishlist crop objects after page refresh (wishlistIds restored from storage
+  // but wishlistCrops local state starts empty).
+  useEffect(() => {
+    const missing = wishlistIds.filter(id => !wishlistCrops.find(c => c.id === id))
+    if (missing.length === 0) return
+    fetch(`/api/crops?ids=${missing.join(',')}`)
+      .then(r => r.ok ? r.json() : { crops: [] })
+      .then(({ crops }: { crops: Crop[] }) => {
+        setWishlistCrops(prev => {
+          const existingIds = new Set(prev.map(c => c.id))
+          return [...prev, ...crops.filter(c => !existingIds.has(c.id))]
+        })
+      })
+      .catch(() => {/* network error — wishlist badges stay empty but IDs preserved */})
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wishlistIds])
+
   useEffect(() => {
     if (query.trim().length < 2) {
       setResults([])
+      setActiveIndex(-1)
       return
     }
     const timer = setTimeout(async () => {
@@ -38,12 +58,19 @@ export function PlantSearch({ wishlistIds, onAdd, onRemove }: PlantSearchProps) 
         const res = await fetch(`/api/crops?q=${encodeURIComponent(query.trim())}`)
         const data = await res.json()
         setResults(data.crops ?? [])
+        setActiveIndex(-1)
       } finally {
         setSearching(false)
       }
     }, 300)
     return () => clearTimeout(timer)
   }, [query])
+
+  useEffect(() => {
+    if (activeIndex < 0 || !listRef.current) return
+    const items = listRef.current.querySelectorAll('li')
+    items[activeIndex]?.scrollIntoView({ block: 'nearest' })
+  }, [activeIndex])
 
   const handleAdd = useCallback((crop: Crop) => {
     setWishlistCrops(prev =>
@@ -59,6 +86,24 @@ export function PlantSearch({ wishlistIds, onAdd, onRemove }: PlantSearchProps) 
 
   const inWishlist = (id: string) => wishlistIds.includes(id)
 
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (results.length === 0) return
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setActiveIndex(i => Math.min(i + 1, results.length - 1))
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setActiveIndex(i => Math.max(i - 1, 0))
+    } else if (e.key === 'Enter') {
+      e.preventDefault()
+      const target = activeIndex >= 0 ? results[activeIndex] : results[0]
+      if (target && !inWishlist(target.id)) handleAdd(target)
+    } else if (e.key === 'Escape') {
+      setResults([])
+      setActiveIndex(-1)
+    }
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -69,32 +114,45 @@ export function PlantSearch({ wishlistIds, onAdd, onRemove }: PlantSearchProps) 
           <Label htmlFor="plant-search">Search by name or botanical name</Label>
           <Input
             id="plant-search"
-            placeholder="e.g. tomato, basil, Allium…"
+            placeholder="e.g. tomato, basil, sunflower…"
             value={query}
             onChange={e => setQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
+            autoComplete="off"
           />
         </div>
 
         {searching && <p className="text-sm text-muted-foreground">Searching…</p>}
 
         {results.length > 0 && (
-          <ul className="space-y-1 max-h-64 overflow-y-auto border rounded p-2">
-            {results.map(crop => (
-              <li key={crop.id} className="flex items-center justify-between text-sm">
-                <span>
-                  <span className="font-medium">{crop.name}</span>{' '}
-                  <span className="text-muted-foreground italic">{crop.botanicalName}</span>
-                </span>
-                <Button
-                  size="sm"
-                  variant={inWishlist(crop.id) ? 'secondary' : 'outline'}
-                  disabled={inWishlist(crop.id)}
-                  onClick={() => handleAdd(crop)}
+          <ul ref={listRef} className="space-y-0.5 max-h-64 overflow-y-auto border rounded p-1">
+            {results.map((crop, index) => {
+              const displayName = getDisplayName(crop)
+              const added = inWishlist(crop.id)
+              return (
+                <li
+                  key={crop.id}
+                  className={cn(
+                    'flex items-center text-sm px-2 py-1.5 rounded select-none',
+                    added
+                      ? 'opacity-50 cursor-default'
+                      : 'cursor-pointer hover:bg-accent',
+                    index === activeIndex && !added && 'bg-accent',
+                  )}
+                  onClick={() => { if (!added) handleAdd(crop) }}
                 >
-                  {inWishlist(crop.id) ? 'Added' : 'Add'}
-                </Button>
-              </li>
-            ))}
+                  <span className="flex-1 min-w-0">
+                    <span className="font-medium">{displayName}</span>
+                    {displayName !== crop.botanicalName && (
+                      <span className="text-muted-foreground italic ml-1">{crop.botanicalName}</span>
+                    )}
+                  </span>
+                  {added && (
+                    <span className="text-xs text-muted-foreground ml-2 shrink-0">Added</span>
+                  )}
+                </li>
+              )
+            })}
           </ul>
         )}
 
@@ -108,11 +166,11 @@ export function PlantSearch({ wishlistIds, onAdd, onRemove }: PlantSearchProps) 
               <div className="flex flex-wrap gap-2">
                 {wishlistCrops.map(crop => (
                   <Badge key={crop.id} variant="secondary" className="gap-1">
-                    {crop.name}
+                    {getDisplayName(crop)}
                     <button
                       onClick={() => handleRemove(crop.id)}
                       className="ml-1 text-muted-foreground hover:text-foreground"
-                      aria-label={`Remove ${crop.name}`}
+                      aria-label={`Remove ${getDisplayName(crop)}`}
                     >
                       ×
                     </button>

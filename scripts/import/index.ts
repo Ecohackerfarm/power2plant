@@ -44,14 +44,17 @@ async function upsertCrop(importer: Importer, raw: RawCrop, stats: ImportStats):
     where: { botanicalName: raw.botanicalName },
     create: {
       botanicalName: raw.botanicalName,
-      name: raw.name,
+      name: raw.name ?? raw.botanicalName,
       slug,
       minTempC: raw.minTempC ?? null,
       imageUrl: raw.imageUrl ?? null,
       isNitrogenFixer: raw.isNitrogenFixer ?? false,
     },
     update: {
-      name: raw.name,
+      // Only overwrite name when the source provides a real common name.
+      // PFAF yields name === botanicalName; skipping prevents it from clobbering
+      // good common names set by earlier importers (USDA, OpenFarm).
+      ...(raw.name && raw.name !== raw.botanicalName ? { name: raw.name } : {}),
       minTempC: raw.minTempC ?? undefined,
       imageUrl: raw.imageUrl ?? undefined,
       isNitrogenFixer: raw.isNitrogenFixer ?? undefined,
