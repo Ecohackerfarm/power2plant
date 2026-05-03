@@ -6,6 +6,7 @@ const makeCrop = (id: string, minTempC: number | null = null): CropInput => ({
   name: id,
   botanicalName: id,
   minTempC,
+  commonNames: [],
 })
 
 const companion = (aId: string, bId: string, confidence = 0.8): RelationshipInput => ({

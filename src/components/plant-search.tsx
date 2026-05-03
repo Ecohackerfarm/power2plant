@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
+import { getDisplayName } from '@/lib/recommend'
 import type { CropRow } from '@/lib/crop-rank'
 
 type Crop = CropRow
@@ -14,11 +15,6 @@ interface PlantSearchProps {
   wishlistIds: string[]
   onAdd: (cropId: string) => void
   onRemove: (cropId: string) => void
-}
-
-function getDisplayName(crop: Crop): string {
-  if (crop.name !== crop.botanicalName) return crop.name
-  return crop.commonNames[0] ?? crop.name
 }
 
 export function PlantSearch({ wishlistIds, onAdd, onRemove }: PlantSearchProps) {

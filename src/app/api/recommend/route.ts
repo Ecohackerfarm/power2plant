@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import prisma from '@/lib/prisma'
-import { recommend, type RelationshipInput } from '@/lib/recommend'
+import { recommend, type RelationshipInput, type CropInput } from '@/lib/recommend'
 
 interface RecommendBody {
   cropIds: string[]
@@ -34,11 +35,12 @@ export async function POST(request: Request) {
     )
   }
 
+  const idList = Prisma.join(cropIds.map(id => Prisma.sql`${id}`))
   const [crops, relationships] = await Promise.all([
-    prisma.crop.findMany({
-      where: { id: { in: cropIds } },
-      select: { id: true, name: true, botanicalName: true, minTempC: true },
-    }),
+    prisma.$queryRaw<CropInput[]>`
+      SELECT id, name, "botanicalName", "minTempC", "commonNames"
+      FROM "Crop" WHERE id IN (${idList})
+    `,
     prisma.cropRelationship.findMany({
       where: {
         AND: [

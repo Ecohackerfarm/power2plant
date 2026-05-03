@@ -3,7 +3,7 @@ import { POST } from '@/app/api/recommend/route'
 
 vi.mock('@/lib/prisma', () => ({
   default: {
-    crop: { findMany: vi.fn() },
+    $queryRaw: vi.fn(),
     cropRelationship: { findMany: vi.fn() },
   },
 }))
@@ -11,8 +11,8 @@ vi.mock('@/lib/prisma', () => ({
 import prisma from '@/lib/prisma'
 
 const fakeCrops = [
-  { id: 'c1', name: 'Tomato', botanicalName: 'Solanum lycopersicum', minTempC: -1.1 },
-  { id: 'c2', name: 'Basil', botanicalName: 'Ocimum basilicum', minTempC: 5.0 },
+  { id: 'c1', name: 'Tomato', botanicalName: 'Solanum lycopersicum', minTempC: -1.1, commonNames: ['Tomato'] },
+  { id: 'c2', name: 'Basil', botanicalName: 'Ocimum basilicum', minTempC: 5.0, commonNames: ['Basil'] },
 ]
 
 const fakeRels = [
@@ -41,7 +41,7 @@ describe('POST /api/recommend', () => {
   })
 
   it('returns recommendation result for valid input', async () => {
-    vi.mocked(prisma.crop.findMany).mockResolvedValue(fakeCrops as any)
+    vi.mocked(prisma.$queryRaw).mockResolvedValue(fakeCrops)
     vi.mocked(prisma.cropRelationship.findMany).mockResolvedValue(fakeRels as any)
 
     const req = new Request('http://localhost/api/recommend', {
@@ -63,7 +63,7 @@ describe('POST /api/recommend', () => {
   })
 
   it('queries relationships only between the requested crops', async () => {
-    vi.mocked(prisma.crop.findMany).mockResolvedValue(fakeCrops as any)
+    vi.mocked(prisma.$queryRaw).mockResolvedValue(fakeCrops)
     vi.mocked(prisma.cropRelationship.findMany).mockResolvedValue([])
 
     const req = new Request('http://localhost/api/recommend', {

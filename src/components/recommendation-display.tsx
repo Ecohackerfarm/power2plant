@@ -1,7 +1,7 @@
 'use client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import type { RecommendResult, CropInput } from '@/lib/recommend'
+import { getDisplayName, type RecommendResult } from '@/lib/recommend'
 
 interface RecommendationDisplayProps {
   result: RecommendResult
@@ -23,12 +23,17 @@ export function RecommendationDisplay({ result }: RecommendationDisplayProps) {
                 <p className="text-sm text-muted-foreground">Empty</p>
               ) : (
                 <ul className="space-y-1">
-                  {bed.crops.map(crop => (
-                    <li key={crop.id} className="text-sm">
-                      <span className="font-medium">{crop.name}</span>{' '}
-                      <span className="text-muted-foreground italic text-xs">{crop.botanicalName}</span>
-                    </li>
-                  ))}
+                  {bed.crops.map(crop => {
+                    const displayName = getDisplayName(crop)
+                    return (
+                      <li key={crop.id} className="text-sm">
+                        <span className="font-medium">{displayName}</span>
+                        {displayName !== crop.botanicalName && (
+                          <span className="text-muted-foreground italic text-xs ml-1">{crop.botanicalName}</span>
+                        )}
+                      </li>
+                    )
+                  })}
                 </ul>
               )}
             </CardContent>
@@ -44,7 +49,7 @@ export function RecommendationDisplay({ result }: RecommendationDisplayProps) {
           <div className="flex flex-wrap gap-2">
             {result.overflow.map(crop => (
               <Badge key={crop.id} variant="outline">
-                {crop.name}
+                {getDisplayName(crop)}
               </Badge>
             ))}
           </div>
@@ -62,7 +67,7 @@ export function RecommendationDisplay({ result }: RecommendationDisplayProps) {
           <ul className="space-y-1">
             {result.conflicts.map((c, i) => (
               <li key={i} className="text-sm text-red-700">
-                {c.a.name} and {c.b.name} should not share a bed
+                {getDisplayName(c.a)} and {getDisplayName(c.b)} should not share a bed
               </li>
             ))}
           </ul>

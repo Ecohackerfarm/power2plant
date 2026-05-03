@@ -3,6 +3,16 @@ export type CropInput = {
   name: string
   botanicalName: string
   minTempC: number | null
+  commonNames: string[]
+}
+
+function toTitleCase(str: string): string {
+  return str.replace(/\b\w/g, c => c.toUpperCase())
+}
+
+export function getDisplayName(crop: Pick<CropInput, 'name' | 'botanicalName' | 'commonNames'>): string {
+  const raw = crop.name !== crop.botanicalName ? crop.name : (crop.commonNames[0] ?? crop.name)
+  return toTitleCase(raw)
 }
 
 export type RelationshipInput = {
