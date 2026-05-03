@@ -1,6 +1,7 @@
 .worktrees/
 .env
 .next/
+.pnpm-store/
 node_modules/
 data/
 *.tsbuildinfo
