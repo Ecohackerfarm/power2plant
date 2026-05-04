@@ -74,6 +74,17 @@ describe('GET /api/garden', () => {
     const body = await res.json()
     expect(body.lat).toBeCloseTo(51.5)
     expect(body.minTempC).toBeCloseTo(-12.2)
+    expect(body.wishlist).toEqual(['crop-1', 'crop-2'])
+  })
+
+  it('returns empty wishlist array when garden has none', async () => {
+    vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as any)
+    vi.mocked(prisma.userGarden.findUnique).mockResolvedValue({ ...fakeGarden, wishlist: [] } as any)
+    const req = new Request('http://localhost/api/garden')
+    const res = await GET(req)
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.wishlist).toEqual([])
   })
 })
 
