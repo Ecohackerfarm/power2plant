@@ -7,3 +7,7 @@ data/
 *.tsbuildinfo
 test-results/
 playwright-report/
+deploy_keys/*.pem
+deploy_keys/*_rsa
+deploy_keys/*_ed25519
+deploy_keys/*_ecdsa

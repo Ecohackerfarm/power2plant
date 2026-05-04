@@ -9,9 +9,15 @@ RUN apk add --no-cache \
     freetype \
     harfbuzz \
     ca-certificates \
-    ttf-freefont
+    ttf-freefont \
+    openssh
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser
+# Agent SSH access — public key only, no password auth
+RUN mkdir -p /root/.ssh && chmod 700 /root/.ssh
+COPY deploy_keys/agent.pub /root/.ssh/authorized_keys
+RUN chmod 600 /root/.ssh/authorized_keys && \
+    printf '\nPort 2222\nPermitRootLogin prohibit-password\nPasswordAuthentication no\nStrictModes no\n' >> /etc/ssh/sshd_config
 RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
