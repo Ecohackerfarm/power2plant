@@ -91,6 +91,14 @@ describe('recommend()', () => {
     expect(result.beds).toHaveLength(4)
   })
 
+  it('spreads unrelated crops across beds rather than packing one bed', () => {
+    // 4 crops, no relationships, 2 beds with capacity 4 — each bed should get ~2
+    const crops = ['a', 'b', 'c', 'd'].map(id => makeCrop(id))
+    const result = recommend(crops, [], 2, 4, 0)
+    const sizes = result.beds.map(b => b.crops.length)
+    expect(Math.max(...sizes) - Math.min(...sizes)).toBeLessThanOrEqual(1)
+  })
+
   it('never co-locates conflicting pair when a free bed exists', () => {
     // tomato-cucumber conflict, basil companions both — 3 beds with capacity
     const crops = [makeCrop('tomato'), makeCrop('cucumber'), makeCrop('basil')]

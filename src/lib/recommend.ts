@@ -138,29 +138,35 @@ export function recommend(
     return scoreB - scoreA
   })
 
-  // 4. Greedy placement — prefer conflict-free beds; fall back to conflicting only
-  //    when no conflict-free bed exists (e.g. single-bed layout)
+  // 4. Greedy placement with three-tier priority:
+  //    (a) positive-affinity bed — companion benefit exists, cluster together
+  //    (b) spread bed — no benefit, prefer emptiest bed to avoid unnecessary crowding
+  //    (c) conflict fallback — only when every bed has a conflict (e.g. single-bed layout)
   const beds: CropInput[][] = Array.from({ length: bedCount }, () => [])
   const overflow: CropInput[] = []
 
   for (const crop of sorted) {
-    let bestBed = -1
-    let bestScore = -Infinity
-    let fallbackBed = -1
-    let fallbackScore = -Infinity
+    let affinityBed = -1; let affinityScore = -Infinity
+    let spreadBed = -1;   let spreadScore = -Infinity   // -bed.length (prefer empty)
+    let conflictBed = -1; let conflictScore = -Infinity
 
     for (let i = 0; i < beds.length; i++) {
       if (beds[i].length >= bedCapacity) continue
       const score = beds[i].reduce((sum, c) => sum + getWeight(crop.id, c.id), 0)
       const hasConflict = beds[i].some(c => getWeight(crop.id, c.id) < 0)
       if (!hasConflict) {
-        if (score > bestScore || bestBed === -1) { bestScore = score; bestBed = i }
+        if (score > 0) {
+          if (score > affinityScore || affinityBed === -1) { affinityScore = score; affinityBed = i }
+        } else {
+          const s = -beds[i].length
+          if (s > spreadScore || spreadBed === -1) { spreadScore = s; spreadBed = i }
+        }
       } else {
-        if (score > fallbackScore || fallbackBed === -1) { fallbackScore = score; fallbackBed = i }
+        if (score > conflictScore || conflictBed === -1) { conflictScore = score; conflictBed = i }
       }
     }
 
-    const chosen = bestBed !== -1 ? bestBed : fallbackBed
+    const chosen = affinityBed !== -1 ? affinityBed : spreadBed !== -1 ? spreadBed : conflictBed
     if (chosen === -1) overflow.push(crop)
     else beds[chosen].push(crop)
   }
