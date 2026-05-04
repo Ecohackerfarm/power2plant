@@ -20,25 +20,21 @@ Reimplementing "powerplant" as "power2plant". Original spec: https://wiki.ecohac
 - FarmOS API for export/import
 - MVP: select 2+ plants, get compatible groupings (no redundant subsets)
 
-**Status:** Data foundation COMPLETE — merged to main (2026-04-29). Next phase: Auth + UI.
-
-**Git state:** all on `main`, clean. 19/19 tests passing.
+**Status:** Auth + plant detail pages COMPLETE — all on main (2026-05-04). 79/79 tests passing.
 
 **What's built:**
-- Next.js 15 + Prisma 6 + PostgreSQL 16 (Docker) + Vitest 3 + better-auth (not yet wired) + TypeScript
-- Full Prisma schema: Crop, CropSource, CropRelationship, RelationshipSource, UserGarden, Bed, Planting
-- 5 data importers: Trefle (REST), USDA (CSV), OpenFarm (JSON dump), PlantBuddies (JS parse), PFAF (HTML scraper)
-- Orchestrator: `pnpm db:import [SOURCE]` — upserts crops + relationships, resolves names via synonym map, recomputes confidence
-- DB seeded: 66,493 crops, 343 relationships, `pnpm db:dump` / `pnpm db:restore` for persistence
-- `db/seed.sql` committed to repo (54MB raw, 7.9MB packed) — run `pnpm db:restore` on new container
-
-**Next phase tasks:**
-1. Wire better-auth (User model → UserGarden.userId)
-2. `/api/zone` route handler — coords → minTempC lookup
-3. `/api/recommend` route handler — greedy affinity bed assignment
-4. LocalStorage garden state (anonymous flow)
-5. UI: zone detection, plant wishlist, bed count/capacity, recommendation display
-6. Account creation + localStorage→DB migration on signup
+- Next.js 15 + Prisma 6 + PostgreSQL 16 (Docker) + Vitest 3 + TypeScript + shadcn/ui + Leaflet + better-auth
+- Full Prisma schema: Crop (commonNames[], isCommonCrop), CropRelationship, RelationshipSource, UserGarden, Bed, Planting
+- 5 data importers: Trefle, USDA, OpenFarm, PlantBuddies, PFAF; `pnpm db:import`
+- DB seeded: 66,493 crops, 343 relationships — `pnpm db:restore` to load
+- `/api/zone`, `/api/crops` (?q= search, ?ids= rehydration), `/api/recommend`, `/api/garden` (GET/PUT, session-gated), `/api/plants/[id]`, `/api/plants/[id]/companions/[companionId]`
+- `src/lib/recommend.ts` — greedy affinity algo: conflict-avoidance constraint, bridge-crop duplication pass, confidence labels
+- `src/lib/crop-rank.ts` — pure search ranking (exact→starts-with+isCommonCrop→contains)
+- Plant detail page (`/plants/[id]`): companion list, add-to-wishlist, add-and-recommend
+- Relationship detail page (`/plants/[id]/companions/[companionId]`): both crops, full details, sources
+- ConfidenceBadge: click-to-explain popover with all 4 levels
+- AuthPanel: sign up / sign in / signed-out display; garden state syncs to DB on sign-in
+- Recommendation: conflicting pairs separated into different beds; bridge crops (e.g. Basil) duplicated into all compatible beds with "· also in Bed X" note
 
 **TODO:** Contact Serlo (serlo/PlantBuddies) to clarify license before production use. Proceeding as non-commercial fair use for now.
 
