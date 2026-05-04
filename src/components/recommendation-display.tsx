@@ -1,15 +1,47 @@
 'use client'
 import Link from 'next/link'
+import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { ConfidenceBadge } from '@/components/confidence-badge'
 import { getDisplayName, type RecommendResult } from '@/lib/recommend'
+import { useSession } from '@/lib/auth-client'
 
 interface RecommendationDisplayProps {
   result: RecommendResult
+  onAccepted?: () => void
 }
 
-export function RecommendationDisplay({ result }: RecommendationDisplayProps) {
+export function RecommendationDisplay({ result, onAccepted }: RecommendationDisplayProps) {
+  const { data: session } = useSession()
+  const [accepting, setAccepting] = useState(false)
+  const [acceptError, setAcceptError] = useState<string | null>(null)
+
+  const handleAccept = async () => {
+    if (!session) return
+    setAccepting(true)
+    setAcceptError(null)
+    try {
+      const res = await fetch('/api/garden/plantings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          beds: result.beds.map((bed) => ({
+            name: `Bed ${bed.index + 1}`,
+            cropIds: bed.crops.map((c) => c.id),
+          })),
+        }),
+      })
+      if (!res.ok) throw new Error('Failed to save plan')
+      onAccepted?.()
+    } catch (e) {
+      setAcceptError(e instanceof Error ? e.message : 'Unknown error')
+    } finally {
+      setAccepting(false)
+    }
+  }
+
   // Build cropId → bed indices map for "also in Bed X" notes
   const cropBeds = new Map<string, number[]>()
   for (const bed of result.beds) {
@@ -80,6 +112,15 @@ export function RecommendationDisplay({ result }: RecommendationDisplayProps) {
           </Card>
         ))}
       </div>
+
+      {session && (
+        <div className="pt-4">
+          <Button size="lg" onClick={handleAccept} disabled={accepting}>
+            {accepting ? 'Saving…' : 'Accept this plan'}
+          </Button>
+          {acceptError && <p className="text-red-600 mt-2">{acceptError}</p>}
+        </div>
+      )}
 
       {result.overflow.length > 0 && (
         <div>
