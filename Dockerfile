@@ -2,6 +2,7 @@
 
 # ---- deps ----
 FROM node:20-alpine AS deps
+RUN apk add --no-cache postgresql16-client
 RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./

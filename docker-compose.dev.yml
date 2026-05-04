@@ -6,6 +6,7 @@ services:
     command: sh -c "pnpm exec prisma generate && pnpm exec prisma migrate deploy && pnpm dev"
     ports:
       - "3000:3000"
+      - "5555:5555"
     environment:
       NODE_ENV: development
       DATABASE_URL: postgresql://power2plant:power2plant@db:5432/power2plant
