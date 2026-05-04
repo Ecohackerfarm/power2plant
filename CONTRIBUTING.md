@@ -80,7 +80,7 @@ pnpm db:seed-common
 
 # Dump the live DB (requires a running postgres with data)
 pnpm db:dump
-# or directly: bash db/dump.sh
+# or directly: sh db/dump.sh
 ```
 
 Commit the updated `db/seed.sql` alongside the migration so reviewers and new contributors get a working DB in one step.
