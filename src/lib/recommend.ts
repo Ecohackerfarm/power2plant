@@ -24,10 +24,15 @@ export type RelationshipInput = {
   notes?: string | null
 }
 
+export type BedHint = {
+  pairLabel: string    // e.g. "Tomato & Basil"
+  explanation: string  // e.g. "nurse plant · pest control · traditional"
+}
+
 export type BedResult = {
   index: number
   crops: CropInput[]
-  hints: string[]
+  hints: BedHint[]
 }
 
 export type RecommendResult = {
@@ -42,19 +47,35 @@ const REASON_LABELS: Record<string, string> = {
   NUTRIENT: 'nutrient sharing',
   SHADE: 'shade benefit',
   ALLELOPATHY: 'natural repellent',
-  OTHER: 'companion benefit',
 }
 
-const TYPE_LABELS: Record<string, string> = {
-  COMPANION: 'good companions',
-  ATTRACTS: 'attracts beneficial insects',
+// Only non-COMPANION types get a label — COMPANION is implied by sharing a bed
+const TYPE_LABELS: Partial<Record<string, string>> = {
+  ATTRACTS: 'attracts beneficials',
+  REPELS: 'repels pests',
   NURSE: 'nurse plant',
   TRAP_CROP: 'trap crop',
 }
 
-function hintText(rel: RelationshipInput): string {
-  if (rel.reason && REASON_LABELS[rel.reason]) return REASON_LABELS[rel.reason]
-  return TYPE_LABELS[rel.type] ?? rel.notes ?? 'companion planting'
+const CONFIDENCE_LABELS: [number, string][] = [
+  [0.75, 'peer-reviewed'],
+  [0.5, 'observed'],
+  [0.3, 'traditional'],
+  [0, 'anecdotal'],
+]
+
+function confidenceLabel(confidence: number): string {
+  return CONFIDENCE_LABELS.find(([thresh]) => confidence >= thresh)?.[1] ?? 'anecdotal'
+}
+
+function buildExplanation(rel: RelationshipInput): string {
+  const parts: string[] = []
+  const typeLabel = TYPE_LABELS[rel.type]
+  if (typeLabel) parts.push(typeLabel)
+  const reasonLabel = rel.reason ? REASON_LABELS[rel.reason] : null
+  if (reasonLabel) parts.push(reasonLabel)
+  parts.push(confidenceLabel(rel.confidence))
+  return parts.join(' · ')
 }
 
 const POSITIVE_TYPES = new Set(['COMPANION', 'ATTRACTS', 'NURSE', 'TRAP_CROP'])
@@ -149,7 +170,7 @@ export function recommend(
 
   // 6. Generate per-bed hints from positive companion pairs
   const bedResults: BedResult[] = beds.map((bedCrops, index) => {
-    const hints: string[] = []
+    const hints: BedHint[] = []
     for (let i = 0; i < bedCrops.length; i++) {
       for (let j = i + 1; j < bedCrops.length; j++) {
         const a = bedCrops[i]
@@ -157,7 +178,10 @@ export function recommend(
         if (getWeight(a.id, b.id) > 0) {
           const rel = relMap.get(pairKey(a.id, b.id))
           if (rel) {
-            hints.push(`${getDisplayName(a)} & ${getDisplayName(b)}: ${hintText(rel)}`)
+            hints.push({
+              pairLabel: `${getDisplayName(a)} & ${getDisplayName(b)}`,
+              explanation: buildExplanation(rel),
+            })
           }
         }
       }

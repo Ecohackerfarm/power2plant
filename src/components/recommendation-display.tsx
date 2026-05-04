@@ -39,8 +39,9 @@ export function RecommendationDisplay({ result }: RecommendationDisplayProps) {
                   {bed.hints.length > 0 && (
                     <ul className="mt-2 space-y-0.5 border-t pt-2">
                       {bed.hints.map((hint, i) => (
-                        <li key={i} className="text-xs text-muted-foreground">
-                          {hint}
+                        <li key={i} className="text-xs">
+                          <span className="font-medium">{hint.pairLabel}</span>
+                          <span className="text-muted-foreground ml-1">— {hint.explanation}</span>
                         </li>
                       ))}
                     </ul>
