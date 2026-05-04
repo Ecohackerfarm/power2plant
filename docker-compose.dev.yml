@@ -20,3 +20,10 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    networks:
+      - default
+      - development-network
+
+networks:
+  development-network:
+    external: true
