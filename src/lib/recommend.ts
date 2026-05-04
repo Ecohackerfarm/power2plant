@@ -42,6 +42,7 @@ export type RecommendResult = {
   beds: BedResult[]
   overflow: CropInput[]
   conflicts: Array<{ a: CropInput; b: CropInput }>
+  duplicatedCropIds: string[]
 }
 
 const REASON_LABELS: Record<string, string> = {
@@ -137,31 +138,52 @@ export function recommend(
     return scoreB - scoreA
   })
 
-  // 4. Greedy placement
+  // 4. Greedy placement — prefer conflict-free beds; fall back to conflicting only
+  //    when no conflict-free bed exists (e.g. single-bed layout)
   const beds: CropInput[][] = Array.from({ length: bedCount }, () => [])
   const overflow: CropInput[] = []
 
   for (const crop of sorted) {
     let bestBed = -1
     let bestScore = -Infinity
+    let fallbackBed = -1
+    let fallbackScore = -Infinity
 
     for (let i = 0; i < beds.length; i++) {
       if (beds[i].length >= bedCapacity) continue
       const score = beds[i].reduce((sum, c) => sum + getWeight(crop.id, c.id), 0)
-      if (score > bestScore || (score === bestScore && bestBed === -1)) {
-        bestScore = score
-        bestBed = i
+      const hasConflict = beds[i].some(c => getWeight(crop.id, c.id) < 0)
+      if (!hasConflict) {
+        if (score > bestScore || bestBed === -1) { bestScore = score; bestBed = i }
+      } else {
+        if (score > fallbackScore || fallbackBed === -1) { fallbackScore = score; fallbackBed = i }
       }
     }
 
-    if (bestBed === -1) {
-      overflow.push(crop)
-    } else {
-      beds[bestBed].push(crop)
+    const chosen = bestBed !== -1 ? bestBed : fallbackBed
+    if (chosen === -1) overflow.push(crop)
+    else beds[chosen].push(crop)
+  }
+
+  // 5. Duplication pass — copy a crop into every additional bed where it adds
+  //    net positive affinity without introducing a conflict
+  const placedSet = new Set(beds.flat().map(c => c.id))
+  const duplicatedIds = new Set<string>()
+  for (const crop of sorted) {
+    if (!placedSet.has(crop.id)) continue
+    for (let i = 0; i < beds.length; i++) {
+      if (beds[i].some(c => c.id === crop.id)) continue
+      if (beds[i].length >= bedCapacity) continue
+      if (beds[i].some(c => getWeight(crop.id, c.id) < 0)) continue
+      const score = beds[i].reduce((sum, c) => sum + getWeight(crop.id, c.id), 0)
+      if (score > 0) {
+        beds[i].push(crop)
+        duplicatedIds.add(crop.id)
+      }
     }
   }
 
-  // 5. Collect conflicts (incompatible pairs in same bed)
+  // 6. Collect conflicts (safety net — only fires when forced by capacity)
   const conflicts: Array<{ a: CropInput; b: CropInput }> = []
   for (const bed of beds) {
     for (let i = 0; i < bed.length; i++) {
@@ -173,7 +195,7 @@ export function recommend(
     }
   }
 
-  // 6. Generate per-bed hints from positive companion pairs
+  // 7. Generate per-bed hints from positive companion pairs
   const bedResults: BedResult[] = beds.map((bedCrops, index) => {
     const hints: BedHint[] = []
     for (let i = 0; i < bedCrops.length; i++) {
@@ -183,14 +205,14 @@ export function recommend(
         if (getWeight(a.id, b.id) > 0) {
           const rel = relMap.get(pairKey(a.id, b.id))
           if (rel) {
-              const { details, confidenceLevel } = buildHint(rel)
-              hints.push({
-                cropAId: a.id < b.id ? a.id : b.id,
-                cropBId: a.id < b.id ? b.id : a.id,
-                pairLabel: `${getDisplayName(a)} & ${getDisplayName(b)}`,
-                details,
-                confidenceLevel,
-              })
+            const { details, confidenceLevel } = buildHint(rel)
+            hints.push({
+              cropAId: a.id < b.id ? a.id : b.id,
+              cropBId: a.id < b.id ? b.id : a.id,
+              pairLabel: `${getDisplayName(a)} & ${getDisplayName(b)}`,
+              details,
+              confidenceLevel,
+            })
           }
         }
       }
@@ -198,7 +220,7 @@ export function recommend(
     return { index, crops: bedCrops, hints }
   })
 
-  return { beds: bedResults, overflow, conflicts }
+  return { beds: bedResults, overflow, conflicts, duplicatedCropIds: [...duplicatedIds] }
 }
 
 export function minTempCToZoneName(minTempC: number): string {

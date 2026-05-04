@@ -10,6 +10,15 @@ interface RecommendationDisplayProps {
 }
 
 export function RecommendationDisplay({ result }: RecommendationDisplayProps) {
+  // Build cropId → bed indices map for "also in Bed X" notes
+  const cropBeds = new Map<string, number[]>()
+  for (const bed of result.beds) {
+    for (const crop of bed.crops) {
+      const list = cropBeds.get(crop.id) ?? []
+      list.push(bed.index)
+      cropBeds.set(crop.id, list)
+    }
+  }
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-semibold">Step 4 — Recommendations</h2>
@@ -26,16 +35,26 @@ export function RecommendationDisplay({ result }: RecommendationDisplayProps) {
               ) : (
                 <>
                   <ul className="space-y-1">
-                    {bed.crops.map(crop => (
-                      <li key={crop.id} className="text-sm">
-                        <Link
-                          href={`/plants/${crop.id}`}
-                          className="font-medium hover:underline"
-                        >
-                          {getDisplayName(crop)}
-                        </Link>
-                      </li>
-                    ))}
+                    {bed.crops.map(crop => {
+                      const otherBeds = (cropBeds.get(crop.id) ?? [])
+                        .filter(i => i !== bed.index)
+                        .map(i => `Bed ${i + 1}`)
+                      return (
+                        <li key={crop.id} className="text-sm">
+                          <Link
+                            href={`/plants/${crop.id}`}
+                            className="font-medium hover:underline"
+                          >
+                            {getDisplayName(crop)}
+                          </Link>
+                          {otherBeds.length > 0 && (
+                            <span className="text-xs text-muted-foreground ml-1">
+                              · also in {otherBeds.join(', ')}
+                            </span>
+                          )}
+                        </li>
+                      )
+                    })}
                   </ul>
                   {bed.hints.length > 0 && (
                     <ul className="mt-2 space-y-0.5 border-t pt-2">

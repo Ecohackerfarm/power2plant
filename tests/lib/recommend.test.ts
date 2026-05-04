@@ -90,6 +90,35 @@ describe('recommend()', () => {
     const result = recommend([], [], 4, 3, 0)
     expect(result.beds).toHaveLength(4)
   })
+
+  it('never co-locates conflicting pair when a free bed exists', () => {
+    // tomato-cucumber conflict, basil companions both — 3 beds with capacity
+    const crops = [makeCrop('tomato'), makeCrop('cucumber'), makeCrop('basil')]
+    const rels = [
+      avoid('tomato', 'cucumber'),
+      companion('tomato', 'basil'),
+      companion('basil', 'cucumber'),
+    ]
+    const result = recommend(crops, rels, 3, 3, 0)
+    expect(result.conflicts).toHaveLength(0)
+    const tomatoBed = result.beds.findIndex(b => b.crops.some(c => c.id === 'tomato'))
+    const cucumberBed = result.beds.findIndex(b => b.crops.some(c => c.id === 'cucumber'))
+    expect(tomatoBed).not.toBe(cucumberBed)
+  })
+
+  it('duplicates a bridge crop into every bed where it adds positive affinity', () => {
+    const crops = [makeCrop('tomato'), makeCrop('cucumber'), makeCrop('basil')]
+    const rels = [
+      avoid('tomato', 'cucumber'),
+      companion('tomato', 'basil'),
+      companion('basil', 'cucumber'),
+    ]
+    const result = recommend(crops, rels, 3, 3, 0)
+    expect(result.duplicatedCropIds).toContain('basil')
+    // basil must appear in at least 2 beds
+    const basilBeds = result.beds.filter(b => b.crops.some(c => c.id === 'basil'))
+    expect(basilBeds.length).toBeGreaterThanOrEqual(2)
+  })
 })
 
 describe('minTempCToZoneName()', () => {
