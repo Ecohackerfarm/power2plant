@@ -29,9 +29,9 @@ Tell power2plant your growing zone and which plants you want to grow — it assi
 
 ### Prerequisites
 
-- Node.js 20+
-- pnpm
-- Docker (for PostgreSQL) or a PostgreSQL 16 instance
+- Docker (with Compose v2)
+
+The host doesn't need Node, pnpm, or psql — everything lives in the dev container.
 
 ### Setup
 
@@ -40,29 +40,29 @@ Tell power2plant your growing zone and which plants you want to grow — it assi
 git clone https://github.com/your-org/power2plant.git
 cd power2plant
 
-# Install dependencies
-pnpm install
-
 # Configure environment
 cp .env.example .env
-# Edit .env — set DATABASE_URL and BETTER_AUTH_SECRET at minimum
+# Edit .env — set BETTER_AUTH_SECRET (dev defaults handle the rest)
 
-# Start the database
-docker compose up -d
-
-# Run migrations
-pnpm db:migrate
-
-# (Optional) Seed plant data — requires Trefle API token in .env
-pnpm db:import
-# Or restore from a pre-seeded dump:
-pnpm db:restore
-
-# Start dev server
-pnpm dev
+# Start the stack (Postgres + app with hot reload)
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+The dev compose command runs `prisma generate`, `prisma migrate deploy`, and `next dev` on startup. Open [http://localhost:3000](http://localhost:3000).
+
+For any project commands (tests, Prisma, db dump/restore, etc.) open a shell **inside** the dev container and run them there:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec app sh
+
+# from inside the container:
+pnpm test:run                # run tests
+pnpm db:migrate              # create a new migration (dev workflow)
+pnpm db:restore              # load the committed seed.sql
+pnpm db:import               # import fresh plant data (needs TREFLE_TOKEN)
+pnpm db:dump                 # snapshot the DB to db/seed.sql
+pnpm db:studio               # Prisma Studio at http://localhost:5555
+```
 
 ### Environment Variables
 
@@ -78,12 +78,14 @@ In development, `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL` fall back to safe def
 
 ## Scripts
 
+Run all of these from a shell inside the dev container (`docker compose -f docker-compose.yml -f docker-compose.dev.yml exec app sh`):
+
 | Command | Description |
 |---------|-------------|
-| `pnpm dev` | Start dev server |
+| `pnpm dev` | Start dev server (already running via compose) |
 | `pnpm build` | Production build |
 | `pnpm test:run` | Run test suite (65 tests) |
-| `pnpm db:migrate` | Run pending Prisma migrations |
+| `pnpm db:migrate` | Create / apply Prisma migrations |
 | `pnpm db:import` | Import plant data from all sources |
 | `pnpm db:import <source>` | Import from a specific source (trefle, usda, openfarm, plantbuddies, pfaf) |
 | `pnpm db:restore` | Restore pre-seeded plant database |
@@ -106,14 +108,7 @@ Plant data is seeded from multiple open sources:
 
 ## Docker
 
-### Development (hot reload)
-
-```bash
-cp .env.example .env
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up
-```
-
-Edit files in `src/` — Next.js hot reloads automatically.
+Development is covered in [Getting Started](#getting-started) — edit files in `src/` and Next.js hot reloads automatically.
 
 ### Production
 
