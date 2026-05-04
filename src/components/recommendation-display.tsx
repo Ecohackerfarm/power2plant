@@ -1,6 +1,8 @@
 'use client'
+import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { ConfidenceBadge } from '@/components/confidence-badge'
 import { getDisplayName, type RecommendResult } from '@/lib/recommend'
 
 interface RecommendationDisplayProps {
@@ -24,24 +26,31 @@ export function RecommendationDisplay({ result }: RecommendationDisplayProps) {
               ) : (
                 <>
                   <ul className="space-y-1">
-                    {bed.crops.map(crop => {
-                      const displayName = getDisplayName(crop)
-                      return (
-                        <li key={crop.id} className="text-sm">
-                          <span className="font-medium">{displayName}</span>
-                          {displayName !== crop.botanicalName && (
-                            <span className="text-muted-foreground italic text-xs ml-1">{crop.botanicalName}</span>
-                          )}
-                        </li>
-                      )
-                    })}
+                    {bed.crops.map(crop => (
+                      <li key={crop.id} className="text-sm">
+                        <Link
+                          href={`/plants/${crop.id}`}
+                          className="font-medium hover:underline"
+                        >
+                          {getDisplayName(crop)}
+                        </Link>
+                      </li>
+                    ))}
                   </ul>
                   {bed.hints.length > 0 && (
                     <ul className="mt-2 space-y-0.5 border-t pt-2">
                       {bed.hints.map((hint, i) => (
                         <li key={i} className="text-xs">
-                          <span className="font-medium">{hint.pairLabel}</span>
-                          <span className="text-muted-foreground ml-1">— {hint.explanation}</span>
+                          <Link
+                            href={`/plants/${hint.cropAId}/companions/${hint.cropBId}`}
+                            className="font-medium hover:underline"
+                          >
+                            {hint.pairLabel}
+                          </Link>
+                          <span className="text-muted-foreground ml-1">
+                            —{hint.details && ` ${hint.details} ·`}{' '}
+                            <ConfidenceBadge level={hint.confidenceLevel} />
+                          </span>
                         </li>
                       ))}
                     </ul>
@@ -60,8 +69,8 @@ export function RecommendationDisplay({ result }: RecommendationDisplayProps) {
           </h3>
           <div className="flex flex-wrap gap-2">
             {result.overflow.map(crop => (
-              <Badge key={crop.id} variant="outline">
-                {getDisplayName(crop)}
+              <Badge key={crop.id} variant="outline" className="cursor-pointer">
+                <Link href={`/plants/${crop.id}`}>{getDisplayName(crop)}</Link>
               </Badge>
             ))}
           </div>

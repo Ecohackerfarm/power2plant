@@ -93,5 +93,5 @@ export function useGarden() {
     update({ bedCount, bedCapacity })
   }, [])
 
-  return { state, setZone, addToWishlist, removeFromWishlist, setBeds }
+  return { state, hydrated, setZone, addToWishlist, removeFromWishlist, setBeds }
 }

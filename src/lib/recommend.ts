@@ -25,8 +25,11 @@ export type RelationshipInput = {
 }
 
 export type BedHint = {
-  pairLabel: string    // e.g. "Tomato & Basil"
-  explanation: string  // e.g. "nurse plant · pest control · traditional"
+  cropAId: string
+  cropBId: string
+  pairLabel: string       // "Tomato & Basil"
+  details: string         // "nurse plant · pest control"  (no confidence)
+  confidenceLevel: string // "traditional"
 }
 
 export type BedResult = {
@@ -57,25 +60,27 @@ const TYPE_LABELS: Partial<Record<string, string>> = {
   TRAP_CROP: 'trap crop',
 }
 
-const CONFIDENCE_LABELS: [number, string][] = [
-  [0.75, 'peer-reviewed'],
-  [0.5, 'observed'],
-  [0.3, 'traditional'],
+// Thresholds are midpoints between CONFIDENCE_WEIGHTS (0.25/0.5/0.75/1.0) so each
+// source level maps to exactly one label: ANECDOTAL→anecdotal, TRADITIONAL→traditional,
+// OBSERVED→observed, PEER_REVIEWED→peer-reviewed.
+const CONFIDENCE_THRESHOLDS: [number, string][] = [
+  [0.875, 'peer-reviewed'],
+  [0.625, 'observed'],
+  [0.375, 'traditional'],
   [0, 'anecdotal'],
 ]
 
-function confidenceLabel(confidence: number): string {
-  return CONFIDENCE_LABELS.find(([thresh]) => confidence >= thresh)?.[1] ?? 'anecdotal'
+export function confidenceLabel(confidence: number): string {
+  return CONFIDENCE_THRESHOLDS.find(([thresh]) => confidence >= thresh)?.[1] ?? 'anecdotal'
 }
 
-function buildExplanation(rel: RelationshipInput): string {
+function buildHint(rel: RelationshipInput): { details: string; confidenceLevel: string } {
   const parts: string[] = []
   const typeLabel = TYPE_LABELS[rel.type]
   if (typeLabel) parts.push(typeLabel)
   const reasonLabel = rel.reason ? REASON_LABELS[rel.reason] : null
   if (reasonLabel) parts.push(reasonLabel)
-  parts.push(confidenceLabel(rel.confidence))
-  return parts.join(' · ')
+  return { details: parts.join(' · '), confidenceLevel: confidenceLabel(rel.confidence) }
 }
 
 const POSITIVE_TYPES = new Set(['COMPANION', 'ATTRACTS', 'NURSE', 'TRAP_CROP'])
@@ -178,10 +183,14 @@ export function recommend(
         if (getWeight(a.id, b.id) > 0) {
           const rel = relMap.get(pairKey(a.id, b.id))
           if (rel) {
-            hints.push({
-              pairLabel: `${getDisplayName(a)} & ${getDisplayName(b)}`,
-              explanation: buildExplanation(rel),
-            })
+              const { details, confidenceLevel } = buildHint(rel)
+              hints.push({
+                cropAId: a.id < b.id ? a.id : b.id,
+                cropBId: a.id < b.id ? b.id : a.id,
+                pairLabel: `${getDisplayName(a)} & ${getDisplayName(b)}`,
+                details,
+                confidenceLevel,
+              })
           }
         }
       }

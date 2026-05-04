@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useGarden } from '@/hooks/use-garden'
 import { ZoneDetector } from '@/components/zone-detector'
 import { PlantSearch } from '@/components/plant-search'
@@ -11,12 +11,26 @@ import type { RecommendResult } from '@/lib/recommend'
 import { AuthPanel } from '@/components/auth-panel'
 
 export default function Home() {
-  const { state, setZone, addToWishlist, removeFromWishlist, setBeds } = useGarden()
+  const { state, hydrated, setZone, addToWishlist, removeFromWishlist, setBeds } = useGarden()
   const [result, setResult] = useState<RecommendResult | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const autoTriggered = useRef(false)
 
   const canRecommend = state.minTempC !== null && state.wishlist.length >= 2
+
+  // Auto-trigger after plant page adds a companion and redirects with ?autoRecommend=1
+  useEffect(() => {
+    if (!hydrated || autoTriggered.current) return
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('autoRecommend') !== '1') return
+    window.history.replaceState({}, '', '/')
+    autoTriggered.current = true
+    if (state.minTempC !== null && state.wishlist.length >= 2) {
+      void getRecommendations()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated])
 
   async function getRecommendations() {
     if (!canRecommend) return
