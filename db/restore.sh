@@ -9,7 +9,7 @@ if [ ! -f "$DUMP" ]; then
   exit 1
 fi
 
-if ! pg_isready -d "$DB_URL" -q 2>/dev/null; then
+if ! pg_isready -d "$DB_URL" -q; then
   echo "ERROR: Database not reachable at $DB_URL" >&2
   exit 1
 fi
