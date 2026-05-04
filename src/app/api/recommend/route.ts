@@ -48,7 +48,7 @@ export async function POST(request: Request) {
           { cropBId: { in: cropIds } },
         ],
       },
-      select: { cropAId: true, cropBId: true, type: true, confidence: true },
+      select: { cropAId: true, cropBId: true, type: true, confidence: true, reason: true, notes: true },
     }),
   ])
 

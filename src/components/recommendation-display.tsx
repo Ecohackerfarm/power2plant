@@ -22,19 +22,30 @@ export function RecommendationDisplay({ result }: RecommendationDisplayProps) {
               {bed.crops.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Empty</p>
               ) : (
-                <ul className="space-y-1">
-                  {bed.crops.map(crop => {
-                    const displayName = getDisplayName(crop)
-                    return (
-                      <li key={crop.id} className="text-sm">
-                        <span className="font-medium">{displayName}</span>
-                        {displayName !== crop.botanicalName && (
-                          <span className="text-muted-foreground italic text-xs ml-1">{crop.botanicalName}</span>
-                        )}
-                      </li>
-                    )
-                  })}
-                </ul>
+                <>
+                  <ul className="space-y-1">
+                    {bed.crops.map(crop => {
+                      const displayName = getDisplayName(crop)
+                      return (
+                        <li key={crop.id} className="text-sm">
+                          <span className="font-medium">{displayName}</span>
+                          {displayName !== crop.botanicalName && (
+                            <span className="text-muted-foreground italic text-xs ml-1">{crop.botanicalName}</span>
+                          )}
+                        </li>
+                      )
+                    })}
+                  </ul>
+                  {bed.hints.length > 0 && (
+                    <ul className="mt-2 space-y-0.5 border-t pt-2">
+                      {bed.hints.map((hint, i) => (
+                        <li key={i} className="text-xs text-muted-foreground">
+                          {hint}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </>
               )}
             </CardContent>
           </Card>

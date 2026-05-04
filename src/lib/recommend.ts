@@ -20,17 +20,41 @@ export type RelationshipInput = {
   cropBId: string
   type: 'COMPANION' | 'AVOID' | 'ATTRACTS' | 'REPELS' | 'NURSE' | 'TRAP_CROP'
   confidence: number
+  reason?: string | null
+  notes?: string | null
 }
 
 export type BedResult = {
   index: number
   crops: CropInput[]
+  hints: string[]
 }
 
 export type RecommendResult = {
   beds: BedResult[]
   overflow: CropInput[]
   conflicts: Array<{ a: CropInput; b: CropInput }>
+}
+
+const REASON_LABELS: Record<string, string> = {
+  PEST_CONTROL: 'pest control',
+  POLLINATION: 'pollination',
+  NUTRIENT: 'nutrient sharing',
+  SHADE: 'shade benefit',
+  ALLELOPATHY: 'natural repellent',
+  OTHER: 'companion benefit',
+}
+
+const TYPE_LABELS: Record<string, string> = {
+  COMPANION: 'good companions',
+  ATTRACTS: 'attracts beneficial insects',
+  NURSE: 'nurse plant',
+  TRAP_CROP: 'trap crop',
+}
+
+function hintText(rel: RelationshipInput): string {
+  if (rel.reason && REASON_LABELS[rel.reason]) return REASON_LABELS[rel.reason]
+  return TYPE_LABELS[rel.type] ?? rel.notes ?? 'companion planting'
 }
 
 const POSITIVE_TYPES = new Set(['COMPANION', 'ATTRACTS', 'NURSE', 'TRAP_CROP'])
@@ -62,6 +86,12 @@ export function recommend(
         ? -r.confidence
         : 0
     weights.set(key, (weights.get(key) ?? 0) + delta)
+  }
+
+  // Relationship lookup by canonical pair key (for hint generation)
+  const relMap = new Map<string, RelationshipInput>()
+  for (const r of relationships) {
+    relMap.set(pairKey(r.cropAId, r.cropBId), r)
   }
 
   function getWeight(idA: string, idB: string): number {
@@ -117,11 +147,25 @@ export function recommend(
     }
   }
 
-  return {
-    beds: beds.map((crops, index) => ({ index, crops })),
-    overflow,
-    conflicts,
-  }
+  // 6. Generate per-bed hints from positive companion pairs
+  const bedResults: BedResult[] = beds.map((bedCrops, index) => {
+    const hints: string[] = []
+    for (let i = 0; i < bedCrops.length; i++) {
+      for (let j = i + 1; j < bedCrops.length; j++) {
+        const a = bedCrops[i]
+        const b = bedCrops[j]
+        if (getWeight(a.id, b.id) > 0) {
+          const rel = relMap.get(pairKey(a.id, b.id))
+          if (rel) {
+            hints.push(`${getDisplayName(a)} & ${getDisplayName(b)}: ${hintText(rel)}`)
+          }
+        }
+      }
+    }
+    return { index, crops: bedCrops, hints }
+  })
+
+  return { beds: bedResults, overflow, conflicts }
 }
 
 export function minTempCToZoneName(minTempC: number): string {
