@@ -4,10 +4,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useSession } from '@/lib/auth-client'
 
+type PlantingStatus = 'PLANNED' | 'PLANTED' | 'HARVESTED'
+
+interface Planting {
+  plantingId: string
+  cropId: string
+  cropName: string
+  status: PlantingStatus
+}
+
 interface Bed {
   id: string
   name: string
-  plantings: Array<{ cropId: string; cropName: string }>
+  plantings: Planting[]
 }
 
 interface MyGardenRef {
@@ -16,6 +25,18 @@ interface MyGardenRef {
 
 interface MyGardenProps {
   onAddMore?: (beds: string[][]) => void
+}
+
+const STATUS_CYCLE: Record<PlantingStatus, PlantingStatus> = {
+  PLANNED: 'PLANTED',
+  PLANTED: 'HARVESTED',
+  HARVESTED: 'PLANNED',
+}
+
+const STATUS_COLOR: Record<PlantingStatus, string> = {
+  PLANNED: 'text-gray-500',
+  PLANTED: 'text-green-600',
+  HARVESTED: 'text-amber-600',
 }
 
 export const MyGarden = forwardRef<MyGardenRef, MyGardenProps>(function MyGarden({ onAddMore }, ref) {
@@ -43,6 +64,20 @@ export const MyGarden = forwardRef<MyGardenRef, MyGardenProps>(function MyGarden
 
   useImperativeHandle(ref, () => ({ refresh: fetchBeds }), [fetchBeds])
 
+  async function cycleStatus(plantingId: string, current: PlantingStatus) {
+    const next = STATUS_CYCLE[current]
+    setBeds(prev => prev.map(b => ({
+      ...b,
+      plantings: b.plantings.map(p => p.plantingId === plantingId ? { ...p, status: next } : p),
+    })))
+    const res = await fetch(`/api/garden/plantings/${plantingId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: next }),
+    })
+    if (!res.ok) void fetchBeds()
+  }
+
   if (!session) return null
 
   return (
@@ -63,7 +98,15 @@ export const MyGarden = forwardRef<MyGardenRef, MyGardenProps>(function MyGarden
                 <CardContent>
                   <ul className="space-y-1">
                     {bed.plantings.map((p) => (
-                      <li key={p.cropId} className="text-sm">{p.cropName}</li>
+                      <li key={p.plantingId} className="text-sm flex items-center justify-between gap-2">
+                        <span>{p.cropName}</span>
+                        <button
+                          className={`text-xs font-medium hover:underline ${STATUS_COLOR[p.status]}`}
+                          onClick={() => void cycleStatus(p.plantingId, p.status)}
+                        >
+                          {p.status.toLowerCase()}
+                        </button>
+                      </li>
                     ))}
                   </ul>
                 </CardContent>
