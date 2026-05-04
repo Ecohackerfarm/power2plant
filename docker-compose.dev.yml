@@ -18,13 +18,19 @@ services:
       - .:/app
       - /app/node_modules
       - /app/.next
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO /dev/null http://localhost:3000/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     depends_on:
       db:
         condition: service_healthy
     networks:
       - default
-      - development-network
+      - power2plant-dev
 
 networks:
-  development-network:
+  power2plant-dev:
     external: true
