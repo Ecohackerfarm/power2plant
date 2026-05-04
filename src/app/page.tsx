@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator'
 import type { RecommendResult } from '@/lib/recommend'
 import { AuthPanel } from '@/components/auth-panel'
 import { useSession } from '@/lib/auth-client'
+import Link from 'next/link'
 
 export default function Home() {
   const { data: session } = useSession()
@@ -70,6 +71,9 @@ export default function Home() {
           <p className="text-muted-foreground mt-1">
             Companion planting recommendations for your garden beds.
           </p>
+          <Link href="/contribute" className="text-sm text-muted-foreground hover:text-foreground mt-1 inline-block">
+            Contribute an observation →
+          </Link>
         </div>
         <AuthPanel />
       </div>

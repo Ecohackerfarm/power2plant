@@ -66,8 +66,10 @@ model RelationshipSource {
   fetchedAt      DateTime         @default(now())
   relationshipId String
   relationship   CropRelationship @relation(fields: [relationshipId], references: [id], onDelete: Cascade)
+  userId         String?
 
   @@index([relationshipId])
+  @@index([userId])
 }
 
 model UserGarden {
