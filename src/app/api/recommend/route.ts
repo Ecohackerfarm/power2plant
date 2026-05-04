@@ -8,6 +8,7 @@ interface RecommendBody {
   bedCount: number
   bedCapacity: number
   minTempC: number
+  existingBeds?: string[][]
 }
 
 export async function POST(request: Request) {
@@ -18,7 +19,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'invalid JSON' }, { status: 400 })
   }
 
-  const { cropIds, bedCount, bedCapacity, minTempC } = body
+  const { cropIds, bedCount, bedCapacity, minTempC, existingBeds } = body
 
   if (
     !Array.isArray(cropIds) ||
@@ -35,7 +36,24 @@ export async function POST(request: Request) {
     )
   }
 
-  const idList = Prisma.join(cropIds.map(id => Prisma.sql`${id}`))
+  if (existingBeds !== undefined) {
+    if (!Array.isArray(existingBeds) || existingBeds.length > 20) {
+      return NextResponse.json({ error: 'existingBeds must be an array of up to 20 beds' }, { status: 400 })
+    }
+    for (const bed of existingBeds) {
+      if (!Array.isArray(bed) || bed.length > 20) {
+        return NextResponse.json({ error: 'each existingBed must be an array of up to 20 crop ids' }, { status: 400 })
+      }
+      for (const id of bed) {
+        if (typeof id !== 'string' || id.trim() === '') {
+          return NextResponse.json({ error: 'existingBed crop ids must be non-empty strings' }, { status: 400 })
+        }
+      }
+    }
+  }
+
+const allIds = [...new Set([...cropIds, ...(existingBeds ?? []).flat()])]
+  const idList = Prisma.join(allIds.map(id => Prisma.sql`${id}`))
   const [crops, relationships] = await Promise.all([
     prisma.$queryRaw<CropInput[]>`
       SELECT id, name, "botanicalName", "minTempC", "commonNames"
@@ -44,15 +62,15 @@ export async function POST(request: Request) {
     prisma.cropRelationship.findMany({
       where: {
         AND: [
-          { cropAId: { in: cropIds } },
-          { cropBId: { in: cropIds } },
+          { cropAId: { in: allIds } },
+          { cropBId: { in: allIds } },
         ],
       },
       select: { cropAId: true, cropBId: true, type: true, confidence: true, reason: true, notes: true },
     }),
   ])
 
-  const result = recommend(crops, relationships as RelationshipInput[], bedCount, bedCapacity, minTempC)
+  const result = recommend(crops, relationships as RelationshipInput[], bedCount, bedCapacity, minTempC, existingBeds)
 
   return NextResponse.json(result)
 }
