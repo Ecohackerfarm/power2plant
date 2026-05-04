@@ -14,12 +14,12 @@ export function useGarden() {
     setHydrated(true)
   }, [])
 
-  // Pull from DB when session loads
+// Pull from DB when session loads
   useEffect(() => {
     if (!session) return
     fetch('/api/garden')
       .then(r => (r.ok ? r.json() : null))
-      .then((data: { lat?: number; lng?: number; minTempC?: number; bedCount?: number; bedCapacity?: number } | null) => {
+      .then((data: { lat?: number; lng?: number; minTempC?: number; bedCount?: number; bedCapacity?: number; wishlist?: string[] } | null) => {
         if (!data) return
         setState(prev => {
           const next = {
@@ -29,6 +29,7 @@ export function useGarden() {
             minTempC: data.minTempC ?? prev.minTempC,
             bedCount: data.bedCount ?? prev.bedCount,
             bedCapacity: data.bedCapacity ?? prev.bedCapacity,
+            wishlist: data.wishlist && data.wishlist.length > 0 ? data.wishlist : prev.wishlist,
           }
           saveState(next)
           return next
@@ -52,13 +53,14 @@ export function useGarden() {
           minTempC: state.minTempC,
           bedCount: state.bedCount,
           bedCapacity: state.bedCapacity,
+          wishlist: state.wishlist,
         }),
       }).catch(() => {/* network error — ignore */})
     }, 500)
     return () => {
       if (pushTimer.current) clearTimeout(pushTimer.current)
     }
-  }, [state.lat, state.lng, state.minTempC, state.bedCount, state.bedCapacity, session, hydrated])
+  }, [state.lat, state.lng, state.minTempC, state.bedCount, state.bedCapacity, state.wishlist, session, hydrated])
 
   function update(patch: Partial<GardenState>) {
     setState(prev => {

@@ -38,6 +38,7 @@ const fakeGarden = {
   minTempC: -12.2,
   bedCount: 3,
   bedCapacity: 3,
+  wishlist: ['crop-1', 'crop-2'],
   createdAt: new Date(),
   updatedAt: new Date(),
 }
@@ -136,6 +137,77 @@ describe('PUT /api/garden', () => {
         where: { userId: 'user-1' },
         create: expect.objectContaining({ userId: 'user-1', lat: 51.5 }),
         update: expect.objectContaining({ lat: 51.5 }),
+      })
+    )
+  })
+
+  it('returns 400 when wishlist is not an array', async () => {
+    vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as any)
+    const req = new Request('http://localhost/api/garden', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ wishlist: 'not-an-array' }),
+    })
+    const res = await PUT(req)
+    expect(res.status).toBe(400)
+    const body = await res.json()
+    expect(body.error).toBe('wishlist must be an array')
+  })
+
+  it('returns 400 when wishlist exceeds 50 items', async () => {
+    vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as any)
+    const req = new Request('http://localhost/api/garden', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ wishlist: Array(51).fill('crop-1') }),
+    })
+    const res = await PUT(req)
+    expect(res.status).toBe(400)
+    const body = await res.json()
+    expect(body.error).toBe('wishlist must have at most 50 items')
+  })
+
+  it('returns 400 when wishlist contains non-string items', async () => {
+    vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as any)
+    const req = new Request('http://localhost/api/garden', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ wishlist: ['crop-1', 123] }),
+    })
+    const res = await PUT(req)
+    expect(res.status).toBe(400)
+    const body = await res.json()
+    expect(body.error).toBe('wishlist items must be non-empty strings')
+  })
+
+  it('returns 400 when wishlist contains empty strings', async () => {
+    vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as any)
+    const req = new Request('http://localhost/api/garden', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ wishlist: ['crop-1', ''] }),
+    })
+    const res = await PUT(req)
+    expect(res.status).toBe(400)
+    const body = await res.json()
+    expect(body.error).toBe('wishlist items must be non-empty strings')
+  })
+
+  it('upserts wishlist successfully', async () => {
+    vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as any)
+    vi.mocked(prisma.userGarden.upsert).mockResolvedValue({ ...fakeGarden, wishlist: ['crop-1', 'crop-2'] } as any)
+    const req = new Request('http://localhost/api/garden', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ wishlist: ['crop-1', 'crop-2'] }),
+    })
+    const res = await PUT(req)
+    expect(res.status).toBe(200)
+    expect(prisma.userGarden.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { userId: 'user-1' },
+        create: expect.objectContaining({ wishlist: ['crop-1', 'crop-2'] }),
+        update: expect.objectContaining({ wishlist: ['crop-1', 'crop-2'] }),
       })
     )
   })
