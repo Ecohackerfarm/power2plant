@@ -34,8 +34,10 @@ export async function GET() {
     id: bed.id,
     name: bed.name,
     plantings: bed.plantings.map((p) => ({
+      plantingId: p.id,
       cropId: p.cropId,
       cropName: p.crop.commonNames?.[0] ?? p.crop.name,
+      status: p.status,
     })),
   }))
 
@@ -140,8 +142,10 @@ export async function POST(request: Request) {
     id: bed.id,
     name: bed.name,
     plantings: bed.plantings.map((p) => ({
+      plantingId: p.id,
       cropId: p.cropId,
       cropName: p.crop.commonNames?.[0] ?? p.crop.name,
+      status: p.status,
     })),
   }))
 

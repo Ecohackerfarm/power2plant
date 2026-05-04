@@ -97,6 +97,7 @@ export function recommend(
   bedCount: number,
   bedCapacity: number,
   userMinTempC: number,
+  existingBeds?: string[][],
 ): RecommendResult {
   // 1. Filter by hardiness: remove crops the zone is too cold for
   const eligible = crops.filter(
@@ -142,10 +143,20 @@ export function recommend(
   //    (a) positive-affinity bed — companion benefit exists, cluster together
   //    (b) spread bed — no benefit, prefer emptiest bed to avoid unnecessary crowding
   //    (c) conflict fallback — only when every bed has a conflict (e.g. single-bed layout)
-  const beds: CropInput[][] = Array.from({ length: bedCount }, () => [])
+  const lockedIds = new Set<string>()
+  const beds: CropInput[][] = Array.from({ length: bedCount }, (_, i) => {
+    if (!existingBeds || !existingBeds[i]) return []
+    const bedCrops = existingBeds[i].flatMap(id => {
+      const found = crops.find(c => c.id === id)
+      if (found) lockedIds.add(found.id)
+      return found ? [found] : []
+    })
+    return bedCrops
+  })
   const overflow: CropInput[] = []
 
   for (const crop of sorted) {
+    if (beds.some(bed => bed.some(c => c.id === crop.id))) continue
     let affinityBed = -1; let affinityScore = -Infinity
     let spreadBed = -1;   let spreadScore = -Infinity   // -bed.length (prefer empty)
     let conflictBed = -1; let conflictScore = -Infinity
@@ -177,6 +188,7 @@ export function recommend(
   const duplicatedIds = new Set<string>()
   for (const crop of sorted) {
     if (!placedSet.has(crop.id)) continue
+    if (lockedIds.has(crop.id)) continue
     for (let i = 0; i < beds.length; i++) {
       if (beds[i].some(c => c.id === crop.id)) continue
       if (beds[i].length >= bedCapacity) continue

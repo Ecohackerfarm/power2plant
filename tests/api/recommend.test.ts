@@ -89,4 +89,61 @@ describe('POST /api/recommend', () => {
       }),
     )
   })
+
+  it('returns 400 when existingBeds is not an array', async () => {
+    const req = new Request('http://localhost/api/recommend', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        cropIds: ['c1'],
+        bedCount: 2,
+        bedCapacity: 3,
+        minTempC: 10,
+        existingBeds: 'not-an-array',
+      }),
+    })
+    const res = await POST(req)
+    expect(res.status).toBe(400)
+  })
+
+  it('returns 400 when existingBed entry has too many ids', async () => {
+    const req = new Request('http://localhost/api/recommend', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        cropIds: ['c1'],
+        bedCount: 2,
+        bedCapacity: 3,
+        minTempC: 10,
+        existingBeds: [Array(21).fill('c1')],
+      }),
+    })
+    const res = await POST(req)
+    expect(res.status).toBe(400)
+  })
+
+  it('returns 200 happy path passes existingBeds through', async () => {
+    vi.mocked(prisma.$queryRaw).mockResolvedValue([
+      ...fakeCrops,
+      { id: 'c3', name: 'Carrot', botanicalName: 'Daucus carota', minTempC: -1.1, commonNames: ['Carrot'] },
+    ])
+    vi.mocked(prisma.cropRelationship.findMany).mockResolvedValue([])
+
+    const req = new Request('http://localhost/api/recommend', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        cropIds: ['c1', 'c2'],
+        bedCount: 2,
+        bedCapacity: 3,
+        minTempC: 10,
+        existingBeds: [['c1']],
+      }),
+    })
+    const res = await POST(req)
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    // c1 must be in bed 0 (locked)
+    expect(body.beds[0].crops.map((c: any) => c.id)).toContain('c1')
+  })
 })

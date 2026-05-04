@@ -93,12 +93,19 @@ model Bed {
   plantings Planting[]
 }
 
+enum PlantingStatus {
+  PLANNED
+  PLANTED
+  HARVESTED
+}
+
 model Planting {
-  id     String @id @default(cuid())
+  id     String         @id @default(cuid())
   bedId  String
-  bed    Bed    @relation(fields: [bedId], references: [id], onDelete: Cascade)
+  bed    Bed            @relation(fields: [bedId], references: [id], onDelete: Cascade)
   cropId String
-  crop   Crop   @relation(fields: [cropId], references: [id], onDelete: Restrict)
+  crop   Crop           @relation(fields: [cropId], references: [id], onDelete: Restrict)
+  status PlantingStatus @default(PLANNED)
 
   @@index([bedId])
   @@index([cropId])
