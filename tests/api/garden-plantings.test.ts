@@ -166,7 +166,7 @@ describe('POST /api/garden/plantings', () => {
 
   it('returns 200 happy path (mock transaction)', async () => {
     vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as any)
-    vi.mocked(prisma.crop.findMany).mockResolvedValue([{ id: 'crop-1' }])
+    vi.mocked(prisma.crop.findMany).mockResolvedValue([{ id: 'crop-1' }] as any)
     vi.mocked(prisma.userGarden.upsert).mockResolvedValue({ id: 'garden-1', userId: 'user-1' } as any)
     vi.mocked(prisma.$transaction).mockImplementation(async (fn: any) => {
       const mockTx = {
