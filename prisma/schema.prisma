@@ -79,6 +79,7 @@ model UserGarden {
   minTempC    Float?
   bedCount    Int      @default(3)
   bedCapacity Int      @default(3)
+  wishlist    String[] @default([])
   beds        Bed[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
