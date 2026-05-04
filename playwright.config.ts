@@ -6,7 +6,8 @@ export default defineConfig({
   retries: 1,
   reporter: 'list',
   use: {
-    baseURL: process.env.E2E_BASE_URL ?? 'http://power2plant-app-1:3000',
+    // Inside the dev container tests run against localhost; override with E2E_BASE_URL if needed
+    baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:3000',
     trace: 'on-first-retry',
   },
   projects: [
@@ -15,7 +16,8 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         launchOptions: {
-          executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
+          // Prefer system Chromium (set by Dockerfile); fall back to Alpine default path
+          executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ?? '/usr/bin/chromium-browser',
           args: ['--no-sandbox', '--disable-setuid-sandbox'],
         },
       },
