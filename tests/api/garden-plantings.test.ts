@@ -110,7 +110,7 @@ describe('POST /api/garden/plantings', () => {
     expect(body.error).toBe('beds must be an array')
   })
 
-  it('returns 400 if bed name empty or too long', async () => {
+  it('returns 400 if bed name is empty', async () => {
     vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as any)
     const req = new Request('http://localhost/api/garden/plantings', {
       method: 'POST',
@@ -123,7 +123,7 @@ describe('POST /api/garden/plantings', () => {
     expect(body.error).toContain('name must be a non-empty string')
   })
 
-    it('returns 400 if bed name too long', async () => {
+  it('returns 400 if bed name exceeds 50 chars', async () => {
     vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as any)
     const req = new Request('http://localhost/api/garden/plantings', {
       method: 'POST',
@@ -166,7 +166,7 @@ describe('POST /api/garden/plantings', () => {
 
   it('returns 200 happy path (mock transaction)', async () => {
     vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as any)
-    vi.mocked(prisma.crop.findMany).mockResolvedValue([{ id: 'crop-1' }])
+    vi.mocked(prisma.crop.findMany).mockResolvedValue([{ id: 'crop-1' }] as any)
     vi.mocked(prisma.userGarden.upsert).mockResolvedValue({ id: 'garden-1', userId: 'user-1' } as any)
     vi.mocked(prisma.$transaction).mockImplementation(async (fn: any) => {
       const mockTx = {
