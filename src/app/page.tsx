@@ -18,6 +18,7 @@ export default function Home() {
   const [result, setResult] = useState<RecommendResult | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [lockedBeds, setLockedBeds] = useState<string[][] | null>(null)
   const autoTriggered = useRef(false)
   const myGardenRef = useRef<{ refresh: () => void }>(null)
 
@@ -49,6 +50,7 @@ export default function Home() {
           bedCount: state.bedCount,
           bedCapacity: state.bedCapacity,
           minTempC: state.minTempC,
+          ...(lockedBeds ? { existingBeds: lockedBeds } : {}),
         }),
       })
       if (!res.ok) throw new Error('Recommendation request failed.')
@@ -73,6 +75,18 @@ export default function Home() {
       </div>
 
       <Separator />
+
+      {lockedBeds && (
+        <div className="flex items-center gap-3 rounded-md border border-blue-200 bg-blue-50 px-4 py-2 text-sm text-blue-800">
+          <span>Adding to your existing garden.</span>
+          <button
+            className="ml-auto underline hover:no-underline"
+            onClick={() => setLockedBeds(null)}
+          >
+            Start fresh
+          </button>
+        </div>
+      )}
 
       <ZoneDetector minTempC={state.minTempC} onZoneDetected={setZone} />
 
@@ -108,7 +122,15 @@ export default function Home() {
       {error && <p className="text-red-600">{error}</p>}
 
       {result && <RecommendationDisplay result={result} onAccepted={() => myGardenRef.current?.refresh()} />}
-      {session && <MyGarden ref={myGardenRef} />}
+      {session && (
+        <MyGarden
+          ref={myGardenRef}
+          onAddMore={(beds) => {
+            setLockedBeds(beds)
+            window.scrollTo({ top: 0, behavior: 'smooth' })
+          }}
+        />
+      )}
     </main>
   )
 }
