@@ -127,6 +127,47 @@ describe('recommend()', () => {
     const basilBeds = result.beds.filter(b => b.crops.some(c => c.id === 'basil'))
     expect(basilBeds.length).toBeGreaterThanOrEqual(2)
   })
+
+  describe('existingBeds parameter', () => {
+    it('locks crops in place in correct beds', () => {
+      const crops = [makeCrop('tomato'), makeCrop('basil'), makeCrop('carrot')]
+      const rels: RelationshipInput[] = []
+      const existingBeds = [['tomato']]
+      const result = recommend(crops, rels, 2, 3, 0, existingBeds)
+      // tomato must be in bed 0 (locked)
+      expect(result.beds[0].crops.map(c => c.id)).toContain('tomato')
+      // basil must be placed somewhere (not locked)
+      const allPlaced = result.beds.flatMap(b => b.crops.map(c => c.id))
+      expect(allPlaced).toContain('basil')
+      expect(allPlaced).toContain('carrot')
+    })
+
+    it('candidates fill remaining capacity around locked crops', () => {
+      const crops = [makeCrop('tomato'), makeCrop('basil'), makeCrop('carrot')]
+      const rels = [companion('tomato', 'basil')]
+      const existingBeds = [['tomato']]
+      const result = recommend(crops, rels, 2, 3, 0, existingBeds)
+      const totalInBeds = result.beds.reduce((s, b) => s + b.crops.length, 0)
+      expect(totalInBeds).toBe(3)
+    })
+
+    it('overflow when all beds full from existing', () => {
+      const crops = [makeCrop('tomato'), makeCrop('basil'), makeCrop('carrot')]
+      const rels: RelationshipInput[] = []
+      const existingBeds = [['tomato', 'basil']]
+      const result = recommend(crops, rels, 1, 2, 0, existingBeds)
+      expect(result.overflow.map(c => c.id)).toContain('carrot')
+    })
+
+    it('locked crop skipped in greedy pass (not double-placed)', () => {
+      const crops = [makeCrop('tomato'), makeCrop('basil')]
+      const rels = [companion('tomato', 'basil')]
+      const existingBeds = [['tomato']]
+      const result = recommend(crops, rels, 2, 3, 0, existingBeds)
+      const tomatoCount = result.beds.reduce((s, b) => s + b.crops.filter(c => c.id === 'tomato').length, 0)
+      expect(tomatoCount).toBe(1)
+    })
+  })
 })
 
 describe('minTempCToZoneName()', () => {
