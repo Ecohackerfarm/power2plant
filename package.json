@@ -17,7 +17,8 @@
     "db:seed-common": "tsx prisma/seed-common-crops.ts",
     "db:studio": "prisma studio",
     "db:dump": "sh db/dump.sh",
-    "db:restore": "sh db/restore.sh"
+    "db:restore": "sh db/restore.sh",
+    "research:search": "tsx scripts/research/search-papers.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
