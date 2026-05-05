@@ -3,6 +3,10 @@ import { headers } from 'next/headers'
 import prisma from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 
+function toTitleCase(str: string): string {
+  return str.replace(/\b\w/g, c => c.toUpperCase())
+}
+
 async function getSession() {
   return auth.api.getSession({ headers: await headers() })
 }
@@ -36,7 +40,7 @@ export async function GET() {
     plantings: bed.plantings.map((p) => ({
       plantingId: p.id,
       cropId: p.cropId,
-      cropName: p.crop.commonNames?.[0] ?? p.crop.name,
+      cropName: toTitleCase(p.crop.commonNames?.[0] ?? (p.crop.name !== p.crop.botanicalName ? p.crop.name : p.crop.botanicalName)),
       status: p.status,
     })),
   }))
@@ -144,7 +148,7 @@ export async function POST(request: Request) {
     plantings: bed.plantings.map((p) => ({
       plantingId: p.id,
       cropId: p.cropId,
-      cropName: p.crop.commonNames?.[0] ?? p.crop.name,
+      cropName: toTitleCase(p.crop.commonNames?.[0] ?? (p.crop.name !== p.crop.botanicalName ? p.crop.name : p.crop.botanicalName)),
       status: p.status,
     })),
   }))
