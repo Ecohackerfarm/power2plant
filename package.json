@@ -21,7 +21,8 @@
     "research:discover": "tsx scripts/research/discover.ts",
     "research:search": "tsx scripts/research/search-papers.ts",
     "research:extract": "tsx scripts/research/extract.ts",
-    "research:import": "tsx scripts/research/import.ts"
+    "research:import": "tsx scripts/research/import.ts",
+    "enrich:wikipedia": "tsx scripts/enrich/wikipedia-names.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",

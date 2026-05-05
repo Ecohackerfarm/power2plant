@@ -11,7 +11,7 @@ function toTitleCase(str: string): string {
 }
 
 export function getDisplayName(crop: Pick<CropInput, 'name' | 'botanicalName' | 'commonNames'>): string {
-  const raw = crop.name !== crop.botanicalName ? crop.name : (crop.commonNames[0] ?? crop.name)
+  const raw = crop.commonNames[0] ?? (crop.name !== crop.botanicalName ? crop.name : crop.botanicalName)
   return toTitleCase(raw)
 }
 
