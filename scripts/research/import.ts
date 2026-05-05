@@ -118,8 +118,11 @@ async function main(): Promise<void> {
     // Create one source per paper (deduplicated by DOI or title)
     let addedSources = 0
     for (const paper of pair.papers) {
-      const paperKey = paper.doi ?? paper.title
-      const exists = relationship.sources.some(s => s.notes?.includes(paperKey) || s.url === (paper.doi ? `https://doi.org/${paper.doi}` : null))
+      const paperUrl = paper.doi ? `https://doi.org/${paper.doi}` : null
+      const exists = relationship.sources.some(s =>
+        (paperUrl !== null && s.url === paperUrl) ||
+        (s.notes?.includes(paper.title) ?? false)
+      )
       if (!exists) {
         await prisma.relationshipSource.create({
           data: {
