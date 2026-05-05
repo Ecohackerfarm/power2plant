@@ -46,14 +46,23 @@ function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-async function fetchWithRetry(url: string): Promise<Response> {
-  const response = await fetch(url, {
-    headers: { 'User-Agent': USER_AGENT }
-  })
-  if (!response.ok) {
+async function fetchWithRetry(url: string, maxRetries = 5): Promise<Response> {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    const response = await fetch(url, {
+      headers: { 'User-Agent': USER_AGENT }
+    })
+    if (response.ok) {
+      return response
+    }
+    if (response.status === 429) {
+      const waitTime = (attempt + 1) * 2000
+      console.log(`Rate limited, waiting ${waitTime}ms...`)
+      await sleep(waitTime)
+      continue
+    }
     throw new Error(`HTTP ${response.status}: ${response.statusText}`)
   }
-  return response
+  throw new Error('Max retries exceeded')
 }
 
 async function searchSemanticScholar(cropA: string, cropB: string): Promise<SemanticScholarPaper[]> {
