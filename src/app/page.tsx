@@ -13,7 +13,7 @@ import Link from 'next/link'
 
 export default function Home() {
   const { data: session } = useSession()
-  const { state, hydrated, setZone, addToWishlist, removeFromWishlist, setBeds } = useGarden()
+  const { state, hydrated, setZone, addToWishlist, removeFromWishlist, clearWishlist, setBeds } = useGarden()
   const [result, setResult] = useState<RecommendResult | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
