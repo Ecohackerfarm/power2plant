@@ -154,6 +154,7 @@ enum SourceType {
   GBIF
   COMMUNITY
   MANUAL
+  RESEARCH
 }
 
 model user {

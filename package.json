@@ -20,7 +20,8 @@
     "db:restore": "sh db/restore.sh",
     "research:discover": "tsx scripts/research/discover.ts",
     "research:search": "tsx scripts/research/search-papers.ts",
-    "research:extract": "tsx scripts/research/extract.ts"
+    "research:extract": "tsx scripts/research/extract.ts",
+    "research:import": "tsx scripts/research/import.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.93.0",
