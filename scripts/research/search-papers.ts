@@ -46,103 +46,81 @@ function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-async function fetchWithRetry(url: string, maxRetries = 5): Promise<Response> {
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    const response = await fetch(url, {
-      headers: { 'User-Agent': USER_AGENT }
-    })
-    if (response.ok) {
-      return response
-    }
-    if (response.status === 429) {
-      const waitTime = (attempt + 1) * 2000
-      console.log(`Rate limited, waiting ${waitTime}ms...`)
-      await sleep(waitTime)
-      continue
-    }
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-  }
-  throw new Error('Max retries exceeded')
+async function fetchJson(url: string): Promise<unknown> {
+  const response = await fetch(url, { headers: { 'User-Agent': USER_AGENT } })
+  if (!response.ok) throw new Error(`HTTP ${response.status} ${response.statusText}`)
+  return response.json()
 }
 
 async function searchSemanticScholar(cropA: string, cropB: string): Promise<SemanticScholarPaper[]> {
   const query = encodeURIComponent(`${cropA} ${cropB} companion planting`)
   const url = `https://api.semanticscholar.org/graph/v1/paper/search?query=${query}&fields=title,abstract,year,externalIds&limit=5`
-  
-  const response = await fetchWithRetry(url)
-  const data = await response.json()
-  return data.data || []
+  try {
+    const data = await fetchJson(url) as { data?: SemanticScholarPaper[] }
+    return data.data ?? []
+  } catch (err) {
+    process.stderr.write(`  Semantic Scholar error: ${err instanceof Error ? err.message : String(err)}\n`)
+    return []
+  }
 }
 
 async function searchCrossRef(cropA: string, cropB: string): Promise<CrossRefWork[]> {
   const query = encodeURIComponent(`${cropA} ${cropB} companion planting`)
-  const url = `https://api.crossref.org/works?query=${query}&rows=3`
-  
-  const response = await fetchWithRetry(url)
-  const data = await response.json()
-  return data.message?.items || []
+  const url = `https://api.crossref.org/works?query=${query}&rows=5&filter=has-abstract:true&select=DOI,title,abstract,published-print,published-online`
+  try {
+    const data = await fetchJson(url) as { message?: { items?: CrossRefWork[] } }
+    return data.message?.items ?? []
+  } catch (err) {
+    process.stderr.write(`  CrossRef error: ${err instanceof Error ? err.message : String(err)}\n`)
+    return []
+  }
 }
 
 function getYearFromCrossRef(work: CrossRefWork): number | undefined {
-  const dateParts = work['published-print']?.['date-parts']?.[0] || 
-                   work['published-online']?.['date-parts']?.[0]
+  const dateParts = work['published-print']?.['date-parts']?.[0] ||
+    work['published-online']?.['date-parts']?.[0]
   return dateParts?.[0]
 }
 
 async function findPapersForPair(pair: CropPair): Promise<Paper[]> {
   const papers: Paper[] = []
-  
-  // Search Semantic Scholar
-  const ssPapers = await searchSemanticScholar(pair.cropA, pair.cropB)
-  
-  for (const paper of ssPapers) {
-    if (!paper.abstract || !paper.year || paper.year < 1970) {
-      continue
-    }
-    
+  const seen = new Set<string>()
+
+  // CrossRef first — no key required, more permissive rate limits
+  const crWorks = await searchCrossRef(pair.cropA, pair.cropB)
+  for (const work of crWorks) {
+    const year = getYearFromCrossRef(work)
+    if (!work.abstract || !year || year < 1970) continue
+    const doi = work.DOI ?? ''
+    if (seen.has(doi)) continue
+    seen.add(doi)
     papers.push({
-      cropA: pair.cropA,
-      cropB: pair.cropB,
+      cropA: pair.cropA, cropB: pair.cropB,
+      paperId: doi || `crossref-${Date.now()}`,
+      title: work.title?.[0] ?? '',
+      abstract: work.abstract,
+      doi, year, source: 'crossref',
+    })
+  }
+
+  await sleep(RATE_LIMIT_MS)
+
+  // Semantic Scholar for additional coverage
+  const ssPapers = await searchSemanticScholar(pair.cropA, pair.cropB)
+  for (const paper of ssPapers) {
+    if (!paper.abstract || !paper.year || paper.year < 1970) continue
+    const doi = paper.externalIds?.DOI ?? ''
+    if (doi && seen.has(doi)) continue
+    seen.add(doi || paper.paperId)
+    papers.push({
+      cropA: pair.cropA, cropB: pair.cropB,
       paperId: paper.paperId,
       title: paper.title,
       abstract: paper.abstract,
-      doi: paper.externalIds?.DOI || '',
-      year: paper.year,
-      source: 'semanticscholar'
+      doi, year: paper.year, source: 'semanticscholar',
     })
   }
-  
-  // For papers missing abstract, try CrossRef fallback
-  const papersNeedingAbstract = ssPapers.filter(p => !p.abstract || !p.year || p.year < 1970)
-  
-  if (papersNeedingAbstract.length > 0) {
-    const crWorks = await searchCrossRef(pair.cropA, pair.cropB)
-    
-    for (const work of crWorks) {
-      const year = getYearFromCrossRef(work)
-      if (!work.abstract || !year || year < 1970) {
-        continue
-      }
-      
-      // Check if we already have this paper
-      const doi = work.DOI || ''
-      if (papers.some(p => p.doi === doi)) {
-        continue
-      }
-      
-      papers.push({
-        cropA: pair.cropA,
-        cropB: pair.cropB,
-        paperId: doi || `crossref-${Date.now()}`,
-        title: work.title?.[0] || '',
-        abstract: work.abstract,
-        doi: doi,
-        year: year,
-        source: 'crossref'
-      })
-    }
-  }
-  
+
   return papers
 }
 

@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { PrismaClient, RelationshipType, ConfidenceLevel } from '@prisma/client'
 
 const prisma = new PrismaClient()
@@ -27,8 +29,8 @@ async function resolveCropId(name: string): Promise<string | null> {
 }
 
 async function main(): Promise<void> {
-  const data = await import('../../data/research/extracted.json')
-  const relationships: ExtractedRelationship[] = data.default || data
+  const extractedPath = join(process.cwd(), 'data/research/extracted.json')
+  const relationships: ExtractedRelationship[] = JSON.parse(readFileSync(extractedPath, 'utf-8'))
 
   let imported = 0
   let skippedUnresolved = 0
