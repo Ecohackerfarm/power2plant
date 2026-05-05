@@ -4,6 +4,27 @@
 
 See the [README](README.md#getting-started) for setup instructions.
 
+## Branching & Release Workflow
+
+```
+feat/<issue-number>-<slug>  →  release/vX.Y.Z  →  main
+fix/<slug>                  →  release/vX.Y.Z  →  main
+```
+
+- **Feature/fix branches** target a release branch, never `main` directly.
+- **Release branches** (`release/vX.Y.Z`) accumulate related features. A PR from the release branch into `main` stays open until the release is ready to ship, then gets merged in one shot.
+- **Branch naming**: `feat/41-research-discover`, `fix/healthcheck`, etc. — issue number prefix where applicable.
+
+### PR test plans
+
+Test plans in PR descriptions are **post-merge acceptance criteria**, not pre-merge steps. The workflow:
+
+1. Merge feature PR into the release branch.
+2. Release branch PR into `main` stays open (accumulates features).
+3. When the release merges to `main`, the running dev server picks up all changes — verify the acceptance criteria then.
+
+There is no pre-merge E2E gate per feature branch. Unit and integration tests run in CI per branch; E2E smoke tests run on `main` after release merges.
+
 ## Running Tests
 
 ```bash
