@@ -2,10 +2,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useGarden } from '@/hooks/use-garden'
 import { ZoneDetector } from '@/components/zone-detector'
-import { PlantSearch } from '@/components/plant-search'
 import { BedConfig } from '@/components/bed-config'
 import { RecommendationDisplay } from '@/components/recommendation-display'
-import { MyGarden } from '@/components/my-garden'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import type { RecommendResult } from '@/lib/recommend'
@@ -85,6 +83,15 @@ export default function Home() {
 
       <Separator />
 
+      <div className="flex justify-center">
+        <Link
+          href="/garden"
+          className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground px-8 h-9 text-sm font-medium hover:bg-primary/80 transition-colors"
+        >
+          My Garden →
+        </Link>
+      </div>
+
       {lockedBeds && (
         <div className="flex items-center gap-3 rounded-md border border-blue-200 bg-blue-50 px-4 py-2 text-sm text-blue-800">
           <span>Adding to your existing garden.</span>
@@ -98,12 +105,6 @@ export default function Home() {
       )}
 
       <ZoneDetector minTempC={state.minTempC} onZoneDetected={setZone} />
-
-      <PlantSearch
-        wishlistIds={state.wishlist}
-        onAdd={addToWishlist}
-        onRemove={removeFromWishlist}
-      />
 
       <BedConfig
         bedCount={state.bedCount}
@@ -131,15 +132,6 @@ export default function Home() {
       {error && <p className="text-red-600">{error}</p>}
 
       {result && <RecommendationDisplay result={result} onAccepted={() => myGardenRef.current?.refresh()} />}
-      {session && (
-        <MyGarden
-          ref={myGardenRef}
-          onAddMore={(beds) => {
-            setLockedBeds(beds)
-            window.scrollTo({ top: 0, behavior: 'smooth' })
-          }}
-        />
-      )}
     </main>
   )
 }
