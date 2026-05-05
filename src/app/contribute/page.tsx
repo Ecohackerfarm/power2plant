@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSession } from '@/lib/auth-client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -33,16 +33,43 @@ function CropPicker({ label, value, onChange }: {
 }) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<Crop[]>([])
+  const [activeIndex, setActiveIndex] = useState(-1)
+  const listRef = useRef<HTMLUListElement>(null)
 
   useEffect(() => {
-    if (query.trim().length < 2) { setResults([]); return }
+    if (query.trim().length < 2) { setResults([]); setActiveIndex(-1); return }
     const timer = setTimeout(async () => {
       const res = await fetch(`/api/crops?q=${encodeURIComponent(query.trim())}`)
       const data = await res.json()
       setResults(data.crops ?? [])
+      setActiveIndex(-1)
     }, 300)
     return () => clearTimeout(timer)
   }, [query])
+
+  useEffect(() => {
+    if (activeIndex < 0 || !listRef.current) return
+    listRef.current.querySelectorAll('li')[activeIndex]?.scrollIntoView({ block: 'nearest' })
+  }, [activeIndex])
+
+  function pick(crop: Crop) {
+    onChange(crop); setResults([]); setQuery(''); setActiveIndex(-1)
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (results.length === 0) return
+    if (e.key === 'ArrowDown') {
+      e.preventDefault(); setActiveIndex(i => Math.min(i + 1, results.length - 1))
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault(); setActiveIndex(i => Math.max(i - 1, 0))
+    } else if (e.key === 'Enter') {
+      e.preventDefault()
+      const target = activeIndex >= 0 ? results[activeIndex] : results[0]
+      if (target) pick(target)
+    } else if (e.key === 'Escape') {
+      setResults([]); setActiveIndex(-1)
+    }
+  }
 
   if (value) {
     return (
@@ -65,15 +92,16 @@ function CropPicker({ label, value, onChange }: {
         placeholder={`Search for ${label.toLowerCase()}…`}
         value={query}
         onChange={e => setQuery(e.target.value)}
+        onKeyDown={handleKeyDown}
         autoComplete="off"
       />
       {results.length > 0 && (
-        <ul className="border rounded divide-y max-h-48 overflow-y-auto">
-          {results.map(crop => (
+        <ul ref={listRef} className="border rounded divide-y max-h-48 overflow-y-auto">
+          {results.map((crop, index) => (
             <li
               key={crop.id}
-              className="px-3 py-2 text-sm cursor-pointer hover:bg-accent"
-              onClick={() => { onChange(crop); setResults([]); setQuery('') }}
+              className={`px-3 py-2 text-sm cursor-pointer hover:bg-accent${index === activeIndex ? ' bg-accent' : ''}`}
+              onClick={() => pick(crop)}
             >
               <span className="font-medium">{getDisplayName(crop)}</span>
               <span className="text-muted-foreground italic ml-1 text-xs">{crop.botanicalName}</span>
