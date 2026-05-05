@@ -71,9 +71,14 @@ export default function Home() {
           <p className="text-muted-foreground mt-1">
             Companion planting recommendations for your garden beds.
           </p>
-          <Link href="/contribute" className="text-sm text-muted-foreground hover:text-foreground mt-1 inline-block">
-            Contribute an observation →
-          </Link>
+          <div className="flex gap-4 text-sm text-muted-foreground mt-1">
+            <Link href="/contribute" className="hover:text-foreground">
+              Contribute an observation →
+            </Link>
+            <Link href="/relationships" className="hover:text-foreground">
+              Browse observations →
+            </Link>
+          </div>
         </div>
         <AuthPanel />
       </div>
