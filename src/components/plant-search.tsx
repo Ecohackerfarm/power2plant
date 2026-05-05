@@ -125,6 +125,12 @@ export function PlantSearch({ wishlistIds, onAdd, onRemove }: PlantSearchProps) 
             {results.map((crop, index) => {
               const displayName = getDisplayName(crop)
               const added = inWishlist(crop.id)
+              const q = query.trim().toLowerCase()
+              const matchedAlias = q.length >= 2
+                ? crop.commonNames.find(
+                    cn => cn.toLowerCase().includes(q) && cn.toLowerCase() !== displayName.toLowerCase()
+                  )
+                : undefined
               return (
                 <li
                   key={crop.id}
@@ -141,6 +147,9 @@ export function PlantSearch({ wishlistIds, onAdd, onRemove }: PlantSearchProps) 
                     <span className="font-medium">{displayName}</span>
                     {displayName !== crop.botanicalName && (
                       <span className="text-muted-foreground italic ml-1">{crop.botanicalName}</span>
+                    )}
+                    {matchedAlias && (
+                      <span className="block text-xs text-muted-foreground">also: {matchedAlias}</span>
                     )}
                   </span>
                   {added && (
