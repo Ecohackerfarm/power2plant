@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { PrismaClient, RelationshipType, ConfidenceLevel } from '@prisma/client'
+import { PrismaClient, RelationshipType } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
@@ -16,6 +16,16 @@ interface ExtractedRelationship {
   year: number
 }
 
+interface AggregatedPair {
+  cropA: string
+  cropB: string
+  type: 'COMPANION' | 'AVOID'
+  confidence: number
+  reason: string | null
+  notes: string
+  papers: Array<{ doi: string | null; title: string; year: number }>
+}
+
 async function resolveCropId(name: string): Promise<string | null> {
   const crop = await prisma.crop.findFirst({
     where: {
@@ -28,20 +38,58 @@ async function resolveCropId(name: string): Promise<string | null> {
   return crop?.id ?? null
 }
 
+function aggregateByPair(relationships: ExtractedRelationship[]): AggregatedPair[] {
+  const pairMap = new Map<string, { companion: number; avoid: number; entries: ExtractedRelationship[] }>()
+
+  for (const entry of relationships) {
+    const key = [entry.cropA, entry.cropB].sort().join('|')
+    if (!pairMap.has(key)) pairMap.set(key, { companion: 0, avoid: 0, entries: [] })
+    const agg = pairMap.get(key)!
+    agg.entries.push(entry)
+    if (entry.type === 'COMPANION') agg.companion += entry.confidence
+    else agg.avoid += entry.confidence
+  }
+
+  const results: AggregatedPair[] = []
+  for (const [, agg] of pairMap) {
+    const winningType: 'COMPANION' | 'AVOID' = agg.companion >= agg.avoid ? 'COMPANION' : 'AVOID'
+    const winningEntries = agg.entries.filter(e => e.type === winningType)
+    // Pick the highest-confidence entry for metadata (notes/reason)
+    const best = winningEntries.reduce((a, b) => a.confidence >= b.confidence ? a : b)
+    const totalScore = winningType === 'COMPANION' ? agg.companion : agg.avoid
+    const totalAll = agg.companion + agg.avoid
+    results.push({
+      cropA: agg.entries[0].cropA,
+      cropB: agg.entries[0].cropB,
+      type: winningType,
+      // Normalize: winning confidence as fraction of all evidence
+      confidence: Math.min(totalScore / totalAll, 1),
+      reason: best.reason,
+      notes: best.notes,
+      papers: agg.entries.map(e => ({ doi: e.doi, title: e.title, year: e.year })),
+    })
+  }
+  return results
+}
+
 async function main(): Promise<void> {
   const extractedPath = join(process.cwd(), 'data/research/extracted.json')
-  const relationships: ExtractedRelationship[] = JSON.parse(readFileSync(extractedPath, 'utf-8'))
+  const raw: ExtractedRelationship[] = JSON.parse(readFileSync(extractedPath, 'utf-8'))
+
+  console.log(`Loaded ${raw.length} extracted relationships`)
+  const pairs = aggregateByPair(raw)
+  console.log(`Aggregated into ${pairs.length} unique crop pairs`)
 
   let imported = 0
   let skippedUnresolved = 0
   let skippedExisting = 0
 
-  for (const entry of relationships) {
-    const idA = await resolveCropId(entry.cropA)
-    const idB = await resolveCropId(entry.cropB)
+  for (const pair of pairs) {
+    const idA = await resolveCropId(pair.cropA)
+    const idB = await resolveCropId(pair.cropB)
 
     if (!idA || !idB) {
-      console.log(`SKIP unresolved: ${entry.cropA} + ${entry.cropB}`)
+      console.log(`SKIP unresolved: ${pair.cropA} + ${pair.cropB}`)
       skippedUnresolved++
       continue
     }
@@ -53,34 +101,51 @@ async function main(): Promise<void> {
       create: {
         cropAId,
         cropBId,
-        type: entry.type as RelationshipType,
+        type: pair.type as RelationshipType,
         direction: 'MUTUAL',
-        reason: entry.reason as any,
-        confidence: entry.confidence,
-        notes: entry.notes,
+        reason: pair.reason as any,
+        confidence: pair.confidence,
+        notes: pair.notes,
       },
-      update: {},
+      update: {
+        type: pair.type as RelationshipType,
+        confidence: pair.confidence,
+        notes: pair.notes,
+      },
       include: { sources: true },
     })
 
-    const sourceExists = relationship.sources.some(s => s.source === 'RESEARCH')
-    if (!sourceExists) {
-      await prisma.relationshipSource.create({
-        data: {
-          relationshipId: relationship.id,
-          source: 'RESEARCH',
-          confidence: 'PEER_REVIEWED',
-          url: entry.doi ? `https://doi.org/${entry.doi}` : null,
-          notes: `${entry.title} (${entry.year})`,
-        },
-      })
+    // Create one source per paper (deduplicated by DOI or title)
+    let addedSources = 0
+    for (const paper of pair.papers) {
+      const paperUrl = paper.doi ? `https://doi.org/${paper.doi}` : null
+      const exists = relationship.sources.some(s =>
+        (paperUrl !== null && s.url === paperUrl) ||
+        (s.notes?.includes(paper.title) ?? false)
+      )
+      if (!exists) {
+        await prisma.relationshipSource.create({
+          data: {
+            relationshipId: relationship.id,
+            source: 'RESEARCH',
+            confidence: 'PEER_REVIEWED',
+            url: paper.doi ? `https://doi.org/${paper.doi}` : null,
+            notes: `${paper.title} (${paper.year})`,
+          },
+        })
+        addedSources++
+      }
+    }
+
+    if (addedSources > 0) {
       imported++
+      console.log(`IMPORT: ${pair.cropA} + ${pair.cropB} → ${pair.type} (${pair.confidence.toFixed(2)}, ${pair.papers.length} papers, ${addedSources} new sources)`)
     } else {
       skippedExisting++
     }
   }
 
-  console.log(`Imported: ${imported} relationships`)
+  console.log(`\nImported/updated: ${imported} relationships`)
   console.log(`Skipped (unresolved crop): ${skippedUnresolved}`)
   console.log(`Skipped (existing): ${skippedExisting}`)
 

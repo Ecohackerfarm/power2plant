@@ -1,4 +1,3 @@
-import Anthropic from '@anthropic-ai/sdk'
 import { readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
 
@@ -22,7 +21,9 @@ type Extraction = {
 
 type Extracted = Paper & Extraction
 
-const MODEL = 'claude-haiku-4-5-20251001'
+const BASE_URL = process.env.LLM_BASE_URL ?? 'https://openrouter.ai/api/v1'
+const MODEL = process.env.LLM_MODEL ?? 'anthropic/claude-haiku-4-5'
+const API_KEY = process.env.LLM_API_KEY ?? process.env.OPENROUTER_API_KEY
 
 function buildPrompt(cropA: string, cropB: string, title: string, abstract: string): string {
   return `Given this agricultural research paper abstract about companion planting of ${cropA} and ${cropB}:
@@ -41,34 +42,41 @@ Respond ONLY with valid JSON: {"type": ..., "reason": ..., "confidence": ..., "n
 
 function stripCodeFences(text: string): string {
   const trimmed = text.trim()
-  if (trimmed.startsWith('```json')) {
-    return trimmed.slice(7, -3).trim()
-  }
-  if (trimmed.startsWith('```')) {
-    return trimmed.slice(3, -3).trim()
-  }
+  if (trimmed.startsWith('```json')) return trimmed.slice(7, -3).trim()
+  if (trimmed.startsWith('```')) return trimmed.slice(3, -3).trim()
   return trimmed
 }
 
-async function extractFromPaper(client: Anthropic, paper: Paper): Promise<Extraction | null> {
+async function extractFromPaper(paper: Paper): Promise<Extraction | null> {
   const prompt = buildPrompt(paper.cropA, paper.cropB, paper.title, paper.abstract)
 
   try {
-    const response = await client.messages.create({
-      model: MODEL,
-      max_tokens: 500,
-      messages: [{ role: 'user', content: prompt }],
+    const res = await fetch(`${BASE_URL}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        max_tokens: 500,
+        messages: [{ role: 'user', content: prompt }],
+      }),
     })
 
-    const text = response.content[0]?.type === 'text' ? response.content[0].text : ''
-    const jsonStr = stripCodeFences(text)
-    const parsed = JSON.parse(jsonStr) as Extraction
+    if (!res.ok) {
+      const text = await res.text()
+      throw new Error(`HTTP ${res.status}: ${text.slice(0, 200)}`)
+    }
+
+    const data = await res.json() as { choices: Array<{ message: { content: string } }> }
+    const text = data.choices[0]?.message?.content ?? ''
+    const parsed = JSON.parse(stripCodeFences(text)) as Extraction
 
     if (!['COMPANION', 'AVOID', 'UNKNOWN'].includes(parsed.type)) {
       console.warn(`Invalid type for ${paper.paperId}: ${parsed.type}`)
       return null
     }
-
     if (parsed.confidence < 0 || parsed.confidence > 1) {
       console.warn(`Invalid confidence for ${paper.paperId}: ${parsed.confidence}`)
       return null
@@ -82,30 +90,28 @@ async function extractFromPaper(client: Anthropic, paper: Paper): Promise<Extrac
 }
 
 async function main(): Promise<void> {
-  const apiKey = process.env.ANTHROPIC_API_KEY
-  if (!apiKey) {
-    console.warn('ANTHROPIC_API_KEY not set, skipping extraction')
-    return
+  if (!API_KEY) {
+    console.error('LLM_API_KEY not set. Export LLM_API_KEY (and optionally LLM_BASE_URL, LLM_MODEL).')
+    process.exit(1)
   }
 
-  const client = new Anthropic({ apiKey })
+  console.log(`Using model: ${MODEL} via ${BASE_URL}`)
 
   const papersPath = join(process.cwd(), 'data/research/papers.json')
   const papers: Paper[] = JSON.parse(readFileSync(papersPath, 'utf-8'))
-
   const results: Extracted[] = []
 
   for (let i = 0; i < papers.length; i++) {
     const paper = papers[i]
-    const extraction = await extractFromPaper(client, paper)
+    const extraction = await extractFromPaper(paper)
 
     if (extraction && extraction.type !== 'UNKNOWN' && extraction.confidence >= 0.5) {
       results.push({ ...paper, ...extraction })
       console.log(`Paper ${i + 1}/${papers.length}: ${paper.cropA} + ${paper.cropB} → ${extraction.type} (${extraction.confidence})`)
     } else if (extraction) {
-      console.log(`Paper ${i + 1}/${papers.length}: ${paper.cropA} + ${paper.cropB} → skipped (confidence: ${extraction.confidence})`)
+      console.log(`Paper ${i + 1}/${papers.length}: ${paper.cropA} + ${paper.cropB} → skipped (${extraction.type}, confidence ${extraction.confidence})`)
     } else {
-      console.log(`Paper ${i + 1}/${papers.length}: ${paper.cropA} + ${paper.cropB} → skipped (parse error)`)
+      console.log(`Paper ${i + 1}/${papers.length}: ${paper.cropA} + ${paper.cropB} → skipped (error)`)
     }
 
     await new Promise(resolve => setTimeout(resolve, 200))
