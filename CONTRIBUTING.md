@@ -15,15 +15,16 @@ fix/<slug>                  →  release/vX.Y.Z  →  main
 - **Release branches** (`release/vX.Y.Z`) accumulate related features. A PR from the release branch into `main` stays open until the release is ready to ship, then gets merged in one shot.
 - **Branch naming**: `feat/41-research-discover`, `fix/healthcheck`, etc. — issue number prefix where applicable.
 
+### CI gates
+
+| PR type | CI |
+|---|---|
+| Any PR | Unit tests (`pnpm test:run`) |
+| `release/*` → `main` | E2E tests (`pnpm test:e2e`) |
+
 ### PR test plans
 
-Test plans in PR descriptions are **post-merge acceptance criteria**, not pre-merge steps. The workflow:
-
-1. Merge feature PR into the release branch.
-2. Release branch PR into `main` stays open (accumulates features).
-3. When the release merges to `main`, the running dev server picks up all changes — verify the acceptance criteria then.
-
-There is no pre-merge E2E gate per feature branch. Unit and integration tests run in CI per branch; E2E smoke tests run on `main` after release merges.
+Test plans in PR descriptions are **post-merge acceptance criteria** for manual verification — click through the feature after the release branch lands on `main` and the dev server picks it up. E2E smoke tests cover regression; the test plan covers feature correctness.
 
 ## Running Tests
 

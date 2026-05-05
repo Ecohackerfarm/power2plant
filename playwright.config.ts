@@ -16,8 +16,11 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         launchOptions: {
-          // Prefer system Chromium (set by Dockerfile); fall back to Alpine default path
-          executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ?? '/usr/bin/chromium-browser',
+          // Use system Chromium when running in the dev container (env var set by Dockerfile).
+          // Omit executablePath in CI so Playwright uses its own installed binary.
+          ...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
+            ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH }
+            : {}),
           args: ['--no-sandbox', '--disable-setuid-sandbox'],
         },
       },
