@@ -5,7 +5,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    exclude: ['node_modules/**', '.worktrees/**', '.pnpm-store/**'],
+    exclude: ['node_modules/**', '.worktrees/**', '.pnpm-store/**', 'tests/e2e/**'],
   },
   resolve: {
     alias: { '@': path.resolve(__dirname, './src') },
