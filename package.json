@@ -24,7 +24,6 @@
     "research:import": "tsx scripts/research/import.ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.93.0",
     "@base-ui/react": "^1.4.1",
     "@prisma/client": "^6.0.0",
     "@tailwindcss/postcss": "^4.2.4",
