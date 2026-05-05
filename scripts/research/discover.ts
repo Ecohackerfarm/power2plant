@@ -20,11 +20,23 @@ function normalizeName(name: string): string {
     .join(' ')
 }
 
-function makePair(cropA: string, cropB: string): CropPair {
+function makePair(cropA: string, cropB: string): CropPair | null {
   const a = normalizeName(cropA)
   const b = normalizeName(cropB)
+  if (a.includes('Family') || b.includes('Family')) return null
   const [first, second] = [a, b].sort()
   return { cropA: first, cropB: second }
+}
+
+const NON_CROP_WORDS = new Set(['Bush', 'Pole', 'Tall', 'Almost', 'Family', 'Everything', 'Crops', 'Brassicas', 'Tall Crops', 'Almost Everything', 'Bean Bush Pole', 'Aromatic Herbs', 'Compete For Similar Growing Conditions', 'Pole Bean'])
+
+function isLikelyCrop(name: string): boolean {
+  if (!name || name.length === 0) return false
+  if (NON_CROP_WORDS.has(name)) return false
+  if (name.includes('Family')) return false
+  if (name.includes('(') || name.includes(')')) return false
+  if (name === name.toUpperCase() && name.length > 1) return false
+  return true
 }
 
 async function fetchWithDelay(url: string): Promise<string> {
@@ -40,32 +52,44 @@ async function extractPairsFromIndex(html: string): Promise<CropPair[]> {
   const pairRegex = /([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s*[+&]\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/g
   let match: RegExpExecArray | null
   while ((match = pairRegex.exec(html)) !== null) {
-    const pair = makePair(match[1], match[2])
-    const key = `${pair.cropA}|${pair.cropB}`
-    pairs.set(key, pair)
-  }
-
-  const tableRowRegex = /<td><a[^>]*>([^<]+)<\/a><\/td>\s*<td>([^<]+)<\/td>\s*<td>([^<]+)<\/td>/g
-  while ((match = tableRowRegex.exec(html)) !== null) {
-    const crop = match[1].trim()
-    const companions = match[2].split(/,\s*/)
-    const antagonists = match[3].split(/,\s*/)
-
-    for (const comp of companions) {
-      const cleanComp = comp.replace(/\s*\([^)]+\)/, '').trim()
-      if (cleanComp && cleanComp !== '—' && cleanComp !== '') {
-        const pair = makePair(crop, cleanComp)
+    const a = normalizeName(match[1])
+    const b = normalizeName(match[2])
+    if (!NON_CROP_WORDS.has(a) && !NON_CROP_WORDS.has(b) && !a.includes('Family') && !b.includes('Family')) {
+      const pair = makePair(match[1], match[2])
+      if (pair) {
         const key = `${pair.cropA}|${pair.cropB}`
         pairs.set(key, pair)
       }
     }
+  }
+
+  const tableRowRegex = /<td><a[^>]*>([^<]+)<\/a><\/td>\s*<td>([^<]+)<\/td>\s*<td>([^<]+)<\/td>/g
+  while ((match = tableRowRegex.exec(html)) !== null) {
+    const crop = normalizeName(match[1].trim().replace(/\s*\([^)]+\)/, ''))
+    const companions = match[2].split(/,\s*/)
+    const antagonists = match[3].split(/,\s*/)
+
+    for (const comp of companions) {
+      let names = comp.split(/[(),]/).map(s => normalizeName(s.trim())).filter(isLikelyCrop)
+      names = names.filter(n => !n.includes('&'))
+      for (const cleanComp of names) {
+        const pair = makePair(crop, cleanComp)
+        if (pair) {
+          const key = `${pair.cropA}|${pair.cropB}`
+          pairs.set(key, pair)
+        }
+      }
+    }
 
     for (const antag of antagonists) {
-      const cleanAntag = antag.replace(/\s*\([^)]+\)/, '').trim()
-      if (cleanAntag && cleanAntag !== '—' && cleanAntag !== '') {
+      let names = antag.split(/[(),]/).map(s => normalizeName(s.trim())).filter(isLikelyCrop)
+      names = names.filter(n => !n.includes('&'))
+      for (const cleanAntag of names) {
         const pair = makePair(crop, cleanAntag)
-        const key = `${pair.cropA}|${pair.cropB}`
-        pairs.set(key, pair)
+        if (pair) {
+          const key = `${pair.cropA}|${pair.cropB}`
+          pairs.set(key, pair)
+        }
       }
     }
   }
