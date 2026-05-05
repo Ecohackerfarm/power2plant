@@ -23,7 +23,7 @@ type Extracted = Paper & Extraction
 
 const BASE_URL = process.env.LLM_BASE_URL ?? 'https://openrouter.ai/api/v1'
 const MODEL = process.env.LLM_MODEL ?? 'anthropic/claude-haiku-4-5'
-const API_KEY = process.env.LLM_API_KEY
+const API_KEY = process.env.LLM_API_KEY ?? process.env.OPENROUTER_API_KEY
 
 function buildPrompt(cropA: string, cropB: string, title: string, abstract: string): string {
   return `Given this agricultural research paper abstract about companion planting of ${cropA} and ${cropB}:
