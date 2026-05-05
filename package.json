@@ -18,6 +18,7 @@
     "db:studio": "prisma studio",
     "db:dump": "sh db/dump.sh",
     "db:restore": "sh db/restore.sh",
+    "research:discover": "tsx scripts/research/discover.ts",
     "research:search": "tsx scripts/research/search-papers.ts"
   },
   "dependencies": {
