@@ -95,5 +95,13 @@ export function useGarden() {
     update({ bedCount, bedCapacity })
   }, [])
 
-  return { state, hydrated, setZone, addToWishlist, removeFromWishlist, setBeds }
+  const clearWishlist = useCallback(() => {
+    setState(prev => {
+      const next = { ...prev, wishlist: [] }
+      saveState(next)
+      return next
+    })
+  }, [])
+
+  return { state, hydrated, setZone, addToWishlist, removeFromWishlist, clearWishlist, setBeds }
 }

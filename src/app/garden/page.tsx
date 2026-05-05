@@ -7,7 +7,7 @@ import { useSession } from '@/lib/auth-client'
 
 export default function GardenPage() {
   const { data: session } = useSession()
-  const { state, addToWishlist, removeFromWishlist } = useGarden()
+  const { state, addToWishlist, removeFromWishlist, clearWishlist } = useGarden()
   const myGardenRef = useRef<{ refresh: () => void }>(null)
 
   return (
@@ -23,6 +23,7 @@ export default function GardenPage() {
         wishlistIds={state.wishlist}
         onAdd={addToWishlist}
         onRemove={removeFromWishlist}
+        onClearAll={clearWishlist}
       />
 
       {session && (

@@ -15,9 +15,10 @@ interface PlantSearchProps {
   wishlistIds: string[]
   onAdd: (cropId: string) => void
   onRemove: (cropId: string) => void
+  onClearAll: () => void
 }
 
-export function PlantSearch({ wishlistIds, onAdd, onRemove }: PlantSearchProps) {
+export function PlantSearch({ wishlistIds, onAdd, onRemove, onClearAll }: PlantSearchProps) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<Crop[]>([])
   const [wishlistCrops, setWishlistCrops] = useState<Crop[]>([])
@@ -165,9 +166,15 @@ export function PlantSearch({ wishlistIds, onAdd, onRemove }: PlantSearchProps) 
           <>
             <Separator />
             <div>
-              <p className="text-sm font-medium mb-2">
-                Your wishlist ({wishlistCrops.length} plants)
-              </p>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-medium">Your wishlist ({wishlistCrops.length} plants)</p>
+                <button
+                  onClick={() => { setWishlistCrops([]); onClearAll() }}
+                  className="text-xs text-muted-foreground hover:text-foreground"
+                >
+                  Clear all
+                </button>
+              </div>
               <div className="flex flex-wrap gap-2">
                 {wishlistCrops.map(crop => (
                   <Badge key={crop.id} variant="secondary" className="gap-1">
