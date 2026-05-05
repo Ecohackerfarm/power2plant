@@ -6,6 +6,60 @@ import { auth } from '@/lib/auth'
 const VALID_TYPES = ['COMPANION', 'AVOID'] as const
 const VALID_REASONS = ['PEST_CONTROL', 'POLLINATION', 'NUTRIENT', 'SHADE', 'ALLELOPATHY', 'OTHER'] as const
 
+function getConfidenceLabel(confidence: number): string {
+  if (confidence >= 1.0) return 'Peer-reviewed'
+  if (confidence >= 0.75) return 'Observed'
+  if (confidence >= 0.5) return 'Traditional'
+  return 'Anecdotal'
+}
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url)
+  const q = searchParams.get('q') ?? ''
+  const cursor = searchParams.get('cursor') ?? undefined
+  const limit = Math.min(parseInt(searchParams.get('limit') ?? '20', 10), 50)
+
+  const cropFilter = q ? {
+    OR: [
+      { name: { contains: q, mode: 'insensitive' as const } },
+      { botanicalName: { contains: q, mode: 'insensitive' as const } },
+      { commonNames: { has: q } },
+    ],
+  } : undefined
+
+  const relationships = await prisma.cropRelationship.findMany({
+    where: {
+      ...(cropFilter ? { OR: [{ cropA: cropFilter }, { cropB: cropFilter }] } : {}),
+      ...(cursor ? { id: { lt: cursor } } : {}),
+    },
+    take: limit + 1,
+    orderBy: { id: 'desc' },
+    include: {
+      cropA: { select: { id: true, name: true, botanicalName: true } },
+      cropB: { select: { id: true, name: true, botanicalName: true } },
+      _count: { select: { sources: true } },
+    },
+  })
+
+  const hasNext = relationships.length > limit
+  const results = hasNext ? relationships.slice(0, -1) : relationships
+  const nextCursor = hasNext ? results[results.length - 1].id : null
+
+  return NextResponse.json({
+    relationships: results.map((r) => ({
+      id: r.id,
+      type: r.type,
+      reason: r.reason,
+      confidence: getConfidenceLabel(r.confidence),
+      notes: r.notes,
+      cropA: r.cropA,
+      cropB: r.cropB,
+      sourceCount: r._count.sources,
+    })),
+    nextCursor,
+  })
+}
+
 async function getSession() {
   return auth.api.getSession({ headers: await headers() })
 }
