@@ -1,0 +1,44 @@
+#!/bin/sh
+# Usage: ./run-agent <role> "<prompt>"
+# Runs opencode with the agent role's system context prepended to the prompt.
+#
+# Available roles: product-planner, nextjs-frontend, prisma-backend,
+#   plant-data-curator, garden-algorithm-engineer, qa-test-reviewer,
+#   security-auth-reviewer, oss-community-maintainer
+#
+# Example: ./run-agent prisma-backend "implement ticket #19"
+
+set -e
+
+AGENTS_DIR="$(dirname "$0")/agents"
+MODEL="${OPENCODE_MODEL:-openrouter/poolside/laguna-m.1:free}"
+
+role="$1"
+shift
+prompt="$*"
+
+if [ -z "$role" ] || [ -z "$prompt" ]; then
+  echo "Usage: $0 <role> <prompt>" >&2
+  echo "Roles: $(ls "$AGENTS_DIR" | sed 's/\.md//' | tr '\n' ' ')" >&2
+  exit 1
+fi
+
+agent_file="$AGENTS_DIR/${role}.md"
+
+if [ ! -f "$agent_file" ]; then
+  echo "Unknown role: $role" >&2
+  echo "Available: $(ls "$AGENTS_DIR" | sed 's/\.md//' | tr '\n' ' ')" >&2
+  exit 1
+fi
+
+system=$(cat "$agent_file")
+
+opencode run \
+  --model "$MODEL" \
+  --dangerously-skip-permissions \
+  --dir /app \
+  "${system}
+
+---
+
+${prompt}"
