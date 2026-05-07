@@ -69,7 +69,7 @@ export async function runQAGate(task: Task, attempt: number, worktreePath: strin
   return new Promise((resolve, reject) => {
     const proc = spawn(
       "opencode",
-      ["run", "--model", "openrouter/tencent/hunyuan-a13b-instruct:free", "--dangerously-skip-permissions", "--dir", worktreePath, qaPrompt],
+      ["run", "--model", "opencode/hy3-preview-free", "--dangerously-skip-permissions", "--dir", worktreePath, qaPrompt],
       { stdio: ["ignore", "pipe", "pipe"] }
     );
 
@@ -122,7 +122,7 @@ export async function runSecurityGate(task: Task, attempt: number, worktreePath:
   return new Promise((resolve, reject) => {
     const proc = spawn(
       "opencode",
-      ["run", "--model", "openrouter/tencent/hunyuan-a13b-instruct:free", "--dangerously-skip-permissions", "--dir", worktreePath, prompt],
+      ["run", "--model", "opencode/hy3-preview-free", "--dangerously-skip-permissions", "--dir", worktreePath, prompt],
       { stdio: ["ignore", "pipe", "pipe"] }
     );
 
@@ -144,8 +144,13 @@ export async function runSecurityGate(task: Task, attempt: number, worktreePath:
 }
 
 export function createPR(task: Task, worktreePath: string): string {
+  execSync("git push -u origin HEAD", { cwd: worktreePath, stdio: "inherit" });
+  const base = execSync(
+    "git branch -r | grep -o 'release/v[0-9.]*' | sort -V | tail -1 || echo 'release/v0.8.0'",
+    { cwd: worktreePath }
+  ).toString().trim() || "release/v0.8.0";
   const result = execSync(
-    `gh pr create --base release/$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.8.0") --title "${task.title}" --body "Closes #${task.issueNumber}"`,
+    `gh pr create --base "${base}" --title "${task.title}" --body "Closes #${task.issueNumber}"`,
     { cwd: worktreePath }
   ).toString().trim();
   return result;
