@@ -1,16 +1,18 @@
 ## Dev Machine Access
 
-All build, test, migration, and DB commands run via SSH into the dev container — never run them locally:
+All build, test, migration, and DB commands run via SSH into the dev container — never run them locally.
+
+Your worktree path (same path inside container): `<WORKTREE_PATH>`
 
 ```sh
-ssh -i /home/agent/.ssh/power2plant_dev -p 2222 -o StrictHostKeyChecking=no root@power2plant-app-1 "<command>"
+ssh -i /home/agent/.ssh/power2plant_dev -p 2222 -o StrictHostKeyChecking=no root@power2plant-app-1 "cd <WORKTREE_PATH> && <command>"
 ```
 
 DB URL (inside container): `postgresql://power2plant:power2plant@db:5432/power2plant`
 
-Note: the container's `.env` has `localhost` not `db` — always pass `DATABASE_URL` explicitly when running migrations or dump scripts via SSH:
+Note: the container's `.env` has `localhost` not `db` — always pass `DATABASE_URL` explicitly for migrations or dump scripts:
 ```sh
-ssh ... root@power2plant-app-1 "cd /app && DATABASE_URL=postgresql://power2plant:power2plant@db:5432/power2plant npx prisma migrate deploy"
+ssh ... root@power2plant-app-1 "cd <WORKTREE_PATH> && DATABASE_URL=postgresql://power2plant:power2plant@db:5432/power2plant npx prisma migrate deploy"
 ```
 
 ## Branch & PR Rules

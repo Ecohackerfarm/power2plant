@@ -47,7 +47,7 @@ echo "Worktree: $worktree (branch: $branch)"
 echo "Model:    $MODEL"
 echo ""
 
-shared=$(cat "$AGENTS_DIR/_shared.md")
+shared=$(sed "s|<WORKTREE_PATH>|$worktree|g" "$AGENTS_DIR/_shared.md")
 system=$(cat "$agent_file")
 
 opencode run \

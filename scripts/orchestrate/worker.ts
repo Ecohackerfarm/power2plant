@@ -10,10 +10,10 @@ const AUTH_PATTERNS = [
   /src\/app\/api\/garden/,
 ];
 
-function buildPrompt(role: string, task: Task): string {
+function buildPrompt(role: string, task: Task, worktreePath: string): string {
   const sharedPath = join(process.cwd(), "agents/_shared.md");
   const rolePath = join(process.cwd(), `agents/${role}.md`);
-  const shared = readFileSync(sharedPath, "utf-8");
+  const shared = readFileSync(sharedPath, "utf-8").replaceAll("<WORKTREE_PATH>", worktreePath);
   const rolePrompt = readFileSync(rolePath, "utf-8");
   const body = task.body ? `\n\n${task.body}` : "";
   return `${shared}\n\n---\n\n${rolePrompt}\n\n---\n\nImplement GitHub issue #${task.issueNumber}: ${task.title}${body}`;
@@ -33,7 +33,7 @@ export async function runAgent(
   worktreePath: string,
   timeoutMs: number
 ): Promise<void> {
-  const prompt = buildPrompt(role, task);
+  const prompt = buildPrompt(role, task, worktreePath);
   const log = logPath(task.issueNumber, attempt);
   const out = createWriteStream(log, { flags: "w" });
 
@@ -93,9 +93,9 @@ export async function runQAGate(task: Task, attempt: number, worktreePath: strin
 function buildQAPrompt(task: Task, worktreePath: string): string {
   const sharedPath = join(process.cwd(), "agents/_shared.md");
   const rolePath = join(process.cwd(), "agents/qa-test-reviewer.md");
-  const shared = readFileSync(sharedPath, "utf-8");
+  const shared = readFileSync(sharedPath, "utf-8").replaceAll("<WORKTREE_PATH>", worktreePath);
   const role = readFileSync(rolePath, "utf-8");
-  return `${shared}\n\n---\n\n${role}\n\n---\n\nReview and validate the implementation for issue #${task.issueNumber}: ${task.title}. Run tests. If tests fail, fix them. Worktree: ${worktreePath}`;
+  return `${shared}\n\n---\n\n${role}\n\n---\n\nReview and validate the implementation for issue #${task.issueNumber}: ${task.title}. Run tests. If tests fail, fix them.`;
 }
 
 export function isAuthTouching(worktreePath: string): boolean {
@@ -113,9 +113,9 @@ export function isAuthTouching(worktreePath: string): boolean {
 export async function runSecurityGate(task: Task, attempt: number, worktreePath: string, timeoutMs: number): Promise<void> {
   const sharedPath = join(process.cwd(), "agents/_shared.md");
   const rolePath = join(process.cwd(), "agents/security-auth-reviewer.md");
-  const shared = readFileSync(sharedPath, "utf-8");
+  const shared = readFileSync(sharedPath, "utf-8").replaceAll("<WORKTREE_PATH>", worktreePath);
   const role = readFileSync(rolePath, "utf-8");
-  const prompt = `${shared}\n\n---\n\n${role}\n\n---\n\nReview auth and security for issue #${task.issueNumber}: ${task.title}. Worktree: ${worktreePath}`;
+  const prompt = `${shared}\n\n---\n\n${role}\n\n---\n\nReview auth and security for issue #${task.issueNumber}: ${task.title}.`;
   const log = logPath(task.issueNumber, attempt) + ".security.log";
   const out = createWriteStream(log, { flags: "w" });
 
