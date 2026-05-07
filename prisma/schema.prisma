@@ -58,14 +58,15 @@ model CropRelationship {
 }
 
 model RelationshipSource {
-  id             String           @id @default(cuid())
+  id             String               @id @default(cuid())
   source         SourceType
-  confidence     ConfidenceLevel  @default(ANECDOTAL)
+  sourceType     SourceClassification?
+  confidence     ConfidenceLevel      @default(ANECDOTAL)
   url            String?
   notes          String?
-  fetchedAt      DateTime         @default(now())
+  fetchedAt      DateTime             @default(now())
   relationshipId String
-  relationship   CropRelationship @relation(fields: [relationshipId], references: [id], onDelete: Cascade)
+  relationship   CropRelationship     @relation(fields: [relationshipId], references: [id], onDelete: Cascade)
   userId         String?
 
   @@index([relationshipId])
@@ -155,6 +156,14 @@ enum SourceType {
   COMMUNITY
   MANUAL
   RESEARCH
+}
+
+enum SourceClassification {
+  SCIENTIFIC_PAPER
+  ACADEMIC_RESOURCE
+  GARDENING_GUIDE
+  BLOG_FORUM
+  PERSONAL_OBSERVATION
 }
 
 model user {

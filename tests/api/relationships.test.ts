@@ -61,6 +61,7 @@ describe('POST /api/relationships', () => {
 
   it('returns 400 when notes exceed 500 chars', async () => {
     vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as any)
+    vi.mocked(prisma.crop.findMany).mockResolvedValue([{ id: 'crop-a' }, { id: 'crop-b' }] as any)
     const res = await POST(makeReq({ ...validBody, notes: 'x'.repeat(501) }))
     expect(res.status).toBe(400)
   })
