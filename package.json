@@ -22,7 +22,12 @@
     "research:search": "tsx scripts/research/search-papers.ts",
     "research:extract": "tsx scripts/research/extract.ts",
     "research:import": "tsx scripts/research/import.ts",
-    "enrich:wikipedia": "tsx scripts/enrich/wikipedia-names.ts"
+    "enrich:wikipedia": "tsx scripts/enrich/wikipedia-names.ts",
+    "orchestrate:status": "NODE_PATH=/home/agent/.local/share/pnpm/global/5/node_modules tsx scripts/orchestrate/index.ts status",
+    "orchestrate:run": "NODE_PATH=/home/agent/.local/share/pnpm/global/5/node_modules tsx scripts/orchestrate/index.ts run",
+    "orchestrate:retry": "NODE_PATH=/home/agent/.local/share/pnpm/global/5/node_modules tsx scripts/orchestrate/index.ts retry",
+    "orchestrate:logs": "NODE_PATH=/home/agent/.local/share/pnpm/global/5/node_modules tsx scripts/orchestrate/index.ts logs",
+    "orchestrate:start": "NODE_PATH=/home/agent/.local/share/pnpm/global/5/node_modules tsx scripts/orchestrate/index.ts start"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",

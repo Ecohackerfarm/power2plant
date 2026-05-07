@@ -1,0 +1,20 @@
+[
+  {
+    "issueNumber": 63,
+    "title": "feat: clear all button on wishlist",
+    "role": "frontend-engineer",
+    "branch": "feat/63-clear-all-wishlist"
+  },
+  {
+    "issueNumber": 70,
+    "title": "schema: add SourceClassification enum + sourceType to RelationshipSource",
+    "role": "backend-engineer",
+    "branch": "feat/70-source-classification-schema"
+  },
+  {
+    "issueNumber": 69,
+    "title": "feat: link to relationship detail after submitting observation",
+    "role": "frontend-engineer",
+    "branch": "feat/69-link-relationship-after-submit"
+  }
+]

@@ -1,0 +1,65 @@
+#!/bin/sh
+# Usage: ./run-agent <role> "<prompt>" [branch]
+# Runs opencode in an isolated git worktree (never modifies /app directly).
+# Branch defaults to agent/<role>-<timestamp> if not specified.
+#
+# Available roles: backend-engineer, frontend-engineer, full-stack-engineer,
+#   plant-data-curator, garden-algorithm-engineer, qa-test-reviewer,
+#   security-auth-reviewer
+#
+# Example: ./run-agent backend-engineer "implement ticket #19" feat/19-my-feature
+
+set -e
+
+REPO_ROOT="$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"
+AGENTS_DIR="$REPO_ROOT/agents"
+MODEL="${OPENCODE_MODEL:-opencode/hy3-preview-free}"
+
+role="$1"
+shift
+prompt="$1"
+branch="${2:-agent/${role}-$(date +%s)}"
+
+if [ -z "$role" ] || [ -z "$prompt" ]; then
+  echo "Usage: $0 <role> <prompt> [branch]" >&2
+  echo "Roles: $(ls "$AGENTS_DIR" | grep -v '^_' | sed 's/\.md//' | tr '\n' ' ')" >&2
+  exit 1
+fi
+
+agent_file="$AGENTS_DIR/${role}.md"
+
+if [ ! -f "$agent_file" ]; then
+  echo "Unknown role: $role" >&2
+  echo "Available: $(ls "$AGENTS_DIR" | grep -v '^_' | sed 's/\.md//' | tr '\n' ' ')" >&2
+  exit 1
+fi
+
+worktree="$REPO_ROOT/.worktrees/$branch"
+
+# create worktree on fresh branch (or reuse existing)
+if git -C "$REPO_ROOT" rev-parse --verify "$branch" > /dev/null 2>&1; then
+  git -C "$REPO_ROOT" worktree add "$worktree" "$branch" 2>/dev/null || true
+else
+  git -C "$REPO_ROOT" worktree add "$worktree" -b "$branch"
+fi
+
+echo "Worktree: $worktree (branch: $branch)"
+echo "Model:    $MODEL"
+echo ""
+
+shared=$(sed "s|<WORKTREE_PATH>|$worktree|g" "$AGENTS_DIR/_shared.md")
+system=$(cat "$agent_file")
+
+opencode run \
+  --model "$MODEL" \
+  --dangerously-skip-permissions \
+  --dir "$worktree" \
+  "${shared}
+
+---
+
+${system}
+
+---
+
+${prompt}"
