@@ -9,7 +9,7 @@ export async function GET(
   const [cropAId, cropBId] = id < companionId ? [id, companionId] : [companionId, id]
 
   const rows = await prisma.$queryRaw<Array<{
-    relId: string; type: string; reason: string | null; confidence: number
+    relId: string; type: string; reason: string | null; reasons: string[]; confidence: number
     notes: string | null; direction: string
     cropAId: string; cropAName: string; cropABotanical: string; cropACommonNames: string[]
     cropANitrogen: boolean
@@ -17,7 +17,7 @@ export async function GET(
     cropBNitrogen: boolean
   }>>`
     SELECT
-      cr.id AS "relId", cr.type, cr.reason, cr.confidence, cr.notes, cr.direction,
+      cr.id AS "relId", cr.type, cr.reason, cr.reasons, cr.confidence, cr.notes, cr.direction,
       ca.id AS "cropAId", ca.name AS "cropAName", ca."botanicalName" AS "cropABotanical",
       ca."commonNames" AS "cropACommonNames", ca."isNitrogenFixer" AS "cropANitrogen",
       cb.id AS "cropBId", cb.name AS "cropBName", cb."botanicalName" AS "cropBBotanical",

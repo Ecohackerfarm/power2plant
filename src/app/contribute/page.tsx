@@ -118,8 +118,9 @@ export default function ContributePage() {
   const [cropA, setCropA] = useState<Crop | null>(null)
   const [cropB, setCropB] = useState<Crop | null>(null)
   const [type, setType] = useState<'COMPANION' | 'AVOID'>('COMPANION')
-  const [reason, setReason] = useState('')
+  const [reasons, setReasons] = useState<string[]>([])
   const [notes, setNotes] = useState('')
+  const [sources, setSources] = useState<{ id: number; url: string }[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState<'success' | 'ratelimit' | 'error' | null>(null)
 
@@ -148,14 +149,15 @@ export default function ContributePage() {
           cropAId: cropA.id,
           cropBId: cropB.id,
           type,
-          reason: reason || undefined,
+          reason: reasons.length > 0 ? reasons : undefined,
           notes: notes || undefined,
+          sources: sources.length > 0 ? sources.map(s => s.url).filter(Boolean) : undefined,
         }),
       })
       if (res.status === 429) { setResult('ratelimit'); return }
       if (!res.ok) { setResult('error'); return }
       setResult('success')
-      setCropA(null); setCropB(null); setReason(''); setNotes('')
+      setCropA(null); setCropB(null); setReasons([]); setNotes(''); setSources([])
     } catch {
       setResult('error')
     } finally {
@@ -216,31 +218,56 @@ export default function ContributePage() {
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="reason">Reason <span className="text-muted-foreground font-normal">(optional)</span></Label>
+              <Label htmlFor="reasons">Reasons <span className="text-muted-foreground font-normal">(optional, select all that apply)</span></Label>
               <select
-                id="reason"
+                id="reasons"
                 className="w-full border rounded-lg px-3 py-2 text-sm bg-background"
-                value={reason}
-                onChange={e => setReason(e.target.value)}
+                multiple
+                value={reasons}
+                onChange={e => setReasons(Array.from(e.target.selectedOptions).map(option => option.value))}
               >
-                {REASONS.map(r => (
+                {REASONS.slice(1).map(r => (
                   <option key={r.value} value={r.value}>{r.label}</option>
                 ))}
               </select>
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="notes">Notes <span className="text-muted-foreground font-normal">(optional, max 500 chars)</span></Label>
+              <Label htmlFor="notes">Notes <span className="text-muted-foreground font-normal">(optional, max 2000 chars)</span></Label>
               <textarea
                 id="notes"
                 className="w-full border rounded-lg px-3 py-2 text-sm bg-background resize-none"
-                rows={3}
-                maxLength={500}
+                rows={5}
+                maxLength={2000}
                 value={notes}
                 onChange={e => setNotes(e.target.value)}
                 placeholder="e.g. Planted together for 3 seasons, noticed fewer aphids…"
               />
-              <p className="text-xs text-muted-foreground text-right">{notes.length}/500</p>
+              <p className="text-xs text-muted-foreground text-right">{notes.length}/2000</p>
+            </div>
+
+            <div className="space-y-1">
+              <Label>Sources (optional)</Label>
+              {sources.map((src, idx) => (
+                <div key={idx} className="flex items-center gap-2 mb-1">
+                  <span className="text-sm font-medium">[{idx + 1}]</span>
+                  <Input
+                    value={src.url}
+                    placeholder="https://..."
+                    onChange={e => {
+                      const newSources = [...sources]
+                      newSources[idx] = { id: idx + 1, url: e.target.value }
+                      setSources(newSources)
+                    }}
+                  />
+                </div>
+              ))}
+              <Button type="button" onClick={() => setSources([...sources, { id: sources.length + 1, url: '' }])} disabled={sources.length >= 20} className="mt-2">
+                Add source
+              </Button>
+              <p className="text-xs text-muted-foreground mt-1">
+                Reference sources in notes using [number] notation
+              </p>
             </div>
 
             <Button
