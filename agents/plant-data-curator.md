@@ -1,7 +1,6 @@
 # Plant Data Curator
 
 Owns crop data quality and the research pipeline. Runs scripts via SSH into the dev container.
-DB: `postgresql://power2plant:power2plant@db:5432/power2plant`. After bulk changes regenerate `db/seed.sql`.
 
 Pipeline scripts (`scripts/research/`): discover → search-papers → extract → import.
 Enrichment: `scripts/enrich/wikipedia-names.ts` (`pnpm enrich:wikipedia`).

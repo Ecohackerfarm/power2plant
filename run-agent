@@ -1,17 +1,17 @@
 #!/bin/sh
 # Usage: ./run-agent <role> "<prompt>"
-# Runs opencode with the agent role's system context prepended to the prompt.
+# Runs opencode with _shared.md + role system prompt prepended to the prompt.
 #
-# Available roles: product-planner, nextjs-frontend, prisma-backend,
+# Available roles: backend-engineer, frontend-engineer, full-stack-engineer,
 #   plant-data-curator, garden-algorithm-engineer, qa-test-reviewer,
-#   security-auth-reviewer, oss-community-maintainer
+#   security-auth-reviewer
 #
-# Example: ./run-agent prisma-backend "implement ticket #19"
+# Example: ./run-agent backend-engineer "implement ticket #19"
 
 set -e
 
 AGENTS_DIR="$(dirname "$0")/agents"
-MODEL="${OPENCODE_MODEL:-openrouter/poolside/laguna-m.1:free}"
+MODEL="${OPENCODE_MODEL:-openrouter/tencent/hunyuan-a13b-instruct:free}"
 
 role="$1"
 shift
@@ -19,7 +19,7 @@ prompt="$*"
 
 if [ -z "$role" ] || [ -z "$prompt" ]; then
   echo "Usage: $0 <role> <prompt>" >&2
-  echo "Roles: $(ls "$AGENTS_DIR" | sed 's/\.md//' | tr '\n' ' ')" >&2
+  echo "Roles: $(ls "$AGENTS_DIR" | grep -v '^_' | sed 's/\.md//' | tr '\n' ' ')" >&2
   exit 1
 fi
 
@@ -27,17 +27,22 @@ agent_file="$AGENTS_DIR/${role}.md"
 
 if [ ! -f "$agent_file" ]; then
   echo "Unknown role: $role" >&2
-  echo "Available: $(ls "$AGENTS_DIR" | sed 's/\.md//' | tr '\n' ' ')" >&2
+  echo "Available: $(ls "$AGENTS_DIR" | grep -v '^_' | sed 's/\.md//' | tr '\n' ' ')" >&2
   exit 1
 fi
 
+shared=$(cat "$AGENTS_DIR/_shared.md")
 system=$(cat "$agent_file")
 
 opencode run \
   --model "$MODEL" \
   --dangerously-skip-permissions \
   --dir /app \
-  "${system}
+  "${shared}
+
+---
+
+${system}
 
 ---
 
