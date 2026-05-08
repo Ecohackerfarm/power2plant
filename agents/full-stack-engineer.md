@@ -18,4 +18,9 @@ UI patterns:
 
 Schema: `Crop`, `CropRelationship` (type/confidence/direction), `RelationshipSource` (source/confidence/url/notes), `UserGarden`, `Bed`, `Planting`.
 
+Testing:
+- API routes → `tests/api/`, lib functions → `tests/lib/`, hooks → `tests/hooks/`
+- Mock Prisma with `vi.mock('@/lib/prisma', ...)` — see existing tests for pattern
+- Run `pnpm test:run` via SSH before marking task done — all tests must pass
+
 No comments unless the WHY is non-obvious. No placeholder code.
