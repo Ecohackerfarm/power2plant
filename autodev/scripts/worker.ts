@@ -30,6 +30,12 @@ export function dropAgentDb(issueNumber: number): void {
   }
 }
 
+function authedRemote(cwd: string, token: string): string {
+  const raw = execSync("git remote get-url origin", { cwd }).toString().trim();
+  const https = raw.replace(/^git@github\.com:/, "https://github.com/").replace(/https:\/\/[^@]+@/, "https://");
+  return https.replace("https://", `https://x-access-token:${token}@`);
+}
+
 const AUTH_PATTERNS = [
   "src/lib/auth.ts",
   "src/lib/auth-client.ts",
@@ -143,9 +149,7 @@ export async function runImplFix(
   const ahead = execSync(`git rev-list origin/${task.branch}..HEAD --count 2>/dev/null || echo 0`, { cwd: worktreePath, shell: "/bin/sh" }).toString().trim();
   if (parseInt(ahead) > 0) {
     const token = execSync("gh auth token").toString().trim();
-    const sshRemote = execSync("git remote get-url origin", { cwd: worktreePath }).toString().trim();
-    const httpsRemote = sshRemote.replace(/^git@github\.com:/, "https://github.com/");
-    execSync(`git push "${httpsRemote.replace("https://", `https://x-access-token:${token}@`)}" HEAD:${task.branch}`, { cwd: worktreePath });
+    execSync(`git push "${authedRemote(worktreePath, token)}" HEAD:${task.branch}`, { cwd: worktreePath });
   }
 }
 
@@ -184,13 +188,8 @@ export function isAuthTouching(worktreePath: string): boolean {
 export function createPR(task: Task, worktreePath: string): string {
   const agentToken = process.env.AGENT_GITHUB_TOKEN;
   if (!agentToken) throw new Error("AGENT_GITHUB_TOKEN not set");
-  const sshRemote = execSync("git remote get-url origin", { cwd: worktreePath }).toString().trim();
-  const httpsRemote = sshRemote.replace(/^git@github\.com:/, "https://github.com/");
   const reviewerToken = execSync("gh auth token").toString().trim();
-  execSync(
-    `git push "${httpsRemote.replace("https://", `https://x-access-token:${reviewerToken}@`)}" HEAD:${task.branch}`,
-    { cwd: worktreePath }
-  );
+  execSync(`git push "${authedRemote(worktreePath, reviewerToken)}" HEAD:${task.branch}`, { cwd: worktreePath });
   const base = execSync(
     "git branch -r | grep -o 'release/v[0-9.]*' | sort -V | tail -1 || echo 'release/v0.8.0'",
     { cwd: worktreePath }

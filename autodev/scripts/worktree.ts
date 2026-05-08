@@ -35,9 +35,10 @@ export function removeWorktree(branch: string): void {
   try {
     execSync(`git worktree remove --force "${path}"`, { stdio: "pipe" });
   } catch {
-    // fallback: manual remove if git worktree remove fails (permission issues)
     if (existsSync(path)) {
-      rmSync(path, { recursive: true, force: true });
+      // node_modules may be owned by root (agent ran pnpm in container) — delete via SSH
+      const SSH = `ssh -i /home/agent/.ssh/power2plant_dev -p 2222 -o StrictHostKeyChecking=no root@power2plant-app-1`;
+      try { execSync(`${SSH} "rm -rf '${path}'"`, { stdio: "pipe" }); } catch { rmSync(path, { recursive: true, force: true }); }
       execSync(`git worktree prune`, { stdio: "pipe" });
     }
   }
