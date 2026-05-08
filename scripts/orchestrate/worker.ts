@@ -122,23 +122,30 @@ export async function runImplFix(
     .replaceAll("<DATABASE_URL>", dbUrl);
   const rolePrompt = readFileSync(join(process.cwd(), `agents/${task.role}.md`), "utf-8");
   const prompt = `${shared}\n\n---\n\n${rolePrompt}\n\n---\n\nAddress QA review comments on PR #${prNumber} (issue #${task.issueNumber}: ${task.title}).\n1. Read all feedback: \`gh pr view ${prNumber} --json reviews,comments\`\n2. Fix each issue raised (tests, logic, missing coverage)\n3. Run \`pnpm test:run\` via SSH — all tests must pass\n4. Commit and push to the existing branch (do NOT create a new PR)`;
+  // Ensure worktree is on the correct feature branch before agent runs
+  const currentBranch = execSync("git branch --show-current", { cwd: worktreePath }).toString().trim();
+  if (currentBranch !== task.branch) {
+    console.warn(`[#${task.issueNumber}] worktree on '${currentBranch}', expected '${task.branch}' — checking out`);
+    execSync(`git checkout ${task.branch}`, { cwd: worktreePath });
+  }
+
   await spawnAgent(
     model, worktreePath, prompt,
     ensureLog(task.issueNumber, `attempt-${attempt + 1}.fix-round${round + 1}.log`),
     timeoutMs
   );
+
   // Safety net: commit + push any changes the agent made but didn't push
   const dirty = execSync("git status --porcelain", { cwd: worktreePath }).toString().trim();
   if (dirty) {
     execSync("git add -A && git commit -m \"fix: address QA review feedback\"", { cwd: worktreePath, shell: "/bin/sh" });
   }
-  const ahead = execSync("git rev-list @{u}..HEAD --count 2>/dev/null || echo 0", { cwd: worktreePath, shell: "/bin/sh" }).toString().trim();
+  const ahead = execSync(`git rev-list origin/${task.branch}..HEAD --count 2>/dev/null || echo 0`, { cwd: worktreePath, shell: "/bin/sh" }).toString().trim();
   if (parseInt(ahead) > 0) {
     const token = execSync("gh auth token").toString().trim();
     const sshRemote = execSync("git remote get-url origin", { cwd: worktreePath }).toString().trim();
     const httpsRemote = sshRemote.replace(/^git@github\.com:/, "https://github.com/");
-    const branch = execSync("git branch --show-current", { cwd: worktreePath }).toString().trim();
-    execSync(`git push "${httpsRemote.replace("https://", `https://x-access-token:${token}@`)}" HEAD:${branch}`, { cwd: worktreePath });
+    execSync(`git push "${httpsRemote.replace("https://", `https://x-access-token:${token}@`)}" HEAD:${task.branch}`, { cwd: worktreePath });
   }
 }
 
@@ -177,7 +184,13 @@ export function isAuthTouching(worktreePath: string): boolean {
 export function createPR(task: Task, worktreePath: string): string {
   const agentToken = process.env.AGENT_GITHUB_TOKEN;
   if (!agentToken) throw new Error("AGENT_GITHUB_TOKEN not set");
-  execSync("git push -u origin HEAD", { cwd: worktreePath, stdio: "inherit" });
+  const sshRemote = execSync("git remote get-url origin", { cwd: worktreePath }).toString().trim();
+  const httpsRemote = sshRemote.replace(/^git@github\.com:/, "https://github.com/");
+  const reviewerToken = execSync("gh auth token").toString().trim();
+  execSync(
+    `git push "${httpsRemote.replace("https://", `https://x-access-token:${reviewerToken}@`)}" HEAD:${task.branch}`,
+    { cwd: worktreePath }
+  );
   const base = execSync(
     "git branch -r | grep -o 'release/v[0-9.]*' | sort -V | tail -1 || echo 'release/v0.8.0'",
     { cwd: worktreePath }
