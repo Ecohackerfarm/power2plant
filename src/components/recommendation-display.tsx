@@ -1,6 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { useState } from 'react'
+import { ArrowRight } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -89,19 +90,22 @@ export function RecommendationDisplay({ result, onAccepted }: RecommendationDisp
                     })}
                   </ul>
                   {bed.hints.length > 0 && (
-                    <ul className="mt-2 space-y-0.5 border-t pt-2">
+                    <ul className="mt-2 space-y-1 border-t pt-2">
                       {bed.hints.map((hint, i) => (
-                        <li key={i} className="text-xs">
+                        <li key={i}>
                           <Link
                             href={`/plants/${hint.cropAId}/companions/${hint.cropBId}`}
-                            className="font-medium hover:underline"
+                            className="flex items-center justify-between gap-2 text-xs rounded px-1 py-0.5 -mx-1 hover:bg-muted group"
                           >
-                            {hint.pairLabel}
+                            <span>
+                              <span className="font-medium">{hint.pairLabel}</span>
+                              <span className="text-muted-foreground ml-1">
+                                —{hint.details && ` ${hint.details} ·`}{' '}
+                                <ConfidenceBadge level={hint.confidenceLevel} />
+                              </span>
+                            </span>
+                            <ArrowRight className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                           </Link>
-                          <span className="text-muted-foreground ml-1">
-                            —{hint.details && ` ${hint.details} ·`}{' '}
-                            <ConfidenceBadge level={hint.confidenceLevel} />
-                          </span>
                         </li>
                       ))}
                     </ul>

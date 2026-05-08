@@ -7,7 +7,7 @@ import { ConfidenceBadge } from '@/components/confidence-badge'
 import { getDisplayName, confidenceLabel } from '@/lib/recommend'
 
 type RelationshipRow = {
-  relId: string; type: string; reason: string | null; confidence: number
+  relId: string; type: string; reason: string | null; reasons: string[]; confidence: number
   notes: string | null; direction: string
   cropAId: string; cropAName: string; cropABotanical: string; cropACommonNames: string[]
   cropANitrogen: boolean
@@ -106,10 +106,18 @@ export default function RelationshipPage() {
           <dt className="w-32 text-muted-foreground shrink-0">Relationship</dt>
           <dd className="font-medium">{TYPE_LABELS[rel.type] ?? rel.type}</dd>
         </div>
-        {rel.reason && (
+        {(rel.reasons?.length > 0 || rel.reason) && (
           <div className="flex gap-3">
-            <dt className="w-32 text-muted-foreground shrink-0">Reason</dt>
-            <dd>{REASON_LABELS[rel.reason] ?? rel.reason}</dd>
+            <dt className="w-32 text-muted-foreground shrink-0">
+              {(rel.reasons?.length ?? 0) > 1 ? 'Reasons' : 'Reason'}
+            </dt>
+            <dd className="flex flex-wrap gap-1">
+              {(rel.reasons?.length > 0 ? rel.reasons : [rel.reason!]).map(r => (
+                <span key={r} className="inline-block bg-muted rounded px-2 py-0.5 text-xs">
+                  {REASON_LABELS[r] ?? r}
+                </span>
+              ))}
+            </dd>
           </div>
         )}
         <div className="flex gap-3">

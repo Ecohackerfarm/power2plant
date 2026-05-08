@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ArrowRight } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -112,33 +113,42 @@ export default function RelationshipsPage() {
         <>
           <div className="space-y-4">
             {relationships.map((rel) => (
-              <Card key={rel.id}>
-                <CardHeader>
-                  <div className="flex items-start justify-between gap-4">
-                    <CardTitle className="text-base">
-                      <span className="font-bold">{rel.cropA.name}</span> +{' '}
-                      <span className="font-bold">{rel.cropB.name}</span>
-                    </CardTitle>
-                    <Badge variant={rel.type === 'COMPANION' ? 'default' : 'destructive'}>
-                      {rel.type === 'COMPANION' ? 'Companion' : 'Avoid'}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {rel.reason && (
+              <Link
+                key={rel.id}
+                href={`/plants/${rel.cropA.id}/companions/${rel.cropB.id}`}
+                className="block group"
+              >
+                <Card className="transition-colors group-hover:border-foreground/30">
+                  <CardHeader>
+                    <div className="flex items-start justify-between gap-4">
+                      <CardTitle className="text-base">
+                        <span className="font-bold">{rel.cropA.name}</span> +{' '}
+                        <span className="font-bold">{rel.cropB.name}</span>
+                      </CardTitle>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Badge variant={rel.type === 'COMPANION' ? 'default' : 'destructive'}>
+                          {rel.type === 'COMPANION' ? 'Companion' : 'Avoid'}
+                        </Badge>
+                        <ArrowRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {rel.reason && (
+                      <p className="text-sm">
+                        <span className="text-muted-foreground">Reason:</span>{' '}
+                        {REASON_LABELS[rel.reason] ?? rel.reason}
+                      </p>
+                    )}
                     <p className="text-sm">
-                      <span className="text-muted-foreground">Reason:</span>{' '}
-                      {REASON_LABELS[rel.reason] ?? rel.reason}
+                      <span className="text-muted-foreground">Confidence:</span> {rel.confidence}
                     </p>
-                  )}
-                  <p className="text-sm">
-                    <span className="text-muted-foreground">Confidence:</span> {rel.confidence}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {rel.sourceCount} source{rel.sourceCount !== 1 ? 's' : ''}
-                  </p>
-                </CardContent>
-              </Card>
+                    <p className="text-sm text-muted-foreground">
+                      {rel.sourceCount} source{rel.sourceCount !== 1 ? 's' : ''}
+                    </p>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
 

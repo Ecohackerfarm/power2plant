@@ -57,6 +57,16 @@ describe('useGarden()', () => {
     expect(result.current.state.wishlist).not.toContain('crop-1')
   })
 
+  it('clearWishlist empties the wishlist', () => {
+    const { result } = renderHook(() => useGarden())
+    act(() => {
+      result.current.addToWishlist('crop-1')
+      result.current.addToWishlist('crop-2')
+      result.current.clearWishlist()
+    })
+    expect(result.current.state.wishlist).toEqual([])
+  })
+
   it('setBeds updates bedCount and bedCapacity', () => {
     const { result } = renderHook(() => useGarden())
     act(() => result.current.setBeds(5, 4))
