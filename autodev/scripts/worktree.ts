@@ -20,17 +20,12 @@ export function createWorktree(branch: string): string {
   if (branchExists) {
     execSync(`git worktree add "${path}" "${branch}"`, { stdio: "inherit" });
   } else {
-    // Branch from latest release branch so PRs only show feature changes
-    const GH_TOKEN = execSync("gh auth token", { stdio: "pipe" }).toString().trim();
-    const remote = execSync("git remote get-url origin", { stdio: "pipe" }).toString().trim()
-      .replace(/^git@github\.com:/, "https://github.com/");
-    const httpsRemote = remote.replace("https://", `https://x-access-token:${GH_TOKEN}@`);
-    execSync(`git fetch "${httpsRemote}" "refs/heads/release/v*:refs/remotes/origin/release/v*"`, { stdio: "pipe" });
+    // Branch from latest release so PRs only show feature changes, not main divergence
     const releaseBranch = execSync(
-      "git branch -r | grep -o 'release/v[0-9.]*' | sort -V | tail -1",
+      "git branch -r | grep -oP 'origin/release/v[0-9.]+' | sort -V | tail -1",
       { stdio: "pipe" }
-    ).toString().trim() || "release/v0.9.0";
-    execSync(`git worktree add "${path}" -b "${branch}" "origin/${releaseBranch}"`, { stdio: "inherit" });
+    ).toString().trim() || "origin/release/v0.9.0";
+    execSync(`git worktree add "${path}" -b "${branch}" "${releaseBranch}"`, { stdio: "inherit" });
   }
   return path;
 }
