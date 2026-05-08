@@ -3,8 +3,28 @@ import { loadState, saveState, type OrchestratorState } from "./state.js";
 import { loadTasks, getPendingTasks, type Task } from "./planner.js";
 import { createWorktree, removeWorktree, worktreePath } from "./worktree.js";
 import { runAgent, runQAReview, runImplFix, runSecurityGate, isAuthTouching, isPRApproved, createPR, createAgentDb, dropAgentDb } from "./worker.js";
-import { readFileSync, existsSync } from "fs";
+import { readFileSync, writeFileSync, unlinkSync, existsSync } from "fs";
 import { join } from "path";
+
+const LOCK_PATH = join(process.cwd(), "autodev/orchestrate/orchestrator.pid");
+
+function acquireLock(): void {
+  if (existsSync(LOCK_PATH)) {
+    const pid = parseInt(readFileSync(LOCK_PATH, "utf-8").trim(), 10);
+    try {
+      process.kill(pid, 0); // throws if process doesn't exist
+      console.error(`Orchestrator already running (PID ${pid}). Use 'status' to check, or delete ${LOCK_PATH} if stale.`);
+      process.exit(1);
+    } catch {
+      // stale lock
+      console.warn(`Removing stale lock for PID ${pid}`);
+    }
+  }
+  writeFileSync(LOCK_PATH, String(process.pid));
+  process.on("exit", () => { try { unlinkSync(LOCK_PATH); } catch {} });
+  process.on("SIGINT", () => process.exit(0));
+  process.on("SIGTERM", () => process.exit(0));
+}
 
 const cmd = process.argv[2];
 const arg = process.argv[3];
@@ -204,10 +224,12 @@ switch (cmd) {
     printStatus();
     break;
   case "run":
+    acquireLock();
     runOrchestration().catch(console.error);
     break;
   case "retry":
     if (!arg) { console.error("Usage: orchestrate retry <issue-number>"); process.exit(1); }
+    acquireLock();
     retryTask(arg).catch(console.error);
     break;
   case "logs":
@@ -215,6 +237,7 @@ switch (cmd) {
     tailLogs(arg);
     break;
   case "start":
+    acquireLock();
     startScheduled().catch(console.error);
     break;
   default:
