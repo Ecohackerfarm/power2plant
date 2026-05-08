@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import prisma from '@/lib/prisma'
+import { SOURCE_CONFIDENCE } from '@/lib/source-confidence'
 import { auth } from '@/lib/auth'
 
 const VALID_TYPES = ['COMPANION', 'AVOID'] as const
@@ -149,7 +150,7 @@ export async function POST(request: Request) {
       data: {
         relationshipId: rel.id,
         source: 'COMMUNITY',
-        confidence: 'ANECDOTAL',
+        confidence: SOURCE_CONFIDENCE[sourceType as any] ?? 'ANECDOTAL',
         notes: notes as string | undefined ?? null,
         userId: session.user.id,
       },
