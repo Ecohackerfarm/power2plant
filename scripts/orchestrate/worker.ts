@@ -122,11 +122,24 @@ export async function runImplFix(
     .replaceAll("<DATABASE_URL>", dbUrl);
   const rolePrompt = readFileSync(join(process.cwd(), `agents/${task.role}.md`), "utf-8");
   const prompt = `${shared}\n\n---\n\n${rolePrompt}\n\n---\n\nAddress QA review comments on PR #${prNumber} (issue #${task.issueNumber}: ${task.title}).\n1. Read all feedback: \`gh pr view ${prNumber} --json reviews,comments\`\n2. Fix each issue raised (tests, logic, missing coverage)\n3. Run \`pnpm test:run\` via SSH — all tests must pass\n4. Commit and push to the existing branch (do NOT create a new PR)`;
-  return spawnAgent(
+  await spawnAgent(
     model, worktreePath, prompt,
     ensureLog(task.issueNumber, `attempt-${attempt + 1}.fix-round${round + 1}.log`),
     timeoutMs
   );
+  // Safety net: commit + push any changes the agent made but didn't push
+  const dirty = execSync("git status --porcelain", { cwd: worktreePath }).toString().trim();
+  if (dirty) {
+    execSync("git add -A && git commit -m \"fix: address QA review feedback\"", { cwd: worktreePath, shell: "/bin/sh" });
+  }
+  const ahead = execSync("git rev-list @{u}..HEAD --count 2>/dev/null || echo 0", { cwd: worktreePath, shell: "/bin/sh" }).toString().trim();
+  if (parseInt(ahead) > 0) {
+    const token = execSync("gh auth token").toString().trim();
+    const sshRemote = execSync("git remote get-url origin", { cwd: worktreePath }).toString().trim();
+    const httpsRemote = sshRemote.replace(/^git@github\.com:/, "https://github.com/");
+    const branch = execSync("git branch --show-current", { cwd: worktreePath }).toString().trim();
+    execSync(`git push "${httpsRemote.replace("https://", `https://x-access-token:${token}@`)}" HEAD:${branch}`, { cwd: worktreePath });
+  }
 }
 
 export function isPRApproved(prNumber: string): boolean {
