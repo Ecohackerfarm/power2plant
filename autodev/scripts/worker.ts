@@ -196,7 +196,7 @@ export function createPR(task: Task, worktreePath: string): string {
     { cwd: worktreePath }
   ).toString().trim() || "release/v0.8.0";
   return execSync(
-    `gh pr create --base "${base}" --title "${task.title}" --body "Closes #${task.issueNumber}"`,
+    `gh pr create --base "${base}" --head "${task.branch}" --title "${task.title}" --body "Closes #${task.issueNumber}"`,
     { cwd: worktreePath, env: { ...process.env, GH_TOKEN: agentToken } }
   ).toString().trim();
 }
