@@ -13,3 +13,4 @@ deploy_keys/*_ed25519
 deploy_keys/*_ecdsa
 orchestrate/state.json
 logs/
+.claude/settings.local.json

@@ -2,7 +2,7 @@ import { loadModels, getModel } from "./models.js";
 import { loadState, saveState, type OrchestratorState } from "./state.js";
 import { loadTasks, getPendingTasks, type Task } from "./planner.js";
 import { createWorktree, removeWorktree, worktreePath } from "./worktree.js";
-import { runAgent, runQAGate, runSecurityGate, isAuthTouching, createPR } from "./worker.js";
+import { runAgent, runQAGate, runSecurityGate, isAuthTouching, createPR, createAgentDb, dropAgentDb } from "./worker.js";
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 
@@ -72,14 +72,22 @@ async function processTask(task: Task, config: ReturnType<typeof loadModels>, st
 
     try {
       console.log(`[#${task.issueNumber}] attempt ${attempt + 1}/${config.maxRetries} model=${model}`);
-      await runAgent(task.role, task, attempt, model, wtPath, timeoutMs);
+      console.log(`[#${task.issueNumber}] creating isolated DB`);
+      const dbUrl = createAgentDb(task.issueNumber);
 
-      console.log(`[#${task.issueNumber}] running QA gate`);
-      await runQAGate(task, attempt, wtPath, timeoutMs);
+      try {
+        await runAgent(task.role, task, attempt, model, wtPath, dbUrl, timeoutMs);
 
-      if (isAuthTouching(wtPath)) {
-        console.log(`[#${task.issueNumber}] running security gate`);
-        await runSecurityGate(task, attempt, wtPath, timeoutMs);
+        console.log(`[#${task.issueNumber}] running QA gate`);
+        await runQAGate(task, attempt, wtPath, dbUrl, timeoutMs);
+
+        if (isAuthTouching(wtPath)) {
+          console.log(`[#${task.issueNumber}] running security gate`);
+          await runSecurityGate(task, attempt, wtPath, dbUrl, timeoutMs);
+        }
+      } finally {
+        console.log(`[#${task.issueNumber}] dropping isolated DB`);
+        dropAgentDb(task.issueNumber);
       }
 
       const prUrl = createPR(task, wtPath);

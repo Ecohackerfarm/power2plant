@@ -1,9 +1,9 @@
 {
   "default": [
-    "openrouter/tencent/hunyuan-a13b-instruct:free",
-    "openrouter/google/gemini-2.0-flash-exp:free",
-    "openrouter/mistralai/devstral-small:free",
-    "openrouter/qwen/qwen3-235b-a22b:free"
+    "opencode/hy3-preview-free",
+    "openrouter/nousresearch/hermes-3-llama-3.1-405b:free",
+    "openrouter/meta-llama/llama-3.3-70b-instruct:free",
+    "openrouter/nvidia/nemotron-3-super-120b-a12b:free"
   ],
   "maxRetries": 3,
   "timeoutMinutes": 20,
