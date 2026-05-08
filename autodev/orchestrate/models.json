@@ -4,6 +4,6 @@
   ],
   "maxRetries": 2,
   "timeoutMinutes": 25,
-  "maxParallel": 3,
+  "maxParallel": 2,
   "schedule": "0 */6 * * *"
 }

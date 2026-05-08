@@ -90,6 +90,19 @@ async function processTask(task: Task, config: ReturnType<typeof loadModels>, st
       wtPath = worktreePath(branch);
     }
 
+    if (attempt > 0) {
+      // Clean up any state left by the previous failed attempt before retrying
+      const { execSync: exec } = await import("child_process");
+      try {
+        exec(`find "${wtPath}/.git" -name "*.lock" -delete 2>/dev/null || true`, { shell: "/bin/sh" });
+        exec(`git -C "${wtPath}" checkout -- . 2>/dev/null || true`, { shell: "/bin/sh" });
+        exec(`git -C "${wtPath}" clean -fd 2>/dev/null || true`, { shell: "/bin/sh" });
+        console.log(`[#${task.issueNumber}] worktree reset for retry`);
+      } catch {
+        // non-fatal
+      }
+    }
+
     try {
       console.log(`[#${task.issueNumber}] attempt ${attempt + 1}/${config.maxRetries} model=${model}`);
       console.log(`[#${task.issueNumber}] creating isolated DB`);
@@ -121,7 +134,7 @@ async function processTask(task: Task, config: ReturnType<typeof loadModels>, st
       const maxReviewRounds = 3;
       for (let round = 0; round < maxReviewRounds; round++) {
         console.log(`[#${task.issueNumber}] QA review round ${round + 1}/${maxReviewRounds}`);
-        await runQAReview(task, attempt, round, wtPath, dbUrl, prNumber, timeoutMs);
+        await runQAReview(task, attempt, round, model, wtPath, dbUrl, prNumber, timeoutMs);
         if (isPRApproved(prNumber)) {
           console.log(`[#${task.issueNumber}] PR approved`);
           break;

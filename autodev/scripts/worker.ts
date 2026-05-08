@@ -108,10 +108,10 @@ export async function runAgent(
 
 export async function runQAReview(
   task: Task, attempt: number, round: number,
-  worktreePath: string, dbUrl: string, prNumber: string, timeoutMs: number
+  model: string, worktreePath: string, dbUrl: string, prNumber: string, timeoutMs: number
 ): Promise<void> {
   return spawnAgent(
-    "opencode/hy3-preview-free", worktreePath,
+    model, worktreePath,
     buildGatePrompt("qa-test-reviewer.md", task, worktreePath, dbUrl,
       `Review PR #${prNumber} for issue #${task.issueNumber}: ${task.title}. Approve if correct and tests exist. Request changes with specific comments if not.`),
     ensureLog(task.issueNumber, `attempt-${attempt + 1}.qa-round${round + 1}.log`),
