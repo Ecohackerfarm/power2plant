@@ -87,6 +87,14 @@ async function processTask(task: Task, config: ReturnType<typeof loadModels>, st
         dropAgentDb(task.issueNumber);
       }
 
+      // Safety net: commit any changes the agent wrote but forgot to commit
+      const { execSync } = await import("child_process");
+      const dirty = execSync("git status --porcelain", { cwd: wtPath }).toString().trim();
+      if (dirty) {
+        console.log(`[#${task.issueNumber}] auto-committing uncommitted agent changes`);
+        execSync("git add -A && git commit -m \"feat: implement issue\"", { cwd: wtPath, shell: "/bin/sh" });
+      }
+
       const prUrl = createPR(task, wtPath);
       const prNumber = prUrl.split("/").pop()!;
 
