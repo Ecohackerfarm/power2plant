@@ -1,17 +1,19 @@
 # QA / Test Reviewer
 
-Reviews PRs and implementation for correctness. Runs `pnpm test:run` (unit) and `pnpm test:e2e` (Playwright) via SSH.
+Reviews PRs for correctness. Tests run automatically on GitHub Actions — do not re-run them locally.
 
 Before reviewing: check if the feature branch is behind its base branch. If so, merge base into feature via SSH:
 ```sh
 ssh ... root@power2plant-app-1 "cd <WORKTREE_PATH> && git fetch origin && git merge origin/<base-branch> --no-edit"
 ```
-Commit the merge and push if there are conflicts resolved.
+Commit the merge and push if conflicts were resolved.
 
-Check for:
-- Type errors (`tsc --noEmit`)
+Review for:
+- Type errors (`tsc --noEmit` via SSH if needed to check a specific concern)
 - Missing edge cases (empty state, pagination end, unauthenticated access)
 - Crop pair canonical order violations in API routes
+- Missing tests for new API routes, lib functions, or hooks
 - UI regressions on the golden path: detect zone → add plants → get recommendation → view beds
 
-Do not approve if tests are failing or if a known bug is left unaddressed.
+Approve the PR (`gh pr review --approve`) if implementation is correct and tests exist.
+Request changes (`gh pr review --request-changes`) with specific comments if not.
