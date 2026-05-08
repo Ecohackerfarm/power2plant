@@ -80,7 +80,7 @@ async function processTask(task: Task, config: ReturnType<typeof loadModels>, st
 
         if (isAuthTouching(wtPath)) {
           console.log(`[#${task.issueNumber}] running security gate`);
-          await runSecurityGate(task, attempt, wtPath, dbUrl, timeoutMs);
+          await runSecurityGate(task, attempt, model, wtPath, dbUrl, timeoutMs);
         }
       } finally {
         console.log(`[#${task.issueNumber}] dropping isolated DB`);

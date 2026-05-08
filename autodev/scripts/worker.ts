@@ -38,7 +38,7 @@ const AUTH_PATTERNS = [
 
 function buildPrompt(role: string, task: Task, worktreePath: string, dbUrl: string): string {
   const sharedPath = join(process.cwd(), "autodev/agents/_shared.md");
-  const rolePath = join(process.cwd(), `agents/${role}.md`);
+  const rolePath = join(process.cwd(), `autodev/agents/${role}.md`);
   const shared = readFileSync(sharedPath, "utf-8")
     .replaceAll("<WORKTREE_PATH>", worktreePath)
     .replaceAll("<DATABASE_URL>", dbUrl);
@@ -52,7 +52,7 @@ function buildGatePrompt(agentFile: string, task: Task, worktreePath: string, db
   const shared = readFileSync(sharedPath, "utf-8")
     .replaceAll("<WORKTREE_PATH>", worktreePath)
     .replaceAll("<DATABASE_URL>", dbUrl);
-  const role = readFileSync(join(process.cwd(), `agents/${agentFile}`), "utf-8");
+  const role = readFileSync(join(process.cwd(), `autodev/agents/${agentFile}`), "utf-8");
   return `${shared}\n\n---\n\n${role}\n\n---\n\n${instruction}`;
 }
 
@@ -120,7 +120,7 @@ export async function runImplFix(
   const shared = readFileSync(join(process.cwd(), "autodev/agents/_shared.md"), "utf-8")
     .replaceAll("<WORKTREE_PATH>", worktreePath)
     .replaceAll("<DATABASE_URL>", dbUrl);
-  const rolePrompt = readFileSync(join(process.cwd(), `agents/${task.role}.md`), "utf-8");
+  const rolePrompt = readFileSync(join(process.cwd(), `autodev/agents/${task.role}.md`), "utf-8");
   const prompt = `${shared}\n\n---\n\n${rolePrompt}\n\n---\n\nAddress QA review comments on PR #${prNumber} (issue #${task.issueNumber}: ${task.title}).\n1. Read all feedback: \`gh pr view ${prNumber} --json reviews,comments\`\n2. Fix each issue raised (tests, logic, missing coverage)\n3. Run \`pnpm test:run\` via SSH — all tests must pass\n4. Commit and push to the existing branch (do NOT create a new PR)`;
   // Ensure worktree is on the correct feature branch before agent runs
   const currentBranch = execSync("git branch --show-current", { cwd: worktreePath }).toString().trim();
@@ -160,9 +160,9 @@ export function isPRApproved(prNumber: string): boolean {
   }
 }
 
-export async function runSecurityGate(task: Task, attempt: number, worktreePath: string, dbUrl: string, timeoutMs: number): Promise<void> {
+export async function runSecurityGate(task: Task, attempt: number, model: string, worktreePath: string, dbUrl: string, timeoutMs: number): Promise<void> {
   return spawnAgent(
-    "opencode/hy3-preview-free", worktreePath,
+    model, worktreePath,
     buildGatePrompt("security-auth-reviewer.md", task, worktreePath, dbUrl,
       `Review auth and security for issue #${task.issueNumber}: ${task.title}.`),
     logPath(task.issueNumber, attempt) + ".security.log",
