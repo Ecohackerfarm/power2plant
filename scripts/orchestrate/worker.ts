@@ -5,6 +5,8 @@ import type { Task } from "./planner.js";
 
 const SSH = `ssh -i /home/agent/.ssh/power2plant_dev -p 2222 -o StrictHostKeyChecking=no root@power2plant-app-1`;
 const PGENV = `PGPASSWORD=power2plant`;
+const PG_HOST = `db-dev`;
+const PG_USER = `power2plant`;
 
 function sshExec(cmd: string): string {
   return execSync(`${SSH} "${cmd.replace(/"/g, '\\"')}"`).toString();
@@ -12,16 +14,17 @@ function sshExec(cmd: string): string {
 
 export function createAgentDb(issueNumber: number): string {
   const dbName = `power2plant_agent_${issueNumber}`;
-  const dbUrl = `postgresql://power2plant:power2plant@db:5432/${dbName}`;
-  sshExec(`${PGENV} createdb -h db -U power2plant ${dbName}`);
-  sshExec(`${PGENV} psql -h db -U power2plant ${dbName} < /app/db/seed.sql`);
-  return dbUrl;
+  const seedPath = join(process.cwd(), "db/seed.sql");
+  execSync(`${PGENV} createdb -h ${PG_HOST} -U ${PG_USER} ${dbName}`);
+  execSync(`${PGENV} psql -h ${PG_HOST} -U ${PG_USER} ${dbName} < ${seedPath}`);
+  // agents connect via internal container hostname
+  return `postgresql://${PG_USER}:power2plant@db:5432/${dbName}`;
 }
 
 export function dropAgentDb(issueNumber: number): void {
   const dbName = `power2plant_agent_${issueNumber}`;
   try {
-    sshExec(`${PGENV} dropdb -h db -U power2plant --if-exists ${dbName}`);
+    execSync(`${PGENV} dropdb -h ${PG_HOST} -U ${PG_USER} --if-exists ${dbName}`);
   } catch {
     // best-effort
   }
