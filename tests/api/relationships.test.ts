@@ -83,10 +83,11 @@ describe('POST /api/relationships', () => {
     expect(res.status).toBe(429)
   })
 
-  it('returns 201 on happy path', async () => {
+  it('returns 201 on happy path without sourceType', async () => {
     vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as any)
     vi.mocked(prisma.crop.findMany).mockResolvedValue([{ id: 'crop-a' }, { id: 'crop-b' }] as any)
     vi.mocked(prisma.relationshipSource.findFirst).mockResolvedValue(null)
+    capturedSourceData = null
     vi.mocked(prisma.$transaction).mockImplementation(async (fn: any) => {
       const mockTx = {
         cropRelationship: {
@@ -94,7 +95,7 @@ describe('POST /api/relationships', () => {
           update: vi.fn().mockResolvedValue({}),
         },
         relationshipSource: {
-          create: vi.fn().mockResolvedValue({ id: 'src-1' }),
+          create: vi.fn().mockImplementation((data) => { capturedSourceData = data; return { id: 'src-1' } }),
           findMany: vi.fn().mockResolvedValue([{ confidence: 'ANECDOTAL' }]),
         },
       }
@@ -105,5 +106,7 @@ describe('POST /api/relationships', () => {
     const body = await res.json()
     expect(body.id).toBe('rel-1')
     expect(body.sourceId).toBe('src-1')
+  })
+
   })
 })

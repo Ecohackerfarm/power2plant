@@ -69,7 +69,7 @@ export async function POST(request: Request) {
   const session = await getSession()
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  let body: { cropAId?: unknown; cropBId?: unknown; type?: unknown; reason?: unknown; notes?: unknown }
+  let body: { cropAId?: unknown; cropBId?: unknown; type?: unknown; reason?: unknown; notes?: unknown; sourceType?: unknown }
   try {
     body = await request.json()
   } catch {
@@ -150,7 +150,8 @@ export async function POST(request: Request) {
       data: {
         relationshipId: rel.id,
         source: 'COMMUNITY',
-        confidence: SOURCE_CONFIDENCE[sourceType as any] ?? 'ANECDOTAL',
+        sourceType: (body as any).sourceType ?? undefined,
+        confidence: SOURCE_CONFIDENCE[(body as any).sourceType as any] ?? 'ANECDOTAL',
         notes: notes as string | undefined ?? null,
         userId: session.user.id,
       },
