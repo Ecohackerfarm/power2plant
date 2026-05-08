@@ -28,8 +28,16 @@ services:
       db:
         condition: service_healthy
     networks:
-      - default
-      - power2plant-dev
+      default: {}
+      power2plant-dev:
+        aliases:
+          - app-dev
+  db:
+    networks:
+      default: {}
+      power2plant-dev:
+        aliases:
+          - db-dev
 
 networks:
   power2plant-dev:
