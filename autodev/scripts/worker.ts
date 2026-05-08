@@ -3,7 +3,7 @@ import { readFileSync, mkdirSync, createWriteStream } from "fs";
 import { join } from "path";
 import type { Task } from "./planner.js";
 
-const SSH = `ssh -i /home/agent/.ssh/power2plant_dev -p 2222 -o StrictHostKeyChecking=no root@power2plant-app-1`;
+const SSH = `ssh -i /home/agent/.ssh/power2plant_dev -p 2222 -o StrictHostKeyChecking=no node@power2plant-app-1`;
 const PGENV = `PGPASSWORD=power2plant`;
 const PG_HOST = `db-dev`;
 const PG_USER = `power2plant`;

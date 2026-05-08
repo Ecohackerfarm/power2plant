@@ -13,11 +13,11 @@ RUN apk add --no-cache \
     openssh
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser
-# Agent SSH access — public key only, no password auth
-RUN mkdir -p /root/.ssh && chmod 700 /root/.ssh
-COPY deploy_keys/agent.pub /root/.ssh/authorized_keys
-RUN chmod 600 /root/.ssh/authorized_keys && \
-    printf '\nPort 2222\nPermitRootLogin prohibit-password\nPasswordAuthentication no\nStrictModes no\n' >> /etc/ssh/sshd_config
+# Agent SSH access — node user (uid 1000 = agent machine uid, avoids permission issues on shared volume)
+RUN mkdir -p /home/node/.ssh && chmod 700 /home/node/.ssh && chown node:node /home/node/.ssh
+COPY deploy_keys/agent.pub /home/node/.ssh/authorized_keys
+RUN chmod 600 /home/node/.ssh/authorized_keys && chown node:node /home/node/.ssh/authorized_keys && \
+    printf '\nPort 2222\nPasswordAuthentication no\nStrictModes no\n' >> /etc/ssh/sshd_config
 RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./

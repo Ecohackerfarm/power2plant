@@ -36,8 +36,8 @@ export function removeWorktree(branch: string): void {
     execSync(`git worktree remove --force "${path}"`, { stdio: "pipe" });
   } catch {
     if (existsSync(path)) {
-      // node_modules may be owned by root (agent ran pnpm in container) — delete via SSH
-      const SSH = `ssh -i /home/agent/.ssh/power2plant_dev -p 2222 -o StrictHostKeyChecking=no root@power2plant-app-1`;
+      // delete via SSH as node user (uid 1000 owns files created in container)
+      const SSH = `ssh -i /home/agent/.ssh/power2plant_dev -p 2222 -o StrictHostKeyChecking=no node@power2plant-app-1`;
       try { execSync(`${SSH} "rm -rf '${path}'"`, { stdio: "pipe" }); } catch { rmSync(path, { recursive: true, force: true }); }
       execSync(`git worktree prune`, { stdio: "pipe" });
     }
