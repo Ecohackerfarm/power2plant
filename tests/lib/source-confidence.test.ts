@@ -1,14 +1,23 @@
-import { expect, test } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { SOURCE_CONFIDENCE } from '@/lib/source-confidence'
-import type { SourceClassification, ConfidenceLevel } from '@prisma/client'
 
-test('SOURCE_CONFIDENCE maps each SourceClassification to correct ConfidenceLevel', () => {
-  const expected: Record<SourceClassification, ConfidenceLevel> = {
-    SCIENTIFIC_PAPER: 'PEER_REVIEWED',
-    ACADEMIC_RESOURCE: 'OBSERVED',
-    GARDENING_GUIDE: 'TRADITIONAL',
-    BLOG_FORUM: 'ANECDOTAL',
-    PERSONAL_OBSERVATION: 'ANECDOTAL',
-  }
-  expect(SOURCE_CONFIDENCE).toEqual(expected)
+describe('SOURCE_CONFIDENCE', () => {
+  it('maps SCIENTIFIC_PAPER to PEER_REVIEWED', () => {
+    expect(SOURCE_CONFIDENCE.SCIENTIFIC_PAPER).toBe('PEER_REVIEWED')
+  })
+  it('maps ACADEMIC_RESOURCE to OBSERVED', () => {
+    expect(SOURCE_CONFIDENCE.ACADEMIC_RESOURCE).toBe('OBSERVED')
+  })
+  it('maps GARDENING_GUIDE to TRADITIONAL', () => {
+    expect(SOURCE_CONFIDENCE.GARDENING_GUIDE).toBe('TRADITIONAL')
+  })
+  it('maps BLOG_FORUM to ANECDOTAL', () => {
+    expect(SOURCE_CONFIDENCE.BLOG_FORUM).toBe('ANECDOTAL')
+  })
+  it('maps PERSONAL_OBSERVATION to ANECDOTAL', () => {
+    expect(SOURCE_CONFIDENCE.PERSONAL_OBSERVATION).toBe('ANECDOTAL')
+  })
+  it('covers all SourceClassification values', () => {
+    expect(Object.keys(SOURCE_CONFIDENCE)).toHaveLength(5)
+  })
 })
