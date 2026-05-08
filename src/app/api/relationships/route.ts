@@ -155,8 +155,8 @@ export async function POST(request: Request) {
       data: {
         relationshipId: rel.id,
         source: 'COMMUNITY',
-        sourceType: (body as any).sourceType ?? undefined,
-        confidence: SOURCE_CONFIDENCE[(body as any).sourceType as any] ?? 'ANECDOTAL',
+        sourceType: sourceType as (typeof VALID_SOURCE_TYPES)[number] | undefined ?? undefined,
+        confidence: SOURCE_CONFIDENCE[sourceType as keyof typeof SOURCE_CONFIDENCE] ?? 'ANECDOTAL',
         notes: notes as string | undefined ?? null,
         userId: session.user.id,
       },
