@@ -100,7 +100,7 @@ async function processTask(task: Task, config: ReturnType<typeof loadModels>, st
         }
         if (round < maxReviewRounds - 1) {
           console.log(`[#${task.issueNumber}] addressing QA feedback (round ${round + 1})`);
-          await runImplFix(task, attempt, round, wtPath, dbUrl, prNumber, timeoutMs);
+          await runImplFix(task, attempt, round, model, wtPath, dbUrl, prNumber, timeoutMs);
         } else {
           console.log(`[#${task.issueNumber}] max review rounds reached — PR left open for manual review`);
         }

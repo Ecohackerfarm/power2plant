@@ -115,9 +115,8 @@ export async function runQAReview(
 
 export async function runImplFix(
   task: Task, attempt: number, round: number,
-  worktreePath: string, dbUrl: string, prNumber: string, timeoutMs: number
+  model: string, worktreePath: string, dbUrl: string, prNumber: string, timeoutMs: number
 ): Promise<void> {
-  const model = "opencode/hy3-preview-free";
   const shared = readFileSync(join(process.cwd(), "agents/_shared.md"), "utf-8")
     .replaceAll("<WORKTREE_PATH>", worktreePath)
     .replaceAll("<DATABASE_URL>", dbUrl);
