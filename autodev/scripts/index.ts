@@ -232,6 +232,31 @@ async function startScheduled(): Promise<void> {
   process.stdin.resume();
 }
 
+function initRelease(version: string): void {
+  const { execSync } = require("child_process");
+  const branch = `release/v${version}`;
+
+  // Create branch from current main and push
+  execSync(`git checkout main && git pull origin main`, { stdio: "inherit" });
+  execSync(`git checkout -b "${branch}"`, { stdio: "inherit" });
+  execSync(`git push origin "${branch}"`, { stdio: "inherit" });
+  console.log(`Branch ${branch} created and pushed.`);
+
+  // Open PR to main if one doesn't already exist
+  const existing = execSync(
+    `gh pr list --base main --head "${branch}" --json number --jq '.[0].number'`
+  ).toString().trim();
+  if (existing && existing !== "null") {
+    console.log(`PR to main already exists: #${existing}`);
+    return;
+  }
+  const prUrl = execSync(
+    `gh pr create --base main --head "${branch}" --title "release: v${version}" --body "Release branch for v${version}. Merging feature branches here — CI runs on each merge."`,
+    { stdio: ["pipe", "pipe", "inherit"] }
+  ).toString().trim();
+  console.log(`PR to main opened: ${prUrl}`);
+}
+
 switch (cmd) {
   case "status":
     printStatus();
@@ -253,6 +278,10 @@ switch (cmd) {
     acquireLock();
     startScheduled().catch(console.error);
     break;
+  case "release":
+    if (!arg) { console.error("Usage: orchestrate release <version>  (e.g. 1.0.0)"); process.exit(1); }
+    initRelease(arg);
+    break;
   default:
-    console.log("Usage: orchestrate <status|run|retry <issue>|logs <issue>|start>");
+    console.log("Usage: orchestrate <status|run|retry <issue>|logs <issue>|start|release <version>>");
 }
