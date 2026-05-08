@@ -15,5 +15,8 @@ Review for:
 - Missing tests for new API routes, lib functions, or hooks
 - UI regressions on the golden path: detect zone → add plants → get recommendation → view beds
 
-Approve the PR (`gh pr review --approve`) if implementation is correct and tests exist.
-Request changes (`gh pr review --request-changes`) with specific comments if not.
+Approve or request changes using the reviewer account (unset GH_TOKEN so the system gh credentials are used):
+```sh
+GH_TOKEN="" gh pr review <number> --approve
+GH_TOKEN="" gh pr review <number> --request-changes --body "<reason>"
+```

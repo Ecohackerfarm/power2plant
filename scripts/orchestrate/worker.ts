@@ -63,12 +63,14 @@ function logPath(issueNumber: number, attempt: number): string {
 }
 
 function spawnAgent(model: string, worktreePath: string, prompt: string, log: string, timeoutMs: number): Promise<void> {
+  const agentToken = process.env.AGENT_GITHUB_TOKEN;
+  if (!agentToken) throw new Error("AGENT_GITHUB_TOKEN not set");
   const out = createWriteStream(log, { flags: "w" });
   return new Promise((resolve, reject) => {
     const proc = spawn(
       "opencode",
       ["run", "--model", model, "--dangerously-skip-permissions", "--dir", worktreePath, prompt],
-      { stdio: ["ignore", "pipe", "pipe"] }
+      { stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, GH_TOKEN: agentToken } }
     );
     proc.stdout.pipe(out);
     proc.stderr.pipe(out);
@@ -126,6 +128,8 @@ export function isAuthTouching(worktreePath: string): boolean {
 }
 
 export function createPR(task: Task, worktreePath: string): string {
+  const agentToken = process.env.AGENT_GITHUB_TOKEN;
+  if (!agentToken) throw new Error("AGENT_GITHUB_TOKEN not set");
   execSync("git push -u origin HEAD", { cwd: worktreePath, stdio: "inherit" });
   const base = execSync(
     "git branch -r | grep -o 'release/v[0-9.]*' | sort -V | tail -1 || echo 'release/v0.8.0'",
@@ -133,6 +137,6 @@ export function createPR(task: Task, worktreePath: string): string {
   ).toString().trim() || "release/v0.8.0";
   return execSync(
     `gh pr create --base "${base}" --title "${task.title}" --body "Closes #${task.issueNumber}"`,
-    { cwd: worktreePath }
+    { cwd: worktreePath, env: { ...process.env, GH_TOKEN: agentToken } }
   ).toString().trim();
 }
