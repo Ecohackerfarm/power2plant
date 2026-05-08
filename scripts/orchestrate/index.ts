@@ -2,7 +2,7 @@ import { loadModels, getModel } from "./models.js";
 import { loadState, saveState, type OrchestratorState } from "./state.js";
 import { loadTasks, getPendingTasks, type Task } from "./planner.js";
 import { createWorktree, removeWorktree, worktreePath } from "./worktree.js";
-import { runAgent, runQAGate, runSecurityGate, isAuthTouching, createPR } from "./worker.js";
+import { runAgent, runQAGate, runSecurityGate, isAuthTouching, createPR, detectNewMigrations, snapshotDb, applyMigrations, restoreDb } from "./worker.js";
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 
@@ -74,12 +74,27 @@ async function processTask(task: Task, config: ReturnType<typeof loadModels>, st
       console.log(`[#${task.issueNumber}] attempt ${attempt + 1}/${config.maxRetries} model=${model}`);
       await runAgent(task.role, task, attempt, model, wtPath, timeoutMs);
 
-      console.log(`[#${task.issueNumber}] running QA gate`);
-      await runQAGate(task, attempt, wtPath, timeoutMs);
+      const migrations = detectNewMigrations(wtPath);
+      let snapFile: string | null = null;
+      if (migrations.length > 0) {
+        console.log(`[#${task.issueNumber}] migrations detected: ${migrations.join(", ")} — snapshotting DB`);
+        snapFile = snapshotDb(task.issueNumber);
+        applyMigrations(wtPath);
+      }
 
-      if (isAuthTouching(wtPath)) {
-        console.log(`[#${task.issueNumber}] running security gate`);
-        await runSecurityGate(task, attempt, wtPath, timeoutMs);
+      try {
+        console.log(`[#${task.issueNumber}] running QA gate`);
+        await runQAGate(task, attempt, wtPath, timeoutMs);
+
+        if (isAuthTouching(wtPath)) {
+          console.log(`[#${task.issueNumber}] running security gate`);
+          await runSecurityGate(task, attempt, wtPath, timeoutMs);
+        }
+      } finally {
+        if (snapFile) {
+          console.log(`[#${task.issueNumber}] restoring DB`);
+          restoreDb(snapFile);
+        }
       }
 
       const prUrl = createPR(task, wtPath);
