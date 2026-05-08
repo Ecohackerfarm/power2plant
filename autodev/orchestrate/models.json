@@ -1,0 +1,12 @@
+{
+  "default": [
+    "claude-haiku-4-5-20251001",
+    "openrouter/google/gemini-2.5-flash",
+    "openrouter/openai/gpt-4o-mini",
+    "openrouter/openai/gpt-oss-120b:free"
+  ],
+  "maxRetries": 3,
+  "timeoutMinutes": 25,
+  "maxParallel": 3,
+  "schedule": "0 */6 * * *"
+}

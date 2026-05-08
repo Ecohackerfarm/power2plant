@@ -11,7 +11,7 @@ export interface Task {
 }
 
 export function loadTasks(): Task[] {
-  const path = join(process.cwd(), "orchestrate/tasks.json");
+  const path = join(process.cwd(), "autodev/orchestrate/tasks.json");
   return JSON.parse(readFileSync(path, "utf-8")) as Task[];
 }
 

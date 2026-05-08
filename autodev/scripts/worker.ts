@@ -37,7 +37,7 @@ const AUTH_PATTERNS = [
 ];
 
 function buildPrompt(role: string, task: Task, worktreePath: string, dbUrl: string): string {
-  const sharedPath = join(process.cwd(), "agents/_shared.md");
+  const sharedPath = join(process.cwd(), "autodev/agents/_shared.md");
   const rolePath = join(process.cwd(), `agents/${role}.md`);
   const shared = readFileSync(sharedPath, "utf-8")
     .replaceAll("<WORKTREE_PATH>", worktreePath)
@@ -48,7 +48,7 @@ function buildPrompt(role: string, task: Task, worktreePath: string, dbUrl: stri
 }
 
 function buildGatePrompt(agentFile: string, task: Task, worktreePath: string, dbUrl: string, instruction: string): string {
-  const sharedPath = join(process.cwd(), "agents/_shared.md");
+  const sharedPath = join(process.cwd(), "autodev/agents/_shared.md");
   const shared = readFileSync(sharedPath, "utf-8")
     .replaceAll("<WORKTREE_PATH>", worktreePath)
     .replaceAll("<DATABASE_URL>", dbUrl);
@@ -57,7 +57,7 @@ function buildGatePrompt(agentFile: string, task: Task, worktreePath: string, db
 }
 
 function ensureLog(issueNumber: number, filename: string): string {
-  const dir = join(process.cwd(), "logs", String(issueNumber));
+  const dir = join(process.cwd(), "autodev/logs", String(issueNumber));
   mkdirSync(dir, { recursive: true });
   return join(dir, filename);
 }
@@ -117,7 +117,7 @@ export async function runImplFix(
   task: Task, attempt: number, round: number,
   model: string, worktreePath: string, dbUrl: string, prNumber: string, timeoutMs: number
 ): Promise<void> {
-  const shared = readFileSync(join(process.cwd(), "agents/_shared.md"), "utf-8")
+  const shared = readFileSync(join(process.cwd(), "autodev/agents/_shared.md"), "utf-8")
     .replaceAll("<WORKTREE_PATH>", worktreePath)
     .replaceAll("<DATABASE_URL>", dbUrl);
   const rolePrompt = readFileSync(join(process.cwd(), `agents/${task.role}.md`), "utf-8");

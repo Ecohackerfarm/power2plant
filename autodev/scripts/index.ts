@@ -58,7 +58,7 @@ async function processTask(task: Task, config: ReturnType<typeof loadModels>, st
       modelUsed: model,
       pr: null,
       worktree: worktreePath(branch),
-      lastLog: `logs/${key}/attempt-${attempt + 1}.log`,
+      lastLog: `autodev/logs/${key}/attempt-${attempt + 1}.log`,
     };
     saveState(state);
 
@@ -121,7 +121,7 @@ async function processTask(task: Task, config: ReturnType<typeof loadModels>, st
       } else {
         state.tasks[key] = { ...state.tasks[key], status: "failed", worktree: wtPath };
         saveState(state);
-        console.error(`[#${task.issueNumber}] all retries exhausted — inspect logs/${key}/`);
+        console.error(`[#${task.issueNumber}] all retries exhausted — inspect autodev/logs/${key}/`);
       }
     }
   }
@@ -149,7 +149,7 @@ function printStatus(): void {
 
   const failed = Object.values(state.tasks).filter((t) => t.status === "failed");
   if (failed.length > 0) {
-    console.log(`\nFailed: ${failed.length} task(s). Inspect logs/<issue>/ for details.`);
+    console.log(`\nFailed: ${failed.length} task(s). Inspect autodev/logs/<issue>/ for details.`);
   }
 }
 
@@ -170,7 +170,7 @@ async function retryTask(issueNumber: string): Promise<void> {
 
 function tailLogs(issueNumber: string): void {
   const { execSync } = require("child_process");
-  const dir = join(process.cwd(), "logs", issueNumber);
+  const dir = join(process.cwd(), "autodev/logs", issueNumber);
   if (!existsSync(dir)) {
     console.error(`No logs found for issue #${issueNumber}`);
     process.exit(1);
