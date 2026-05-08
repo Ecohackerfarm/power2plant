@@ -70,14 +70,17 @@ export async function POST(request: Request) {
   const session = await getSession()
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  let body: { cropAId?: unknown; cropBId?: unknown; type?: unknown; reason?: unknown; notes?: unknown; sourceType?: unknown }
+  let body: {
+    cropAId?: unknown; cropBId?: unknown; type?: unknown; reason?: unknown; notes?: unknown;
+    sourceType?: unknown; sources?: unknown; sourceTypeOverrides?: unknown; evidenceLevel?: unknown;
+  }
   try {
     body = await request.json()
   } catch {
     return NextResponse.json({ error: 'invalid JSON' }, { status: 400 })
   }
 
-  const { cropAId, cropBId, type, reason, notes } = body
+const { cropAId, cropBId, type, reason, notes, sourceType, sources, sourceTypeOverrides, evidenceLevel } = body
 
   if (typeof cropAId !== 'string' || cropAId.trim() === '') {
     return NextResponse.json({ error: 'cropAId must be a non-empty string' }, { status: 400 })
@@ -97,9 +100,17 @@ export async function POST(request: Request) {
   if (notes !== undefined && (typeof notes !== 'string' || notes.length > 500)) {
     return NextResponse.json({ error: 'notes must be a string of at most 500 chars' }, { status: 400 })
   }
-  const { sourceType } = body
   if (sourceType !== undefined && !VALID_SOURCE_TYPES.includes(sourceType as (typeof VALID_SOURCE_TYPES)[number])) {
     return NextResponse.json({ error: 'invalid sourceType' }, { status: 400 })
+  }
+  if (evidenceLevel !== undefined && !['ANECDOTAL', 'TRADITIONAL', 'OBSERVED', 'PEER_REVIEWED'].includes(evidenceLevel as string)) {
+    return NextResponse.json({ error: 'invalid evidenceLevel' }, { status: 400 })
+  }
+  if (sources !== undefined && (!Array.isArray(sources) || sources.some(s => typeof s !== 'string'))) {
+    return NextResponse.json({ error: 'sources must be an array of strings' }, { status: 400 })
+  }
+  if (sourceTypeOverrides !== undefined && (typeof sourceTypeOverrides !== 'object' || sourceTypeOverrides === null)) {
+    return NextResponse.json({ error: 'sourceTypeOverrides must be an object' }, { status: 400 })
   }
 
   // Verify both crops exist
@@ -135,7 +146,7 @@ export async function POST(request: Request) {
     )
   }
 
-  // Upsert relationship + create source in transaction
+  // Upsert relationship + create sources in transaction
   const result = await prisma.$transaction(async (tx) => {
     const rel = await tx.cropRelationship.upsert({
       where: { cropAId_cropBId: { cropAId: canonA, cropBId: canonB } },
@@ -151,16 +162,115 @@ export async function POST(request: Request) {
       update: {},
     })
 
-    const source = await tx.relationshipSource.create({
-      data: {
-        relationshipId: rel.id,
-        source: 'COMMUNITY',
-        sourceType: sourceType as (typeof VALID_SOURCE_TYPES)[number] | undefined ?? undefined,
-        confidence: SOURCE_CONFIDENCE[sourceType as keyof typeof SOURCE_CONFIDENCE] ?? 'ANECDOTAL',
-        notes: notes as string | undefined ?? null,
-        userId: session.user.id,
-      },
-    })
+const sourceUrls = (sources as string[] | undefined) ?? []
+    const overrides = (sourceTypeOverrides as Record<string, string> | undefined) ?? {}
+
+    const createdSources = []
+    for (let i = 0; i < sourceUrls.length; i++) {
+      const url = sourceUrls[i]
+      if (!url || url.trim() === '') continue
+      const effectiveSourceType = (overrides[i] ?? null) as (typeof VALID_SOURCE_TYPES)[number] | null
+      const src = await tx.relationshipSource.create({
+        data: {
+          relationshipId: rel.id,
+          source: 'COMMUNITY',
+          sourceType: effectiveSourceType,
+          confidence: effectiveSourceType
+            ? (SOURCE_CONFIDENCE[effectiveSourceType as keyof typeof SOURCE_CONFIDENCE] ?? 'ANECDOTAL')
+            : 'ANECDOTAL',
+          url: url.trim(),
+          notes: notes as string | undefined ?? null,
+          userId: session.user.id,
+        },
+      })
+      createdSources.push(src)
+    }
+
+    // Backward compat: if sourceType was provided directly (no sources array)
+    if (createdSources.length === 0 && sourceType !== undefined) {
+      const src = await tx.relationshipSource.create({
+        data: {
+          relationshipId: rel.id,
+          source: 'COMMUNITY',
+          sourceType: sourceType as (typeof VALID_SOURCE_TYPES)[number],
+          confidence: SOURCE_CONFIDENCE[sourceType as keyof typeof SOURCE_CONFIDENCE] ?? 'ANECDOTAL',
+          notes: notes as string | undefined ?? null,
+          userId: session.user.id,
+        },
+      })
+      createdSources.push(src)
+    }
+
+    // If no URL sources but evidenceLevel was provided, create a single source with that level
+    if (createdSources.length === 0 && evidenceLevel) {
+      const src = await tx.relationshipSource.create({
+        data: {
+          relationshipId: rel.id,
+          source: 'COMMUNITY',
+          confidence: evidenceLevel as 'ANECDOTAL' | 'TRADITIONAL' | 'OBSERVED' | 'PEER_REVIEWED',
+          notes: notes as string | undefined ?? null,
+          userId: session.user.id,
+        },
+      })
+      createdSources.push(src)
+    }
+
+    // Fallback: always create at least one source
+    if (createdSources.length === 0) {
+      const src = await tx.relationshipSource.create({
+        data: {
+          relationshipId: rel.id,
+          source: 'COMMUNITY',
+          confidence: 'ANECDOTAL',
+          notes: notes as string | undefined ?? null,
+          userId: session.user.id,
+        },
+      })
+      createdSources.push(src)
+    }
+
+    // Backward compat: if sourceType was provided directly (no sources array)
+    if (createdSources.length === 0 && sourceType !== undefined) {
+      const src = await tx.relationshipSource.create({
+        data: {
+          relationshipId: rel.id,
+          source: 'COMMUNITY',
+          sourceType: sourceType as (typeof VALID_SOURCE_TYPES)[number],
+          confidence: SOURCE_CONFIDENCE[sourceType as keyof typeof SOURCE_CONFIDENCE] ?? 'ANECDOTAL',
+          notes: notes as string | undefined ?? null,
+          userId: session.user.id,
+        },
+      })
+      createdSources.push(src)
+    }
+
+    // If no URL sources but evidenceLevel was provided, create a single source with that level
+    if (createdSources.length === 0 && evidenceLevel) {
+      const src = await tx.relationshipSource.create({
+        data: {
+          relationshipId: rel.id,
+          source: 'COMMUNITY',
+          confidence: evidenceLevel as 'ANECDOTAL' | 'TRADITIONAL' | 'OBSERVED' | 'PEER_REVIEWED',
+          notes: notes as string | undefined ?? null,
+          userId: session.user.id,
+        },
+      })
+      createdSources.push(src)
+    }
+
+    // Fallback: always create at least one source
+    if (createdSources.length === 0) {
+      const src = await tx.relationshipSource.create({
+        data: {
+          relationshipId: rel.id,
+          source: 'COMMUNITY',
+          confidence: 'ANECDOTAL',
+          notes: notes as string | undefined ?? null,
+          userId: session.user.id,
+        },
+      })
+      createdSources.push(src)
+    }
 
     // Recompute confidence as max across all sources
     const allSources = await tx.relationshipSource.findMany({
@@ -174,7 +284,7 @@ export async function POST(request: Request) {
       data: { confidence: maxConfidence },
     })
 
-    return { id: rel.id, sourceId: source.id }
+    return { id: rel.id, sourceIds: createdSources.map(s => s.id) }
   })
 
   return NextResponse.json(result, { status: 201 })

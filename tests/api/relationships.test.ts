@@ -110,7 +110,7 @@ describe('POST /api/relationships', () => {
     expect(res.status).toBe(201)
     const body = await res.json()
     expect(body.id).toBe('rel-1')
-    expect(body.sourceId).toBe('src-1')
+    expect(body.sourceIds).toEqual(['src-1'])
     expect(capturedSourceData.data.confidence).toBe('ANECDOTAL')
   })
 

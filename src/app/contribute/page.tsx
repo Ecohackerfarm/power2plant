@@ -142,6 +142,12 @@ export default function ContributePage() {
     setSubmitting(true)
     setResult(null)
     try {
+      const sourceTypeOverrides: Record<number, string> = {}
+      sources.forEach((s, idx) => {
+        if (s.overrideType !== s.detectedType) {
+          sourceTypeOverrides[idx] = s.overrideType
+        }
+      })
       const res = await fetch('/api/relationships', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -152,12 +158,14 @@ export default function ContributePage() {
           reason: reasons.length > 0 ? reasons : undefined,
           notes: notes || undefined,
           sources: sources.length > 0 ? sources.map(s => s.url).filter(Boolean) : undefined,
+          sourceTypeOverrides: Object.keys(sourceTypeOverrides).length > 0 ? sourceTypeOverrides : undefined,
+          evidenceLevel,
         }),
       })
       if (res.status === 429) { setResult('ratelimit'); return }
       if (!res.ok) { setResult('error'); return }
       setResult('success')
-      setCropA(null); setCropB(null); setReasons([]); setNotes(''); setSources([])
+      setCropA(null); setCropB(null); setReasons([]); setNotes(''); resetSources(); setEvidenceLevel('ANECDOTAL')
     } catch {
       setResult('error')
     } finally {
@@ -246,28 +254,68 @@ export default function ContributePage() {
               <p className="text-xs text-muted-foreground text-right">{notes.length}/2000</p>
             </div>
 
-            <div className="space-y-1">
-              <Label>Sources (optional)</Label>
-              {sources.map((src, idx) => (
-                <div key={idx} className="flex items-center gap-2 mb-1">
-                  <span className="text-sm font-medium">[{idx + 1}]</span>
-                  <Input
-                    value={src.url}
-                    placeholder="https://..."
-                    onChange={e => {
-                      const newSources = [...sources]
-                      newSources[idx] = { id: idx + 1, url: e.target.value }
-                      setSources(newSources)
-                    }}
-                  />
+            <div className="space-y-2">
+              <Label>Evidence level</Label>
+              <p className="text-xs text-muted-foreground">How confident are you in this observation? This sets a minimum confidence floor.</p>
+              <div className="flex flex-col gap-2">
+                {EVIDENCE_LEVELS.map(el => (
+                  <label key={el.value} className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input
+                      type="radio"
+                      name="evidenceLevel"
+                      value={el.value}
+                      checked={evidenceLevel === el.value}
+                      onChange={() => setEvidenceLevel(el.value)}
+                    />
+                    {el.label}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Sources <span className="text-muted-foreground font-normal">(optional)</span></Label>
+              <p className="text-xs text-muted-foreground">
+                doi.org and PubMed links are recognised automatically as scientific papers.
+              </p>
+              {sources.map((src) => (
+                <div key={src.id} className="flex items-start gap-2">
+                  <div className="flex-1 space-y-1">
+                    <Input
+                      value={src.url}
+                      placeholder="https://..."
+                      onChange={e => updateUrl(src.id, e.target.value)}
+                      onBlur={() => classify(src.id)}
+                    />
+                    <div className="flex items-center gap-2">
+                      <Badge variant={BADGE_VARIANT[src.detectedType]}>
+                        {SOURCE_TYPE_LABELS[src.detectedType]}
+                      </Badge>
+                      <select
+                        className="border rounded px-2 py-0.5 text-xs bg-background"
+                        value={src.overrideType}
+                        onChange={e => setOverride(src.id, e.target.value as SourceClassification)}
+                      >
+                        {SOURCE_TYPE_OPTIONS.map(opt => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeSource(src.id)}
+                    className="mt-0.5 shrink-0"
+                  >
+                    ✕
+                  </Button>
                 </div>
               ))}
-              <Button type="button" onClick={() => setSources([...sources, { id: sources.length + 1, url: '' }])} disabled={sources.length >= 20} className="mt-2">
+              <Button type="button" onClick={addSource} disabled={sources.length >= 20} className="mt-2">
                 Add source
               </Button>
-              <p className="text-xs text-muted-foreground mt-1">
-                Reference sources in notes using [number] notation
-              </p>
             </div>
 
             <Button
