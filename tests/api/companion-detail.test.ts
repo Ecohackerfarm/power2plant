@@ -35,7 +35,7 @@ describe('GET /api/plants/[id]/companions/[companionId]', () => {
   it('returns relationship with non-community sources', async () => {
     vi.mocked(prisma.$queryRaw).mockResolvedValue([fakeRel])
     vi.mocked(prisma.relationshipSource.findMany).mockResolvedValue([
-      { source: 'TREFLE', sourceType: null, confidence: 'OBSERVED', url: 'https://trefle.io', notes: null, fetchedAt: new Date('2025-01-01'), userId: null },
+      { id: 'src-1', relationshipId: 'rel-1', source: 'TREFLE', sourceType: null, confidence: 'OBSERVED', url: 'https://trefle.io', notes: null, fetchedAt: new Date('2025-01-01'), userId: null },
     ])
 
     const res = await GET(makeReq('crop-a', 'crop-b'), {
@@ -52,9 +52,9 @@ describe('GET /api/plants/[id]/companions/[companionId]', () => {
   it('groups community sources by user+day', async () => {
     vi.mocked(prisma.$queryRaw).mockResolvedValue([fakeRel])
     vi.mocked(prisma.relationshipSource.findMany).mockResolvedValue([
-      { source: 'COMMUNITY', sourceType: null, confidence: 'ANECDOTAL', url: null, notes: 'I grew these together', fetchedAt: new Date('2025-06-01T10:00:00Z'), userId: 'user-1' },
-      { source: 'COMMUNITY', sourceType: 'SCIENTIFIC_PAPER', confidence: 'PEER_REVIEWED', url: 'https://doi.org/10.1234', notes: null, fetchedAt: new Date('2025-06-01T10:01:00Z'), userId: 'user-1' },
-      { source: 'COMMUNITY', sourceType: 'GARDENING_GUIDE', confidence: 'TRADITIONAL', url: 'https://rhs.org.uk/guide', notes: null, fetchedAt: new Date('2025-06-01T10:02:00Z'), userId: 'user-1' },
+      { id: 'src-2', relationshipId: 'rel-1', source: 'COMMUNITY', sourceType: null, confidence: 'ANECDOTAL', url: null, notes: 'I grew these together', fetchedAt: new Date('2025-06-01T10:00:00Z'), userId: 'user-1' },
+      { id: 'src-3', relationshipId: 'rel-1', source: 'COMMUNITY', sourceType: 'SCIENTIFIC_PAPER', confidence: 'PEER_REVIEWED', url: 'https://doi.org/10.1234', notes: null, fetchedAt: new Date('2025-06-01T10:01:00Z'), userId: 'user-1' },
+      { id: 'src-4', relationshipId: 'rel-1', source: 'COMMUNITY', sourceType: 'GARDENING_GUIDE', confidence: 'TRADITIONAL', url: 'https://rhs.org.uk/guide', notes: null, fetchedAt: new Date('2025-06-01T10:02:00Z'), userId: 'user-1' },
     ])
 
     const res = await GET(makeReq('crop-a', 'crop-b'), {
@@ -77,8 +77,8 @@ describe('GET /api/plants/[id]/companions/[companionId]', () => {
   it('separates community and non-community sources', async () => {
     vi.mocked(prisma.$queryRaw).mockResolvedValue([fakeRel])
     vi.mocked(prisma.relationshipSource.findMany).mockResolvedValue([
-      { source: 'TREFLE', sourceType: null, confidence: 'OBSERVED', url: 'https://trefle.io', notes: null, fetchedAt: new Date('2025-01-01'), userId: null },
-      { source: 'COMMUNITY', sourceType: null, confidence: 'ANECDOTAL', url: null, notes: 'testimony', fetchedAt: new Date('2025-06-01'), userId: 'user-1' },
+      { id: 'src-5', relationshipId: 'rel-1', source: 'TREFLE', sourceType: null, confidence: 'OBSERVED', url: 'https://trefle.io', notes: null, fetchedAt: new Date('2025-01-01'), userId: null },
+      { id: 'src-6', relationshipId: 'rel-1', source: 'COMMUNITY', sourceType: null, confidence: 'ANECDOTAL', url: null, notes: 'testimony', fetchedAt: new Date('2025-06-01'), userId: 'user-1' },
     ])
 
     const res = await GET(makeReq('crop-a', 'crop-b'), {
@@ -94,7 +94,7 @@ describe('GET /api/plants/[id]/companions/[companionId]', () => {
   it('does not expose userId in response', async () => {
     vi.mocked(prisma.$queryRaw).mockResolvedValue([fakeRel])
     vi.mocked(prisma.relationshipSource.findMany).mockResolvedValue([
-      { source: 'COMMUNITY', sourceType: null, confidence: 'ANECDOTAL', url: null, notes: 'test', fetchedAt: new Date('2025-06-01'), userId: 'user-1' },
+      { id: 'src-7', relationshipId: 'rel-1', source: 'COMMUNITY', sourceType: null, confidence: 'ANECDOTAL', url: null, notes: 'test', fetchedAt: new Date('2025-06-01'), userId: 'user-1' },
     ])
 
     const res = await GET(makeReq('crop-a', 'crop-b'), {
@@ -107,7 +107,7 @@ describe('GET /api/plants/[id]/companions/[companionId]', () => {
   it('includes sourceType on non-community sources', async () => {
     vi.mocked(prisma.$queryRaw).mockResolvedValue([fakeRel])
     vi.mocked(prisma.relationshipSource.findMany).mockResolvedValue([
-      { source: 'TREFLE', sourceType: 'SCIENTIFIC_PAPER', confidence: 'PEER_REVIEWED', url: 'https://trefle.io', notes: null, fetchedAt: new Date('2025-01-01'), userId: null },
+      { id: 'src-8', relationshipId: 'rel-1', source: 'TREFLE', sourceType: 'SCIENTIFIC_PAPER', confidence: 'PEER_REVIEWED', url: 'https://trefle.io', notes: null, fetchedAt: new Date('2025-01-01'), userId: null },
     ])
 
     const res = await GET(makeReq('crop-a', 'crop-b'), {
