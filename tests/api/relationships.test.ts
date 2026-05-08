@@ -36,7 +36,9 @@ function makeReq(body: unknown) {
 
 const validBody = { cropAId: 'crop-a', cropBId: 'crop-b', type: 'COMPANION' }
 
-beforeEach(() => vi.clearAllMocks())
+let capturedSourceData: any = null
+
+beforeEach(() => { vi.clearAllMocks(); capturedSourceData = null })
 
 describe('POST /api/relationships', () => {
   it('returns 401 when not authenticated', async () => {
@@ -61,6 +63,7 @@ describe('POST /api/relationships', () => {
 
   it('returns 400 when notes exceed 500 chars', async () => {
     vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as any)
+    vi.mocked(prisma.crop.findMany).mockResolvedValue([{ id: 'crop-a' }, { id: 'crop-b' }] as any)
     const res = await POST(makeReq({ ...validBody, notes: 'x'.repeat(501) }))
     expect(res.status).toBe(400)
   })
@@ -82,10 +85,7 @@ describe('POST /api/relationships', () => {
     expect(res.status).toBe(429)
   })
 
-  it('returns 201 on happy path', async () => {
-    vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as any)
-    vi.mocked(prisma.crop.findMany).mockResolvedValue([{ id: 'crop-a' }, { id: 'crop-b' }] as any)
-    vi.mocked(prisma.relationshipSource.findFirst).mockResolvedValue(null)
+  function mockTransaction() {
     vi.mocked(prisma.$transaction).mockImplementation(async (fn: any) => {
       const mockTx = {
         cropRelationship: {
@@ -93,16 +93,44 @@ describe('POST /api/relationships', () => {
           update: vi.fn().mockResolvedValue({}),
         },
         relationshipSource: {
-          create: vi.fn().mockResolvedValue({ id: 'src-1' }),
+          create: vi.fn().mockImplementation((data: any) => { capturedSourceData = data; return { id: 'src-1' } }),
           findMany: vi.fn().mockResolvedValue([{ confidence: 'ANECDOTAL' }]),
         },
       }
       return fn(mockTx)
     })
+  }
+
+  it('returns 201 on happy path without sourceType', async () => {
+    vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as any)
+    vi.mocked(prisma.crop.findMany).mockResolvedValue([{ id: 'crop-a' }, { id: 'crop-b' }] as any)
+    vi.mocked(prisma.relationshipSource.findFirst).mockResolvedValue(null)
+    mockTransaction()
     const res = await POST(makeReq(validBody))
     expect(res.status).toBe(201)
     const body = await res.json()
     expect(body.id).toBe('rel-1')
     expect(body.sourceId).toBe('src-1')
+    expect(capturedSourceData.data.confidence).toBe('ANECDOTAL')
+  })
+
+  it('returns 400 when sourceType is invalid', async () => {
+    vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as any)
+    vi.mocked(prisma.crop.findMany).mockResolvedValue([{ id: 'crop-a' }, { id: 'crop-b' }] as any)
+    vi.mocked(prisma.relationshipSource.findFirst).mockResolvedValue(null)
+    const res = await POST(makeReq({ ...validBody, sourceType: 'INVALID_TYPE' }))
+    expect(res.status).toBe(400)
+    expect((await res.json()).error).toContain('sourceType')
+  })
+
+  it('persists sourceType and maps to correct confidence', async () => {
+    vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as any)
+    vi.mocked(prisma.crop.findMany).mockResolvedValue([{ id: 'crop-a' }, { id: 'crop-b' }] as any)
+    vi.mocked(prisma.relationshipSource.findFirst).mockResolvedValue(null)
+    mockTransaction()
+    const res = await POST(makeReq({ ...validBody, sourceType: 'SCIENTIFIC_PAPER' }))
+    expect(res.status).toBe(201)
+    expect(capturedSourceData.data.sourceType).toBe('SCIENTIFIC_PAPER')
+    expect(capturedSourceData.data.confidence).toBe('PEER_REVIEWED')
   })
 })
