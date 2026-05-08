@@ -21,6 +21,10 @@ ssh ... root@power2plant-app-1 "cd <WORKTREE_PATH> && DATABASE_URL=postgresql://
 - PRs target `release/vX.Y.Z`, never `main` directly
 - Run `pnpm test:run` (via SSH) before creating PR — all tests must pass
 - After any schema or seed data change: `pnpm db:seed-common && pnpm db:dump` (via SSH), commit updated `db/seed.sql`
+- Schema changes: create migration file only — do NOT run `migrate deploy` or `migrate dev` without `--create-only`:
+  ```sh
+  ssh ... root@power2plant-app-1 "cd <WORKTREE_PATH> && DATABASE_URL=postgresql://power2plant:power2plant@db:5432/power2plant npx prisma migrate dev --create-only --name <descriptive-name>"
+  ```
 
 ## Permissions
 

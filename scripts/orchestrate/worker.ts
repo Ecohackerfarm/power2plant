@@ -4,6 +4,51 @@ import { join } from "path";
 import type { Task } from "./planner.js";
 import type { ModelsConfig } from "./models.js";
 
+const SSH = `ssh -i /home/agent/.ssh/power2plant_dev -p 2222 -o StrictHostKeyChecking=no root@power2plant-app-1`;
+const DB_URL = `postgresql://power2plant:power2plant@db:5432/power2plant`;
+const PGENV = `PGPASSWORD=power2plant`;
+
+function sshExec(cmd: string): string {
+  return execSync(`${SSH} "${cmd.replace(/"/g, '\\"')}"`).toString();
+}
+
+export function detectNewMigrations(worktreePath: string): string[] {
+  try {
+    const out = execSync(
+      `git -C "${worktreePath}" diff --name-only origin/main...HEAD -- prisma/migrations/`
+    ).toString();
+    return [...new Set(
+      out.split("\n")
+        .filter((f) => f.includes("prisma/migrations/"))
+        .map((f) => f.split("/")[2])
+        .filter(Boolean)
+    )];
+  } catch {
+    return [];
+  }
+}
+
+export function snapshotDb(issueNumber: number): string {
+  const snapFile = `/tmp/snap_${issueNumber}.sql`;
+  sshExec(`${PGENV} pg_dump -h db -U power2plant power2plant > ${snapFile}`);
+  return snapFile;
+}
+
+export function applyMigrations(worktreePath: string): void {
+  sshExec(`cd ${worktreePath} && DATABASE_URL=${DB_URL} npx prisma migrate deploy`);
+}
+
+export function restoreDb(snapFile: string): void {
+  sshExec(
+    `${PGENV} psql -h db -U power2plant postgres -c ` +
+    `"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='power2plant' AND pid <> pg_backend_pid();" && ` +
+    `${PGENV} dropdb -h db -U power2plant power2plant && ` +
+    `${PGENV} createdb -h db -U power2plant power2plant && ` +
+    `${PGENV} psql -h db -U power2plant power2plant < ${snapFile} && ` +
+    `rm ${snapFile}`
+  );
+}
+
 const AUTH_PATTERNS = [
   "src/lib/auth.ts",
   "src/lib/auth-client.ts",
