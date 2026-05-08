@@ -18,8 +18,13 @@ vi.mock('next/headers', () => ({
   headers: vi.fn().mockResolvedValue(new Headers()),
 }))
 
+vi.mock('@/lib/classify-url', () => ({
+  classifyUrl: vi.fn(),
+}))
+
 import prisma from '@/lib/prisma'
 import { auth } from '@/lib/auth'
+import { classifyUrl } from '@/lib/classify-url'
 
 const fakeSession = {
   user: { id: 'user-1', email: 'test@example.com', name: 'Test' },
@@ -37,8 +42,9 @@ function makeReq(body: unknown) {
 const validBody = { cropAId: 'crop-a', cropBId: 'crop-b', type: 'COMPANION' }
 
 let capturedSourceData: any = null
+let createdSources: any[] = []
 
-beforeEach(() => { vi.clearAllMocks(); capturedSourceData = null })
+beforeEach(() => { vi.clearAllMocks(); capturedSourceData = null; createdSources = [] })
 
 describe('POST /api/relationships', () => {
   it('returns 401 when not authenticated', async () => {
@@ -93,8 +99,15 @@ describe('POST /api/relationships', () => {
           update: vi.fn().mockResolvedValue({}),
         },
         relationshipSource: {
-          create: vi.fn().mockImplementation((data: any) => { capturedSourceData = data; return { id: 'src-1' } }),
-          findMany: vi.fn().mockResolvedValue([{ confidence: 'ANECDOTAL' }]),
+          create: vi.fn().mockImplementation((data: any) => {
+            createdSources.push(data.data)
+            capturedSourceData = data
+            return { id: `src-${createdSources.length}` }
+          }),
+          findMany: vi.fn().mockImplementation(() => {
+            const confidences = createdSources.map(s => ({ confidence: s.confidence }))
+            return confidences.length > 0 ? confidences : [{ confidence: 'ANECDOTAL' }]
+          }),
         },
       }
       return fn(mockTx)
@@ -132,5 +145,46 @@ describe('POST /api/relationships', () => {
     expect(res.status).toBe(201)
     expect(capturedSourceData.data.sourceType).toBe('SCIENTIFIC_PAPER')
     expect(capturedSourceData.data.confidence).toBe('PEER_REVIEWED')
+  })
+
+  it('returns 400 when sources is not an array', async () => {
+    vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as any)
+    const res = await POST(makeReq({ ...validBody, sources: 'not-an-array' }))
+    expect(res.status).toBe(400)
+    expect((await res.json()).error).toContain('sources must be an array')
+  })
+
+  it('returns 400 when sources contains non-strings', async () => {
+    vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as any)
+    const res = await POST(makeReq({ ...validBody, sources: ['https://example.com', 123] }))
+    expect(res.status).toBe(400)
+    expect((await res.json()).error).toContain('sources must be an array')
+  })
+
+  it('creates sources from URLs and testimony on multi-source submission', async () => {
+    vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as any)
+    vi.mocked(prisma.crop.findMany).mockResolvedValue([{ id: 'crop-a' }, { id: 'crop-b' }] as any)
+    vi.mocked(prisma.relationshipSource.findFirst).mockResolvedValue(null)
+    vi.mocked(classifyUrl).mockImplementation((url: string) => {
+      if (url.includes('doi.org')) return 'SCIENTIFIC_PAPER' as const
+      if (url.includes('rhs.org.uk')) return 'GARDENING_GUIDE' as const
+      return 'BLOG_FORUM' as const
+    })
+    mockTransaction()
+    const res = await POST(makeReq({
+      ...validBody,
+      sources: ['https://doi.org/10.1234/xyz', 'https://www.rhs.org.uk/guide'],
+    }))
+    expect(res.status).toBe(201)
+    expect(createdSources).toHaveLength(3)
+    expect(createdSources[0].sourceType).toBe('SCIENTIFIC_PAPER')
+    expect(createdSources[0].source).toBe('MANUAL')
+    expect(createdSources[0].confidence).toBe('PEER_REVIEWED')
+    expect(createdSources[1].sourceType).toBe('GARDENING_GUIDE')
+    expect(createdSources[1].source).toBe('MANUAL')
+    expect(createdSources[1].confidence).toBe('TRADITIONAL')
+    expect(createdSources[2].sourceType).toBe('PERSONAL_OBSERVATION')
+    expect(createdSources[2].source).toBe('COMMUNITY')
+    expect(createdSources[2].confidence).toBe('ANECDOTAL')
   })
 })

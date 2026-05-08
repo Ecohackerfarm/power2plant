@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import prisma from '@/lib/prisma'
 import { SOURCE_CONFIDENCE } from '@/lib/source-confidence'
+import { classifyUrl } from '@/lib/classify-url'
 import { auth } from '@/lib/auth'
 
 const VALID_TYPES = ['COMPANION', 'AVOID'] as const
@@ -70,7 +71,7 @@ export async function POST(request: Request) {
   const session = await getSession()
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  let body: { cropAId?: unknown; cropBId?: unknown; type?: unknown; reason?: unknown; notes?: unknown; sourceType?: unknown }
+  let body: { cropAId?: unknown; cropBId?: unknown; type?: unknown; reason?: unknown; notes?: unknown; sourceType?: unknown; sources?: unknown }
   try {
     body = await request.json()
   } catch {
@@ -100,6 +101,13 @@ export async function POST(request: Request) {
   const { sourceType } = body
   if (sourceType !== undefined && !VALID_SOURCE_TYPES.includes(sourceType as (typeof VALID_SOURCE_TYPES)[number])) {
     return NextResponse.json({ error: 'invalid sourceType' }, { status: 400 })
+  }
+
+  const { sources } = body
+  if (sources !== undefined) {
+    if (!Array.isArray(sources) || !sources.every(s => typeof s === 'string')) {
+      return NextResponse.json({ error: 'sources must be an array of URL strings' }, { status: 400 })
+    }
   }
 
   // Verify both crops exist
@@ -135,7 +143,7 @@ export async function POST(request: Request) {
     )
   }
 
-  // Upsert relationship + create source in transaction
+  // Upsert relationship + create source(s) in transaction
   const result = await prisma.$transaction(async (tx) => {
     const rel = await tx.cropRelationship.upsert({
       where: { cropAId_cropBId: { cropAId: canonA, cropBId: canonB } },
@@ -151,16 +159,48 @@ export async function POST(request: Request) {
       update: {},
     })
 
-    const source = await tx.relationshipSource.create({
-      data: {
-        relationshipId: rel.id,
-        source: 'COMMUNITY',
-        sourceType: sourceType as (typeof VALID_SOURCE_TYPES)[number] | undefined ?? undefined,
-        confidence: SOURCE_CONFIDENCE[sourceType as keyof typeof SOURCE_CONFIDENCE] ?? 'ANECDOTAL',
-        notes: notes as string | undefined ?? null,
-        userId: session.user.id,
-      },
-    })
+    let sourceId: string
+
+    if (sources && Array.isArray(sources) && sources.length > 0) {
+      for (const url of sources) {
+        const st = classifyUrl(url)
+        const src = await tx.relationshipSource.create({
+          data: {
+            relationshipId: rel.id,
+            source: 'MANUAL',
+            sourceType: st,
+            confidence: SOURCE_CONFIDENCE[st],
+            url,
+            notes: notes as string | undefined ?? null,
+            userId: session.user.id,
+          },
+        })
+        sourceId = src.id
+      }
+      const testimony = await tx.relationshipSource.create({
+        data: {
+          relationshipId: rel.id,
+          source: 'COMMUNITY',
+          sourceType: 'PERSONAL_OBSERVATION',
+          confidence: 'ANECDOTAL',
+          notes: notes as string | undefined ?? null,
+          userId: session.user.id,
+        },
+      })
+      sourceId = testimony.id
+    } else {
+      const source = await tx.relationshipSource.create({
+        data: {
+          relationshipId: rel.id,
+          source: 'COMMUNITY',
+          sourceType: sourceType as (typeof VALID_SOURCE_TYPES)[number] | undefined ?? undefined,
+          confidence: SOURCE_CONFIDENCE[sourceType as keyof typeof SOURCE_CONFIDENCE] ?? 'ANECDOTAL',
+          notes: notes as string | undefined ?? null,
+          userId: session.user.id,
+        },
+      })
+      sourceId = source.id
+    }
 
     // Recompute confidence as max across all sources
     const allSources = await tx.relationshipSource.findMany({
@@ -174,7 +214,7 @@ export async function POST(request: Request) {
       data: { confidence: maxConfidence },
     })
 
-    return { id: rel.id, sourceId: source.id }
+    return { id: rel.id, sourceId }
   })
 
   return NextResponse.json(result, { status: 201 })
