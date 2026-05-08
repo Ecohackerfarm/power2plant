@@ -30,11 +30,62 @@ export async function GET(
   const rel = rows[0]
   if (!rel) return NextResponse.json({ error: 'relationship not found' }, { status: 404 })
 
-  const sources = await prisma.relationshipSource.findMany({
+  const rawSources = await prisma.relationshipSource.findMany({
     where: { relationshipId: rel.relId },
-    select: { source: true, confidence: true, url: true, notes: true, fetchedAt: true },
+    select: { source: true, sourceType: true, confidence: true, url: true, notes: true, fetchedAt: true, userId: true },
     orderBy: { confidence: 'desc' },
   })
+
+  const community: (typeof rawSources)[number][] = []
+  const other: (typeof rawSources)[number][] = []
+  for (const s of rawSources) {
+    if (s.source === 'COMMUNITY') community.push(s)
+    else other.push(s)
+  }
+
+  const groupedCommunity: Array<{
+    source: string
+    confidence: string
+    notes: string | null
+    fetchedAt: string
+    urls: Array<{ url: string; sourceType: string | null; confidence: string }>
+  }> = []
+
+  const groups = new Map<string, typeof community>()
+  for (const s of community) {
+    const date = s.fetchedAt.toISOString().slice(0, 10)
+    const key = `${s.userId ?? 'anon'}|${date}`
+    if (!groups.has(key)) groups.set(key, [])
+    groups.get(key)!.push(s)
+  }
+
+  for (const rows of groups.values()) {
+    const testimony = rows.find(r => !r.url) ?? rows[0]
+    const urls = rows.filter(r => r.url).map(r => ({
+      url: r.url!,
+      sourceType: r.sourceType,
+      confidence: r.confidence,
+    }))
+    groupedCommunity.push({
+      source: 'COMMUNITY',
+      confidence: testimony.confidence,
+      notes: testimony.notes,
+      fetchedAt: testimony.fetchedAt.toISOString(),
+      urls,
+    })
+  }
+
+  const sources = [
+    ...other.map(s => ({
+      source: s.source,
+      confidence: s.confidence,
+      url: s.url,
+      notes: s.notes,
+      fetchedAt: s.fetchedAt.toISOString(),
+      sourceType: s.sourceType,
+    })),
+    ...groupedCommunity,
+  ]
 
   return NextResponse.json({ relationship: rel, sources })
 }

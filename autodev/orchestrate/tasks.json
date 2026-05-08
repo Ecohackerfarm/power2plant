@@ -1,0 +1,30 @@
+[
+  {
+    "issueNumber": 71,
+    "title": "feat: auto-detect sourceType from URL + derive confidence",
+    "role": "backend-engineer",
+    "branch": "feat/71-classify-url",
+    "body": "Create `src/lib/classify-url.ts` exporting `classifyUrl(url: string): SourceClassification` with priority rules: doi.org/pubmed/scholar → SCIENTIFIC_PAPER; *.edu/*.ac.uk → ACADEMIC_RESOURCE; rhs.org.uk/almanac.com/gardenersworld.com/extension.org/growveg.com/pfaf.org → GARDENING_GUIDE; anything else with URL → BLOG_FORUM. Invalid/unparseable URLs → BLOG_FORUM fallback.\n\nUpdate `POST /api/relationships` (`src/app/api/relationships/route.ts`) to accept `sources: string[]` (array of URLs). For each URL, create a separate `RelationshipSource` row with `classifyUrl(url)` as sourceType and `SOURCE_CONFIDENCE[sourceType]` as confidence. Always create one testimony row with sourceType=PERSONAL_OBSERVATION, confidence=ANECDOTAL. Relationship confidence = max across all source rows. Keep existing `sourceType` single-field path as fallback for old clients.\n\nWrite unit tests in `tests/lib/classify-url.test.ts` covering doi.org, pubmed, .edu, rhs.org.uk, random blog, invalid URL. Write API test for multi-source submission in `tests/api/relationships.test.ts`."
+  },
+  {
+    "issueNumber": 73,
+    "title": "feat: show all community sources on relationship detail page",
+    "role": "full-stack-engineer",
+    "branch": "feat/73-community-sources-detail",
+    "body": "Update `GET /api/plants/[id]/companions/[companionId]` to include `sourceType` and `userId` in the sources select. Do NOT send userId to client; use it only for grouping server-side.\n\nGroup community RelationshipSource rows by (userId, date-day of fetchedAt). Each group = one observation: display the testimony row's notes at top, then list URL rows beneath with their sourceType label. Non-community sources (TREFLE, USDA, PFAF) keep existing single-row display.\n\nAdd `SOURCE_TYPE_LABELS` in the page component: SCIENTIFIC_PAPER→'Scientific paper', ACADEMIC_RESOURCE→'Academic resource', GARDENING_GUIDE→'Gardening guide', BLOG_FORUM→'Blog / forum', PERSONAL_OBSERVATION→'Personal observation'.\n\nPage: `src/app/plants/[id]/companions/[companionId]/page.tsx`. API route: `src/app/api/plants/[id]/companions/[companionId]/route.ts`. Write tests."
+  },
+  {
+    "issueNumber": 72,
+    "title": "feat: evidence quality UI on /contribute — source type input with auto-detection",
+    "role": "frontend-engineer",
+    "branch": "feat/72-evidence-quality-ui",
+    "body": "Redesign the evidence section in `src/app/contribute/page.tsx`.\n\nFirst check if `src/lib/classify-url.ts` exists. If not, create it (same logic as issue #71: doi.org/pubmed/scholar→SCIENTIFIC_PAPER, *.edu/*.ac.uk→ACADEMIC_RESOURCE, rhs.org.uk/almanac.com etc→GARDENING_GUIDE, else BLOG_FORUM, invalid→BLOG_FORUM).\n\nAdd evidence level radio (4 options: 'I observed this personally'=ANECDOTAL, 'I've read about this in resources'=TRADITIONAL, 'I can point to documentation'=OBSERVED, 'I have peer-reviewed sources'=PEER_REVIEWED). This sets the floor.\n\nReplace source input with a list of URL inputs. Each URL row: text input + auto-detected type badge (call classifyUrl on blur) + override select (pre-selected to detected type) + remove button. Show hint: 'doi.org and PubMed links are recognised automatically as scientific papers.'\n\nUpdate form submission to send `sources: string[]` and `sourceTypeOverrides: Record<number, string>` to POST /api/relationships. The `evidenceLevel` can go into `notes` prefix or be sent as a separate field if the API accepts it.\n\nWrite a hook test if any logic is extracted to a custom hook."
+  },
+  {
+    "issueNumber": 67,
+    "title": "feat: companion relationship search page + fix relationship URL ordering bug",
+    "role": "full-stack-engineer",
+    "branch": "feat/67-relationship-search",
+    "body": "Two parts:\n\n1. **Bug fix**: `/plants/[id]/companions/[companionId]` returns 404 when URL has IDs in non-canonical order. Fix: query with OR both orderings (`WHERE (cropAId=A AND cropBId=B) OR (cropAId=B AND cropBId=A)`). Also ensure recommendation display builds URLs in canonical order (smaller ID first).\n\n2. **Search page**: Create `GET /api/relationships/search?crop=<name>&cursor=<id>` — returns CropRelationships where cropA or cropB name/commonNames matches (case-insensitive, partial). Response: array of `{ id, cropA: {id,name}, cropB: {id,name}, type, confidence, reasons, notes, sourceCount }`. Cursor pagination.\n\nCreate page `src/app/relationships/search/page.tsx` with: debounced search input (300ms, min 2 chars), results list (crop pair, COMPANION/AVOID badge, confidence, reasons), click → `/plants/<smaller-id>/companions/<larger-id>`, loading/empty states. Add nav link from home page or existing /relationships page.\n\nWrite API test in `tests/api/` and page/hook tests as appropriate."
+  }
+]
