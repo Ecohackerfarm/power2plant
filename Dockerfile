@@ -17,6 +17,7 @@ ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser
 RUN mkdir -p /home/node/.ssh && chmod 700 /home/node/.ssh && chown node:node /home/node/.ssh
 COPY deploy_keys/agent.pub /home/node/.ssh/authorized_keys
 RUN chmod 600 /home/node/.ssh/authorized_keys && chown node:node /home/node/.ssh/authorized_keys && \
+    passwd -d node && \
     printf '\nPort 2222\nPasswordAuthentication no\nStrictModes no\n' >> /etc/ssh/sshd_config
 RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
