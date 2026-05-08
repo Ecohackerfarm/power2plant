@@ -17,6 +17,8 @@ type RelationshipRow = {
 
 type Source = {
   source: string; confidence: string; url: string | null; notes: string | null; fetchedAt: string
+  sourceType?: string | null
+  urls?: Array<{ url: string; sourceType: string | null; confidence: string }>
 }
 
 const REASON_LABELS: Record<string, string> = {
@@ -42,6 +44,13 @@ const SOURCE_LABELS: Record<string, string> = {
 const SOURCE_CONFIDENCE_LABELS: Record<string, string> = {
   ANECDOTAL: 'anecdotal', TRADITIONAL: 'traditional',
   OBSERVED: 'observed', PEER_REVIEWED: 'peer-reviewed',
+}
+const SOURCE_TYPE_LABELS: Record<string, string> = {
+  SCIENTIFIC_PAPER: 'Scientific paper',
+  ACADEMIC_RESOURCE: 'Academic resource',
+  GARDENING_GUIDE: 'Gardening guide',
+  BLOG_FORUM: 'Blog / forum',
+  PERSONAL_OBSERVATION: 'Personal observation',
 }
 
 function CropCard({ name, botanical, commonNames, isNitrogen }: {
@@ -141,19 +150,58 @@ export default function RelationshipPage() {
           <Separator />
           <div>
             <h2 className="font-semibold mb-3 text-sm">Sources</h2>
-            <ul className="space-y-2">
-              {sources.map((s, i) => (
-                <li key={i} className="text-sm flex items-start gap-2">
-                  <span className="font-medium shrink-0">{SOURCE_LABELS[s.source] ?? s.source}</span>
-                  <span className="text-muted-foreground">
-                    — <ConfidenceBadge level={SOURCE_CONFIDENCE_LABELS[s.confidence] ?? s.confidence} />
-                    {s.url && (
-                      <> · <a href={s.url} target="_blank" rel="noopener noreferrer" className="underline">link</a></>
-                    )}
-                    {s.notes && <> · {s.notes}</>}
-                  </span>
-                </li>
-              ))}
+            <ul className="space-y-3">
+              {sources.map((s, i) => {
+                if (s.source === 'COMMUNITY' && s.urls) {
+                  return (
+                    <li key={i} className="text-sm space-y-1">
+                      <div className="flex items-start gap-2">
+                        <span className="font-medium shrink-0">{SOURCE_LABELS[s.source] ?? s.source}</span>
+                        <span className="text-muted-foreground">
+                          — <ConfidenceBadge level={SOURCE_CONFIDENCE_LABELS[s.confidence] ?? s.confidence} />
+                          {s.notes && <> · {s.notes}</>}
+                        </span>
+                      </div>
+                      {s.urls.length > 0 && (
+                        <ul className="ml-4 space-y-1 border-l-2 border-muted pl-3">
+                          {s.urls.map((u, j) => (
+                            <li key={j} className="text-muted-foreground">
+                              <a href={u.url} target="_blank" rel="noopener noreferrer" className="underline">
+                                {u.url}
+                              </a>
+                              {u.sourceType && (
+                                <span className="ml-1 text-xs bg-muted rounded px-1.5 py-0.5">
+                                  {SOURCE_TYPE_LABELS[u.sourceType] ?? u.sourceType}
+                                </span>
+                              )}
+                              <span className="ml-1">
+                                · <ConfidenceBadge level={SOURCE_CONFIDENCE_LABELS[u.confidence] ?? u.confidence} />
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </li>
+                  )
+                }
+                return (
+                  <li key={i} className="text-sm flex items-start gap-2">
+                    <span className="font-medium shrink-0">{SOURCE_LABELS[s.source] ?? s.source}</span>
+                    <span className="text-muted-foreground">
+                      — <ConfidenceBadge level={SOURCE_CONFIDENCE_LABELS[s.confidence] ?? s.confidence} />
+                      {s.url && (
+                        <> · <a href={s.url} target="_blank" rel="noopener noreferrer" className="underline">link</a></>
+                      )}
+                      {s.sourceType && (
+                        <span className="ml-1 text-xs bg-muted rounded px-1.5 py-0.5">
+                          {SOURCE_TYPE_LABELS[s.sourceType] ?? s.sourceType}
+                        </span>
+                      )}
+                      {s.notes && <> · {s.notes}</>}
+                    </span>
+                  </li>
+                )
+              })}
             </ul>
           </div>
         </>
