@@ -56,10 +56,14 @@ function buildGatePrompt(agentFile: string, task: Task, worktreePath: string, db
   return `${shared}\n\n---\n\n${role}\n\n---\n\n${instruction}`;
 }
 
-function logPath(issueNumber: number, attempt: number): string {
+function ensureLog(issueNumber: number, filename: string): string {
   const dir = join(process.cwd(), "logs", String(issueNumber));
   mkdirSync(dir, { recursive: true });
-  return join(dir, `attempt-${attempt + 1}.log`);
+  return join(dir, filename);
+}
+
+function logPath(issueNumber: number, attempt: number): string {
+  return ensureLog(issueNumber, `attempt-${attempt + 1}.log`);
 }
 
 function spawnAgent(model: string, worktreePath: string, prompt: string, log: string, timeoutMs: number): Promise<void> {
@@ -96,14 +100,45 @@ export async function runAgent(
   );
 }
 
-export async function runQAGate(task: Task, attempt: number, worktreePath: string, dbUrl: string, timeoutMs: number): Promise<void> {
+export async function runQAReview(
+  task: Task, attempt: number, round: number,
+  worktreePath: string, dbUrl: string, prNumber: string, timeoutMs: number
+): Promise<void> {
   return spawnAgent(
     "opencode/hy3-preview-free", worktreePath,
     buildGatePrompt("qa-test-reviewer.md", task, worktreePath, dbUrl,
-      `Review and validate the implementation for issue #${task.issueNumber}: ${task.title}. Run tests. Fix failures.`),
-    logPath(task.issueNumber, attempt) + ".qa.log",
+      `Review PR #${prNumber} for issue #${task.issueNumber}: ${task.title}. Approve if correct and tests exist. Request changes with specific comments if not.`),
+    ensureLog(task.issueNumber, `attempt-${attempt + 1}.qa-round${round + 1}.log`),
     timeoutMs
   );
+}
+
+export async function runImplFix(
+  task: Task, attempt: number, round: number,
+  worktreePath: string, dbUrl: string, prNumber: string, timeoutMs: number
+): Promise<void> {
+  const model = "opencode/hy3-preview-free";
+  const shared = readFileSync(join(process.cwd(), "agents/_shared.md"), "utf-8")
+    .replaceAll("<WORKTREE_PATH>", worktreePath)
+    .replaceAll("<DATABASE_URL>", dbUrl);
+  const rolePrompt = readFileSync(join(process.cwd(), `agents/${task.role}.md`), "utf-8");
+  const prompt = `${shared}\n\n---\n\n${rolePrompt}\n\n---\n\nAddress QA review comments on PR #${prNumber} (issue #${task.issueNumber}: ${task.title}).\n1. Read all feedback: \`gh pr view ${prNumber} --json reviews,comments\`\n2. Fix each issue raised (tests, logic, missing coverage)\n3. Run \`pnpm test:run\` via SSH — all tests must pass\n4. Commit and push to the existing branch (do NOT create a new PR)`;
+  return spawnAgent(
+    model, worktreePath, prompt,
+    ensureLog(task.issueNumber, `attempt-${attempt + 1}.fix-round${round + 1}.log`),
+    timeoutMs
+  );
+}
+
+export function isPRApproved(prNumber: string): boolean {
+  try {
+    const decision = execSync(
+      `gh pr view ${prNumber} --json reviewDecision --jq '.reviewDecision'`
+    ).toString().trim();
+    return decision === "APPROVED";
+  } catch {
+    return false;
+  }
 }
 
 export async function runSecurityGate(task: Task, attempt: number, worktreePath: string, dbUrl: string, timeoutMs: number): Promise<void> {
