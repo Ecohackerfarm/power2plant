@@ -10,7 +10,7 @@ export interface ModelsConfig {
 }
 
 export function loadModels(): ModelsConfig {
-  const path = join(process.cwd(), "autodev/orchestrate/models.json");
+  const path = join(process.cwd(), "orchestrate/models.json");
   return JSON.parse(readFileSync(path, "utf-8")) as ModelsConfig;
 }
 

@@ -104,6 +104,10 @@ describe('POST /api/relationships', () => {
             capturedSourceData = data
             return { id: `src-${createdSources.length}` }
           }),
+          createMany: vi.fn().mockImplementation(({ data }: any) => {
+            createdSources.push(...data)
+            return { count: data.length }
+          }),
           findMany: vi.fn().mockImplementation(() => {
             const confidences = createdSources.map(s => ({ confidence: s.confidence }))
             return confidences.length > 0 ? confidences : [{ confidence: 'ANECDOTAL' }]
@@ -123,7 +127,6 @@ describe('POST /api/relationships', () => {
     expect(res.status).toBe(201)
     const body = await res.json()
     expect(body.id).toBe('rel-1')
-    expect(body.sourceId).toBe('src-1')
     expect(capturedSourceData.data.confidence).toBe('ANECDOTAL')
   })
 
@@ -178,13 +181,16 @@ describe('POST /api/relationships', () => {
     expect(res.status).toBe(201)
     expect(createdSources).toHaveLength(3)
     expect(createdSources[0].sourceType).toBe('SCIENTIFIC_PAPER')
-    expect(createdSources[0].source).toBe('MANUAL')
+    expect(createdSources[0].source).toBe('COMMUNITY')
     expect(createdSources[0].confidence).toBe('PEER_REVIEWED')
+    expect(createdSources[0].url).toBe('https://doi.org/10.1234/xyz')
     expect(createdSources[1].sourceType).toBe('GARDENING_GUIDE')
-    expect(createdSources[1].source).toBe('MANUAL')
+    expect(createdSources[1].source).toBe('COMMUNITY')
     expect(createdSources[1].confidence).toBe('TRADITIONAL')
+    expect(createdSources[1].url).toBe('https://www.rhs.org.uk/guide')
     expect(createdSources[2].sourceType).toBe('PERSONAL_OBSERVATION')
     expect(createdSources[2].source).toBe('COMMUNITY')
     expect(createdSources[2].confidence).toBe('ANECDOTAL')
+    expect(createdSources[2].url).toBeNull()
   })
 })

@@ -11,6 +11,6 @@ deploy_keys/*.pem
 deploy_keys/*_rsa
 deploy_keys/*_ed25519
 deploy_keys/*_ecdsa
-autodev/orchestrate/state.json
-autodev/logs/
+orchestrate/state.json
+logs/
 .claude/settings.local.json

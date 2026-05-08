@@ -3,7 +3,7 @@ import { existsSync, rmSync } from "fs";
 import { join } from "path";
 
 export function worktreePath(branch: string): string {
-  return join(process.cwd(), ".worktrees", branch.replaceAll("/", "_"));
+  return join(process.cwd(), ".worktrees", branch);
 }
 
 export function createWorktree(branch: string): string {
