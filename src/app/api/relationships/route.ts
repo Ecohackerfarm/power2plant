@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import prisma from '@/lib/prisma'
+import { SOURCE_CONFIDENCE } from '@/lib/source-confidence'
 import { auth } from '@/lib/auth'
 
 const VALID_TYPES = ['COMPANION', 'AVOID'] as const
 const VALID_REASONS = ['PEST_CONTROL', 'POLLINATION', 'NUTRIENT', 'SHADE', 'ALLELOPATHY', 'OTHER'] as const
+const VALID_SOURCE_TYPES = ['SCIENTIFIC_PAPER', 'ACADEMIC_RESOURCE', 'GARDENING_GUIDE', 'BLOG_FORUM', 'PERSONAL_OBSERVATION'] as const
 
 function getConfidenceLabel(confidence: number): string {
   if (confidence >= 1.0) return 'Peer-reviewed'
@@ -68,14 +70,14 @@ export async function POST(request: Request) {
   const session = await getSession()
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  let body: { cropAId?: unknown; cropBId?: unknown; type?: unknown; reason?: unknown; notes?: unknown }
+  let body: { cropAId?: unknown; cropBId?: unknown; type?: unknown; reason?: unknown; notes?: unknown; sourceType?: unknown }
   try {
     body = await request.json()
   } catch {
     return NextResponse.json({ error: 'invalid JSON' }, { status: 400 })
   }
 
-  const { cropAId, cropBId, type, reason, notes } = body
+  const { cropAId, cropBId, type, reason, notes, sourceType } = body
 
   if (typeof cropAId !== 'string' || cropAId.trim() === '') {
     return NextResponse.json({ error: 'cropAId must be a non-empty string' }, { status: 400 })
@@ -94,6 +96,9 @@ export async function POST(request: Request) {
   }
   if (notes !== undefined && (typeof notes !== 'string' || notes.length > 500)) {
     return NextResponse.json({ error: 'notes must be a string of at most 500 chars' }, { status: 400 })
+  }
+  if (sourceType !== undefined && !VALID_SOURCE_TYPES.includes(sourceType as (typeof VALID_SOURCE_TYPES)[number])) {
+    return NextResponse.json({ error: 'invalid sourceType' }, { status: 400 })
   }
 
   // Verify both crops exist
@@ -149,7 +154,8 @@ export async function POST(request: Request) {
       data: {
         relationshipId: rel.id,
         source: 'COMMUNITY',
-        confidence: 'ANECDOTAL',
+        sourceType: sourceType as (typeof VALID_SOURCE_TYPES)[number] | undefined ?? undefined,
+        confidence: SOURCE_CONFIDENCE[sourceType as keyof typeof SOURCE_CONFIDENCE] ?? 'ANECDOTAL',
         notes: notes as string | undefined ?? null,
         userId: session.user.id,
       },
