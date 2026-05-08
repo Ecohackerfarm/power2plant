@@ -9,4 +9,9 @@ Key patterns:
 - `cn()` from `src/lib/utils` for conditional classnames
 - No new dependencies if a shadcn primitive exists
 
+Testing:
+- Write unit tests for new hooks in `tests/hooks/` — see `tests/hooks/use-garden.test.ts` for pattern
+- Pure logic extracted to `src/lib/` gets a `tests/lib/` test
+- Run `pnpm test:run` via SSH before marking task done — all tests must pass
+
 No comments unless the WHY is non-obvious. No placeholder code.

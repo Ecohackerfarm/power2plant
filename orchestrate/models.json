@@ -1,9 +1,9 @@
 {
   "default": [
     "opencode/hy3-preview-free",
-    "openrouter/nousresearch/hermes-3-llama-3.1-405b:free",
-    "openrouter/meta-llama/llama-3.3-70b-instruct:free",
-    "openrouter/nvidia/nemotron-3-super-120b-a12b:free"
+    "openrouter/openai/gpt-oss-120b:free",
+    "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+    "openrouter/google/gemma-4-31b-it:free"
   ],
   "maxRetries": 3,
   "timeoutMinutes": 20,

@@ -56,19 +56,25 @@ function buildGatePrompt(agentFile: string, task: Task, worktreePath: string, db
   return `${shared}\n\n---\n\n${role}\n\n---\n\n${instruction}`;
 }
 
-function logPath(issueNumber: number, attempt: number): string {
+function ensureLog(issueNumber: number, filename: string): string {
   const dir = join(process.cwd(), "logs", String(issueNumber));
   mkdirSync(dir, { recursive: true });
-  return join(dir, `attempt-${attempt + 1}.log`);
+  return join(dir, filename);
+}
+
+function logPath(issueNumber: number, attempt: number): string {
+  return ensureLog(issueNumber, `attempt-${attempt + 1}.log`);
 }
 
 function spawnAgent(model: string, worktreePath: string, prompt: string, log: string, timeoutMs: number): Promise<void> {
+  const agentToken = process.env.AGENT_GITHUB_TOKEN;
+  if (!agentToken) throw new Error("AGENT_GITHUB_TOKEN not set");
   const out = createWriteStream(log, { flags: "w" });
   return new Promise((resolve, reject) => {
     const proc = spawn(
       "opencode",
       ["run", "--model", model, "--dangerously-skip-permissions", "--dir", worktreePath, prompt],
-      { stdio: ["ignore", "pipe", "pipe"] }
+      { stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, GH_TOKEN: agentToken } }
     );
     proc.stdout.pipe(out);
     proc.stderr.pipe(out);
@@ -94,14 +100,64 @@ export async function runAgent(
   );
 }
 
-export async function runQAGate(task: Task, attempt: number, worktreePath: string, dbUrl: string, timeoutMs: number): Promise<void> {
+export async function runQAReview(
+  task: Task, attempt: number, round: number,
+  worktreePath: string, dbUrl: string, prNumber: string, timeoutMs: number
+): Promise<void> {
   return spawnAgent(
     "opencode/hy3-preview-free", worktreePath,
     buildGatePrompt("qa-test-reviewer.md", task, worktreePath, dbUrl,
-      `Review and validate the implementation for issue #${task.issueNumber}: ${task.title}. Run tests. Fix failures.`),
-    logPath(task.issueNumber, attempt) + ".qa.log",
+      `Review PR #${prNumber} for issue #${task.issueNumber}: ${task.title}. Approve if correct and tests exist. Request changes with specific comments if not.`),
+    ensureLog(task.issueNumber, `attempt-${attempt + 1}.qa-round${round + 1}.log`),
     timeoutMs
   );
+}
+
+export async function runImplFix(
+  task: Task, attempt: number, round: number,
+  model: string, worktreePath: string, dbUrl: string, prNumber: string, timeoutMs: number
+): Promise<void> {
+  const shared = readFileSync(join(process.cwd(), "agents/_shared.md"), "utf-8")
+    .replaceAll("<WORKTREE_PATH>", worktreePath)
+    .replaceAll("<DATABASE_URL>", dbUrl);
+  const rolePrompt = readFileSync(join(process.cwd(), `agents/${task.role}.md`), "utf-8");
+  const prompt = `${shared}\n\n---\n\n${rolePrompt}\n\n---\n\nAddress QA review comments on PR #${prNumber} (issue #${task.issueNumber}: ${task.title}).\n1. Read all feedback: \`gh pr view ${prNumber} --json reviews,comments\`\n2. Fix each issue raised (tests, logic, missing coverage)\n3. Run \`pnpm test:run\` via SSH — all tests must pass\n4. Commit and push to the existing branch (do NOT create a new PR)`;
+  // Ensure worktree is on the correct feature branch before agent runs
+  const currentBranch = execSync("git branch --show-current", { cwd: worktreePath }).toString().trim();
+  if (currentBranch !== task.branch) {
+    console.warn(`[#${task.issueNumber}] worktree on '${currentBranch}', expected '${task.branch}' — checking out`);
+    execSync(`git checkout ${task.branch}`, { cwd: worktreePath });
+  }
+
+  await spawnAgent(
+    model, worktreePath, prompt,
+    ensureLog(task.issueNumber, `attempt-${attempt + 1}.fix-round${round + 1}.log`),
+    timeoutMs
+  );
+
+  // Safety net: commit + push any changes the agent made but didn't push
+  const dirty = execSync("git status --porcelain", { cwd: worktreePath }).toString().trim();
+  if (dirty) {
+    execSync("git add -A && git commit -m \"fix: address QA review feedback\"", { cwd: worktreePath, shell: "/bin/sh" });
+  }
+  const ahead = execSync(`git rev-list origin/${task.branch}..HEAD --count 2>/dev/null || echo 0`, { cwd: worktreePath, shell: "/bin/sh" }).toString().trim();
+  if (parseInt(ahead) > 0) {
+    const token = execSync("gh auth token").toString().trim();
+    const sshRemote = execSync("git remote get-url origin", { cwd: worktreePath }).toString().trim();
+    const httpsRemote = sshRemote.replace(/^git@github\.com:/, "https://github.com/");
+    execSync(`git push "${httpsRemote.replace("https://", `https://x-access-token:${token}@`)}" HEAD:${task.branch}`, { cwd: worktreePath });
+  }
+}
+
+export function isPRApproved(prNumber: string): boolean {
+  try {
+    const decision = execSync(
+      `gh pr view ${prNumber} --json reviewDecision --jq '.reviewDecision'`
+    ).toString().trim();
+    return decision === "APPROVED";
+  } catch {
+    return false;
+  }
 }
 
 export async function runSecurityGate(task: Task, attempt: number, worktreePath: string, dbUrl: string, timeoutMs: number): Promise<void> {
@@ -126,13 +182,21 @@ export function isAuthTouching(worktreePath: string): boolean {
 }
 
 export function createPR(task: Task, worktreePath: string): string {
-  execSync("git push -u origin HEAD", { cwd: worktreePath, stdio: "inherit" });
+  const agentToken = process.env.AGENT_GITHUB_TOKEN;
+  if (!agentToken) throw new Error("AGENT_GITHUB_TOKEN not set");
+  const sshRemote = execSync("git remote get-url origin", { cwd: worktreePath }).toString().trim();
+  const httpsRemote = sshRemote.replace(/^git@github\.com:/, "https://github.com/");
+  const reviewerToken = execSync("gh auth token").toString().trim();
+  execSync(
+    `git push "${httpsRemote.replace("https://", `https://x-access-token:${reviewerToken}@`)}" HEAD:${task.branch}`,
+    { cwd: worktreePath }
+  );
   const base = execSync(
     "git branch -r | grep -o 'release/v[0-9.]*' | sort -V | tail -1 || echo 'release/v0.8.0'",
     { cwd: worktreePath }
   ).toString().trim() || "release/v0.8.0";
   return execSync(
     `gh pr create --base "${base}" --title "${task.title}" --body "Closes #${task.issueNumber}"`,
-    { cwd: worktreePath }
+    { cwd: worktreePath, env: { ...process.env, GH_TOKEN: agentToken } }
   ).toString().trim();
 }

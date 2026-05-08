@@ -2,7 +2,7 @@ import { loadModels, getModel } from "./models.js";
 import { loadState, saveState, type OrchestratorState } from "./state.js";
 import { loadTasks, getPendingTasks, type Task } from "./planner.js";
 import { createWorktree, removeWorktree, worktreePath } from "./worktree.js";
-import { runAgent, runQAGate, runSecurityGate, isAuthTouching, createPR, createAgentDb, dropAgentDb } from "./worker.js";
+import { runAgent, runQAReview, runImplFix, runSecurityGate, isAuthTouching, isPRApproved, createPR, createAgentDb, dropAgentDb } from "./worker.js";
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 
@@ -78,9 +78,6 @@ async function processTask(task: Task, config: ReturnType<typeof loadModels>, st
       try {
         await runAgent(task.role, task, attempt, model, wtPath, dbUrl, timeoutMs);
 
-        console.log(`[#${task.issueNumber}] running QA gate`);
-        await runQAGate(task, attempt, wtPath, dbUrl, timeoutMs);
-
         if (isAuthTouching(wtPath)) {
           console.log(`[#${task.issueNumber}] running security gate`);
           await runSecurityGate(task, attempt, wtPath, dbUrl, timeoutMs);
@@ -91,6 +88,24 @@ async function processTask(task: Task, config: ReturnType<typeof loadModels>, st
       }
 
       const prUrl = createPR(task, wtPath);
+      const prNumber = prUrl.split("/").pop()!;
+
+      const maxReviewRounds = 3;
+      for (let round = 0; round < maxReviewRounds; round++) {
+        console.log(`[#${task.issueNumber}] QA review round ${round + 1}/${maxReviewRounds}`);
+        await runQAReview(task, attempt, round, wtPath, dbUrl, prNumber, timeoutMs);
+        if (isPRApproved(prNumber)) {
+          console.log(`[#${task.issueNumber}] PR approved`);
+          break;
+        }
+        if (round < maxReviewRounds - 1) {
+          console.log(`[#${task.issueNumber}] addressing QA feedback (round ${round + 1})`);
+          await runImplFix(task, attempt, round, model, wtPath, dbUrl, prNumber, timeoutMs);
+        } else {
+          console.log(`[#${task.issueNumber}] max review rounds reached — PR left open for manual review`);
+        }
+      }
+
       removeWorktree(branch);
 
       state.tasks[key] = { ...state.tasks[key], status: "done", pr: prUrl, worktree: null };
