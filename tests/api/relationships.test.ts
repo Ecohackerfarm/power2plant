@@ -144,7 +144,7 @@ describe('POST /api/relationships', () => {
     vi.mocked(prisma.crop.findMany).mockResolvedValue([{ id: 'crop-a' }, { id: 'crop-b' }] as any)
     vi.mocked(prisma.relationshipSource.findFirst).mockResolvedValue(null)
     mockTransaction()
-    const res = await POST(makeReq({ ...validBody, sourceType: 'SCIENTIFIC_PAPER' }))
+    const res = await POST(makeReq({ ...validBody, sourceType: 'SCIENTIFIC_PAPER', evidenceLevel: 'PEER_REVIEWED' }))
     expect(res.status).toBe(201)
     expect(capturedSourceData.data.sourceType).toBe('SCIENTIFIC_PAPER')
     expect(capturedSourceData.data.confidence).toBe('PEER_REVIEWED')

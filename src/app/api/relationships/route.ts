@@ -3,11 +3,13 @@ import { headers } from 'next/headers'
 import prisma from '@/lib/prisma'
 import { SOURCE_CONFIDENCE } from '@/lib/source-confidence'
 import { classifyUrl } from '@/lib/classify-url'
+import type { SourceClassification, ConfidenceLevel } from '@prisma/client'
 import { auth } from '@/lib/auth'
 
 const VALID_TYPES = ['COMPANION', 'AVOID'] as const
 const VALID_REASONS = ['PEST_CONTROL', 'POLLINATION', 'NUTRIENT', 'SHADE', 'ALLELOPATHY', 'OTHER'] as const
 const VALID_SOURCE_TYPES = ['SCIENTIFIC_PAPER', 'ACADEMIC_RESOURCE', 'GARDENING_GUIDE', 'BLOG_FORUM', 'PERSONAL_OBSERVATION'] as const
+const VALID_EVIDENCE_LEVELS = ['ANECDOTAL', 'TRADITIONAL', 'OBSERVED', 'PEER_REVIEWED'] as const
 
 function getConfidenceLabel(confidence: number): string {
   if (confidence >= 1.0) return 'Peer-reviewed'
@@ -71,7 +73,7 @@ export async function POST(request: Request) {
   const session = await getSession()
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  let body: { cropAId?: unknown; cropBId?: unknown; type?: unknown; reason?: unknown; notes?: unknown; sourceType?: unknown; sources?: unknown }
+  let body: { cropAId?: unknown; cropBId?: unknown; type?: unknown; reason?: unknown; notes?: unknown; sourceType?: unknown; sources?: unknown; evidenceLevel?: unknown; sourceTypeOverrides?: unknown }
   try {
     body = await request.json()
   } catch {
@@ -107,6 +109,23 @@ export async function POST(request: Request) {
   if (sources !== undefined) {
     if (!Array.isArray(sources) || !sources.every(s => typeof s === 'string')) {
       return NextResponse.json({ error: 'sources must be an array of URL strings' }, { status: 400 })
+    }
+  }
+
+  const { evidenceLevel } = body
+  if (evidenceLevel !== undefined && !VALID_EVIDENCE_LEVELS.includes(evidenceLevel as (typeof VALID_EVIDENCE_LEVELS)[number])) {
+    return NextResponse.json({ error: 'invalid evidenceLevel' }, { status: 400 })
+  }
+
+  const { sourceTypeOverrides } = body
+  if (sourceTypeOverrides !== undefined) {
+    if (typeof sourceTypeOverrides !== 'object' || sourceTypeOverrides === null || Array.isArray(sourceTypeOverrides)) {
+      return NextResponse.json({ error: 'sourceTypeOverrides must be an object' }, { status: 400 })
+    }
+    for (const [key, val] of Object.entries(sourceTypeOverrides)) {
+      if (!VALID_SOURCE_TYPES.includes(val as (typeof VALID_SOURCE_TYPES)[number])) {
+        return NextResponse.json({ error: `invalid sourceType for index ${key}` }, { status: 400 })
+      }
     }
   }
 
@@ -162,8 +181,9 @@ export async function POST(request: Request) {
     let sourceId: string
 
     if (sources && Array.isArray(sources) && sources.length > 0) {
-      for (const url of sources) {
-        const st = classifyUrl(url)
+      for (const [index, url] of sources.entries()) {
+        const autoType = classifyUrl(url)
+        const st: SourceClassification = sourceTypeOverrides?.[index] ?? autoType
         const src = await tx.relationshipSource.create({
           data: {
             relationshipId: rel.id,
@@ -177,24 +197,26 @@ export async function POST(request: Request) {
         })
         sourceId = src.id
       }
+      const testimonyConfidence = evidenceLevel as ConfidenceLevel | undefined ?? 'ANECDOTAL'
       const testimony = await tx.relationshipSource.create({
         data: {
           relationshipId: rel.id,
           source: 'COMMUNITY',
           sourceType: 'PERSONAL_OBSERVATION',
-          confidence: 'ANECDOTAL',
+          confidence: testimonyConfidence,
           notes: notes as string | undefined ?? null,
           userId: session.user.id,
         },
       })
       sourceId = testimony.id
     } else {
+      const testimonyConfidence = evidenceLevel as ConfidenceLevel | undefined ?? 'ANECDOTAL'
       const source = await tx.relationshipSource.create({
         data: {
           relationshipId: rel.id,
           source: 'COMMUNITY',
           sourceType: sourceType as (typeof VALID_SOURCE_TYPES)[number] | undefined ?? undefined,
-          confidence: SOURCE_CONFIDENCE[sourceType as keyof typeof SOURCE_CONFIDENCE] ?? 'ANECDOTAL',
+          confidence: testimonyConfidence,
           notes: notes as string | undefined ?? null,
           userId: session.user.id,
         },

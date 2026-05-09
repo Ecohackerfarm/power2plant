@@ -5,8 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
 import { getDisplayName } from '@/lib/recommend'
+import { classifyUrl } from '@/lib/classify-url'
 import type { CropRow } from '@/lib/crop-rank'
+import type { SourceClassification } from '@prisma/client'
 import Link from 'next/link'
 
 type Crop = Pick<CropRow, 'id' | 'name' | 'botanicalName' | 'commonNames'>
@@ -25,6 +28,29 @@ const REASONS = [
   { value: 'ALLELOPATHY', label: 'Natural repellent (allelopathy)' },
   { value: 'OTHER', label: 'Other' },
 ] as const
+
+const EVIDENCE_LEVELS = [
+  { value: 'ANECDOTAL', label: 'I observed this personally' },
+  { value: 'TRADITIONAL', label: 'I\'ve read about this in resources' },
+  { value: 'OBSERVED', label: 'I can point to documentation' },
+  { value: 'PEER_REVIEWED', label: 'I have peer-reviewed sources' },
+] as const
+
+const SOURCE_TYPE_LABELS: Record<SourceClassification, string> = {
+  SCIENTIFIC_PAPER: 'Scientific paper',
+  ACADEMIC_RESOURCE: 'Academic resource',
+  GARDENING_GUIDE: 'Gardening guide',
+  BLOG_FORUM: 'Blog / Forum',
+  PERSONAL_OBSERVATION: 'Personal observation',
+}
+
+const SOURCE_TYPE_BADGE_VARIANTS: Record<SourceClassification, 'default' | 'secondary' | 'destructive' | 'outline' | 'ghost' | 'link'> = {
+  SCIENTIFIC_PAPER: 'default',
+  ACADEMIC_RESOURCE: 'secondary',
+  GARDENING_GUIDE: 'outline',
+  BLOG_FORUM: 'ghost',
+  PERSONAL_OBSERVATION: 'ghost',
+}
 
 function CropPicker({ label, value, onChange }: {
   label: string
@@ -120,7 +146,10 @@ export default function ContributePage() {
   const [type, setType] = useState<'COMPANION' | 'AVOID'>('COMPANION')
   const [reasons, setReasons] = useState<string[]>([])
   const [notes, setNotes] = useState('')
-  const [sources, setSources] = useState<{ id: number; url: string }[]>([])
+  const [evidenceLevel, setEvidenceLevel] = useState<string>('ANECDOTAL')
+  const [sourceUrls, setSourceUrls] = useState<string[]>([])
+  const [sourceTypes, setSourceTypes] = useState<SourceClassification[]>([])
+  const [sourceOverrides, setSourceOverrides] = useState<(SourceClassification | null)[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState<'success' | 'ratelimit' | 'error' | null>(null)
 
@@ -142,6 +171,11 @@ export default function ContributePage() {
     setSubmitting(true)
     setResult(null)
     try {
+      const urls = sourceUrls.filter(Boolean)
+      const overrides: Record<number, string> = {}
+      sourceOverrides.forEach((ov, idx) => {
+        if (ov && urls[idx]) overrides[idx] = ov
+      })
       const res = await fetch('/api/relationships', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -151,13 +185,16 @@ export default function ContributePage() {
           type,
           reason: reasons.length > 0 ? reasons : undefined,
           notes: notes || undefined,
-          sources: sources.length > 0 ? sources.map(s => s.url).filter(Boolean) : undefined,
+          sources: urls.length > 0 ? urls : undefined,
+          evidenceLevel,
+          sourceTypeOverrides: Object.keys(overrides).length > 0 ? overrides : undefined,
         }),
       })
       if (res.status === 429) { setResult('ratelimit'); return }
       if (!res.ok) { setResult('error'); return }
       setResult('success')
-      setCropA(null); setCropB(null); setReasons([]); setNotes(''); setSources([])
+      setCropA(null); setCropB(null); setReasons([]); setNotes(''); setEvidenceLevel('ANECDOTAL')
+      setSourceUrls([]); setSourceTypes([]); setSourceOverrides([])
     } catch {
       setResult('error')
     } finally {
@@ -246,28 +283,100 @@ export default function ContributePage() {
               <p className="text-xs text-muted-foreground text-right">{notes.length}/2000</p>
             </div>
 
+            <div className="space-y-2">
+              <Label>Evidence level</Label>
+              <p className="text-xs text-muted-foreground">Select the highest quality evidence you have for this observation.</p>
+              <div className="flex flex-col gap-2">
+                {EVIDENCE_LEVELS.map(el => (
+                  <label key={el.value} className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input
+                      type="radio"
+                      name="evidenceLevel"
+                      value={el.value}
+                      checked={evidenceLevel === el.value}
+                      onChange={() => setEvidenceLevel(el.value)}
+                    />
+                    {el.label}
+                  </label>
+                ))}
+              </div>
+            </div>
+
             <div className="space-y-1">
-              <Label>Sources (optional)</Label>
-              {sources.map((src, idx) => (
-                <div key={idx} className="flex items-center gap-2 mb-1">
-                  <span className="text-sm font-medium">[{idx + 1}]</span>
-                  <Input
-                    value={src.url}
-                    placeholder="https://..."
-                    onChange={e => {
-                      const newSources = [...sources]
-                      newSources[idx] = { id: idx + 1, url: e.target.value }
-                      setSources(newSources)
-                    }}
-                  />
-                </div>
-              ))}
-              <Button type="button" onClick={() => setSources([...sources, { id: sources.length + 1, url: '' }])} disabled={sources.length >= 20} className="mt-2">
+              <Label>Sources <span className="text-muted-foreground font-normal">(optional)</span></Label>
+              <p className="text-xs text-muted-foreground">
+                doi.org and PubMed links are recognised automatically as scientific papers.
+              </p>
+              {sourceUrls.map((url, idx) => {
+                const detected = sourceTypes[idx] ?? 'BLOG_FORUM'
+                const override = sourceOverrides[idx]
+                const displayType = override ?? detected
+                return (
+                  <div key={idx} className="flex items-start gap-2 mb-2">
+                    <span className="text-sm font-medium mt-2 shrink-0">[{idx + 1}]</span>
+                    <div className="flex-1 space-y-1">
+                      <Input
+                        value={url}
+                        placeholder="https://..."
+                        onChange={e => {
+                          const next = [...sourceUrls]
+                          next[idx] = e.target.value
+                          setSourceUrls(next)
+                        }}
+                        onBlur={e => {
+                          const classified = classifyUrl(e.target.value)
+                          const nextTypes = [...sourceTypes]
+                          nextTypes[idx] = classified
+                          setSourceTypes(nextTypes)
+                        }}
+                      />
+                      <div className="flex items-center gap-2">
+                        <Badge variant={SOURCE_TYPE_BADGE_VARIANTS[displayType]}>
+                          {SOURCE_TYPE_LABELS[displayType]}
+                        </Badge>
+                        <select
+                          className="text-xs border rounded px-1 py-0.5 bg-background"
+                          value={override ?? ''}
+                          onChange={e => {
+                            const val = e.target.value
+                            const next = [...sourceOverrides]
+                            next[idx] = val ? (val as SourceClassification) : null
+                            setSourceOverrides(next)
+                          }}
+                        >
+                          <option value="">Auto-detected</option>
+                          {(Object.entries(SOURCE_TYPE_LABELS) as [SourceClassification, string][]).map(([key, label]) => (
+                            <option key={key} value={key}>{label}</option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          className="text-xs text-muted-foreground hover:text-foreground underline shrink-0"
+                          onClick={() => {
+                            setSourceUrls(sourceUrls.filter((_, i) => i !== idx))
+                            setSourceTypes(sourceTypes.filter((_, i) => i !== idx))
+                            setSourceOverrides(sourceOverrides.filter((_, i) => i !== idx))
+                          }}
+                        >
+                          remove
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+              <Button
+                type="button"
+                onClick={() => {
+                  setSourceUrls([...sourceUrls, ''])
+                  setSourceTypes([...sourceTypes, 'BLOG_FORUM'])
+                  setSourceOverrides([...sourceOverrides, null])
+                }}
+                disabled={sourceUrls.length >= 20}
+                className="mt-2"
+              >
                 Add source
               </Button>
-              <p className="text-xs text-muted-foreground mt-1">
-                Reference sources in notes using [number] notation
-              </p>
             </div>
 
             <Button
