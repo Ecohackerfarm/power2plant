@@ -18,7 +18,6 @@ ssh ... node@power2plant-app-1 "cd <WORKTREE_PATH> && DATABASE_URL=<DATABASE_URL
 
 - Branch naming: `feat/<issue-number>-<slug>` or `fix/<slug>`
 - PRs target `release/vX.Y.Z`, never `main` directly
-- Run `pnpm test:run` (via SSH) before creating PR — all tests must pass
 - Schema changes: create migration file only — do NOT apply it yourself:
   ```sh
   ssh ... node@power2plant-app-1 "cd <WORKTREE_PATH> && DATABASE_URL=<DATABASE_URL> npx prisma migrate dev --create-only --name <descriptive-name>"

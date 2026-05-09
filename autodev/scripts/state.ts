@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { join } from "path";
 
-export type TaskStatus = "pending" | "running" | "qa" | "done" | "failed";
+export type TaskStatus = "pending" | "running" | "qa" | "needs-continue" | "done" | "failed";
 
 export interface TaskState {
   status: TaskStatus;

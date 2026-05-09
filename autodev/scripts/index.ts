@@ -45,6 +45,16 @@ const arg = process.argv[3];
 async function runOrchestration(): Promise<void> {
   const config = loadModels();
   const state = loadState();
+
+  // Reset stale "running" tasks from a previous crashed run
+  for (const [key, task] of Object.entries(state.tasks)) {
+    if (task.status === "running") {
+      console.warn(`[#${key}] resetting stale 'running' → 'failed'`);
+      state.tasks[key] = { ...task, status: "failed" };
+    }
+  }
+  saveState(state);
+
   const tasks = loadTasks();
   const pending = getPendingTasks(tasks, state);
 
@@ -65,6 +75,7 @@ async function runOrchestration(): Promise<void> {
     }
     const p = processTask(task, config, state).finally(() => {
       running--;
+      pool.splice(pool.indexOf(p), 1);
     });
     pool.push(p);
     running++;
@@ -175,7 +186,10 @@ async function processTask(task: Task, config: ReturnType<typeof loadModels>, st
       if (attempt < config.maxRetries - 1) {
         removeWorktree(branch);
       } else {
-        state.tasks[key] = { ...state.tasks[key], status: "failed", worktree: wtPath };
+        // If we reached QA (PR exists) and failed there, preserve "qa" status so 'continue' can resume
+        const prevStatus = state.tasks[key]?.status;
+        const finalStatus = (prevStatus === "qa" && state.tasks[key]?.pr) ? "qa" : "failed";
+        state.tasks[key] = { ...state.tasks[key], status: finalStatus, worktree: wtPath };
         saveState(state);
         console.error(`[#${task.issueNumber}] all retries exhausted — inspect autodev/logs/${key}/`);
       }
@@ -187,7 +201,8 @@ function printStatus(): void {
   const state = loadState();
   const tasks = loadTasks();
 
-  const icon: Record<string, string> = { done: "✓", failed: "✗", running: "⟳", qa: "◎", pending: "·" };
+  const config = loadModels();
+  const icon: Record<string, string> = { done: "✓", failed: "✗", running: "⟳", qa: "◎", "needs-continue": "!", pending: "·" };
 
   console.log("\nTASK  ISSUE  ROLE                     STATUS      ATTEMPTS  MODEL                     PR");
   console.log("────  ─────  ───────────────────────  ──────────  ────────  ────────────────────────  ──────");
@@ -195,8 +210,10 @@ function printStatus(): void {
   for (const task of tasks) {
     const s = state.tasks[String(task.issueNumber)];
     const status = s?.status ?? "pending";
-    const statusLabel = status === "qa" ? `qa r${s?.qaRound ?? "?"}/${3}` : status;
-    const attempts = s ? `${s.attempts}/${loadModels().maxRetries}` : "-";
+    const statusLabel = status === "qa" ? `qa r${s?.qaRound ?? "?"}/${config.maxReviewRounds ?? 3}`
+      : status === "needs-continue" ? "needs-cont"
+      : status;
+    const attempts = s ? `${s.attempts}/${config.maxRetries}` : "-";
     const model = s?.modelUsed?.split("/").pop() ?? "-";
     const pr = s?.pr ? `#${s.pr.split("/").pop()}` : "-";
     console.log(
@@ -221,22 +238,32 @@ async function continueTask(issueNumber: string): Promise<void> {
   if (!taskState?.pr) { console.error(`No PR found for #${issueNumber} — use retry instead`); process.exit(1); }
   const prNumber = taskState.pr.split("/").pop()!;
 
+  // Resume from QA phase if the task was interrupted during a QA review round
+  const resumeFromQA = taskState.status === "qa" && taskState.qaRound != null;
+  const startRound = resumeFromQA ? taskState.qaRound! - 1 : 0;
+
   const timeoutMs = config.timeoutMinutes * 60 * 1000;
   const model = getModel(0, config.default);
-  const wtPath = createWorktree(task.branch);
+  let wtPath: string;
+  try {
+    wtPath = createWorktree(task.branch);
+  } catch {
+    wtPath = worktreePath(task.branch);
+  }
 
-  state.tasks[issueNumber] = { ...taskState, status: "running", worktree: wtPath };
+  state.tasks[issueNumber] = { ...taskState, status: resumeFromQA ? "qa" : "running", worktree: wtPath };
   saveState(state);
 
   try {
     const dbUrl = createAgentDb(task.issueNumber);
     try {
-      // Start with impl-fix to address pending QA feedback, then re-review
-      console.log(`[#${task.issueNumber}] addressing pending QA feedback before re-review`);
-      await runImplFix(task, 0, 0, model, wtPath, dbUrl, prNumber, timeoutMs);
+      if (!resumeFromQA) {
+        console.log(`[#${task.issueNumber}] addressing pending QA feedback before re-review`);
+        await runImplFix(task, 0, 0, model, wtPath, dbUrl, prNumber, timeoutMs);
+      }
 
       const maxReviewRounds = config.maxReviewRounds ?? 3;
-      for (let round = 0; round < maxReviewRounds; round++) {
+      for (let round = startRound; round < maxReviewRounds; round++) {
         console.log(`[#${task.issueNumber}] QA continue round ${round + 1}/${maxReviewRounds}`);
         state.tasks[issueNumber] = { ...state.tasks[issueNumber], status: "qa", qaRound: round + 1 };
         saveState(state);
@@ -246,6 +273,8 @@ async function continueTask(issueNumber: string): Promise<void> {
           break;
         }
         if (round < maxReviewRounds - 1) {
+          state.tasks[issueNumber] = { ...state.tasks[issueNumber], status: "needs-continue" };
+          saveState(state);
           await runImplFix(task, 0, round + 1, model, wtPath, dbUrl, prNumber, timeoutMs);
         } else {
           console.log(`[#${task.issueNumber}] max review rounds reached — PR left open for manual review`);
@@ -261,7 +290,8 @@ async function continueTask(issueNumber: string): Promise<void> {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error(`[#${task.issueNumber}] continue failed: ${msg}`);
-    state.tasks[issueNumber] = { ...state.tasks[issueNumber], status: "done", worktree: wtPath };
+    // Preserve current phase status (qa/needs-continue/running) so continue can resume correctly
+    state.tasks[issueNumber] = { ...state.tasks[issueNumber], worktree: wtPath };
     saveState(state);
   }
 }

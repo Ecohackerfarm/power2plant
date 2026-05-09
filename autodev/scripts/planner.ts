@@ -18,6 +18,7 @@ export function loadTasks(): Task[] {
 export function getPendingTasks(tasks: Task[], state: OrchestratorState): Task[] {
   return tasks.filter((t) => {
     const s = state.tasks[String(t.issueNumber)];
-    return !s || (s.status !== "done" && s.status !== "failed");
+    if (!s) return true;           // new task
+    return s.status === "failed";  // failed tasks auto-retry; qa/needs-continue need explicit continue
   });
 }
