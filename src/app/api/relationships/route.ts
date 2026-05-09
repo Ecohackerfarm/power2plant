@@ -3,10 +3,7 @@ import { headers } from 'next/headers'
 import prisma from '@/lib/prisma'
 import { SOURCE_CONFIDENCE } from '@/lib/source-confidence'
 import { classifyUrl } from '@/lib/classify-url'
-<<<<<<< Updated upstream
 import type { SourceClassification, ConfidenceLevel } from '@prisma/client'
-=======
->>>>>>> Stashed changes
 import { auth } from '@/lib/auth'
 
 const VALID_TYPES = ['COMPANION', 'AVOID'] as const
@@ -76,11 +73,7 @@ export async function POST(request: Request) {
   const session = await getSession()
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-<<<<<<< Updated upstream
   let body: { cropAId?: unknown; cropBId?: unknown; type?: unknown; reason?: unknown; notes?: unknown; sourceType?: unknown; sources?: unknown; evidenceLevel?: unknown; sourceTypeOverrides?: unknown }
-=======
-  let body: { cropAId?: unknown; cropBId?: unknown; type?: unknown; reason?: unknown; notes?: unknown; sourceType?: unknown; sources?: unknown }
->>>>>>> Stashed changes
   try {
     body = await request.json()
   } catch {
@@ -117,13 +110,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'invalid sourceType' }, { status: 400 })
   }
 
-  const { sources } = body
-  if (sources !== undefined) {
-    if (!Array.isArray(sources) || !sources.every(s => typeof s === 'string')) {
-      return NextResponse.json({ error: 'sources must be an array of URL strings' }, { status: 400 })
-    }
-  }
-
   const { evidenceLevel } = body
   if (evidenceLevel !== undefined && !VALID_EVIDENCE_LEVELS.includes(evidenceLevel as (typeof VALID_EVIDENCE_LEVELS)[number])) {
     return NextResponse.json({ error: 'invalid evidenceLevel' }, { status: 400 })
@@ -136,12 +122,11 @@ export async function POST(request: Request) {
     }
     for (const [key, val] of Object.entries(sourceTypeOverrides)) {
       if (!VALID_SOURCE_TYPES.includes(val as (typeof VALID_SOURCE_TYPES)[number])) {
-        return NextResponse.json({ error: `invalid sourceType for index ${key}` }, { status: 400 })
+        return NextResponse.json({ error: 'invalid sourceType for index ' + key }, { status: 400 })
       }
     }
   }
 
-  // Verify both crops exist
   const crops = await prisma.crop.findMany({
     where: { id: { in: [cropAId, cropBId] } },
     select: { id: true },
@@ -152,10 +137,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'unknown crop ids', ids: unknown }, { status: 422 })
   }
 
-  // Canonical ordering
   const [canonA, canonB] = cropAId < cropBId ? [cropAId, cropBId] : [cropBId, cropAId]
 
-  // Rate limit: one submission per user per pair per day
   const todayStart = new Date()
   todayStart.setHours(0, 0, 0, 0)
 
@@ -174,11 +157,6 @@ export async function POST(request: Request) {
     )
   }
 
-<<<<<<< Updated upstream
-  // Upsert relationship + create source(s) in transaction
-=======
-  // Upsert relationship + create sources in transaction
->>>>>>> Stashed changes
   const result = await prisma.$transaction(async (tx) => {
     const rel = await tx.cropRelationship.upsert({
       where: { cropAId_cropBId: { cropAId: canonA, cropBId: canonB } },
@@ -194,7 +172,6 @@ export async function POST(request: Request) {
       update: {},
     })
 
-<<<<<<< Updated upstream
     let sourceId: string
 
     if (sources && Array.isArray(sources) && sources.length > 0) {
@@ -229,50 +206,18 @@ export async function POST(request: Request) {
     } else {
       const testimonyConfidence = evidenceLevel as ConfidenceLevel | undefined ?? 'ANECDOTAL'
       const source = await tx.relationshipSource.create({
-=======
-    if (sources !== undefined) {
-      const urlSources = (sources as string[]).map(url => ({
-        relationshipId: rel.id,
-        source: 'COMMUNITY' as const,
-        sourceType: classifyUrl(url),
-        confidence: SOURCE_CONFIDENCE[classifyUrl(url)],
-        url,
-        notes: (notes as string | undefined) ?? null,
-        userId: session.user.id,
-      }))
-      urlSources.push({
-        relationshipId: rel.id,
-        source: 'COMMUNITY' as const,
-        sourceType: 'PERSONAL_OBSERVATION',
-        confidence: 'ANECDOTAL',
-        url: null,
-        notes: (notes as string | undefined) ?? null,
-        userId: session.user.id,
-      })
-      await tx.relationshipSource.createMany({ data: urlSources })
-    } else {
-      await tx.relationshipSource.create({
->>>>>>> Stashed changes
         data: {
           relationshipId: rel.id,
           source: 'COMMUNITY',
           sourceType: sourceType as (typeof VALID_SOURCE_TYPES)[number] | undefined ?? undefined,
-<<<<<<< Updated upstream
           confidence: testimonyConfidence,
-=======
-          confidence: SOURCE_CONFIDENCE[sourceType as keyof typeof SOURCE_CONFIDENCE] ?? 'ANECDOTAL',
->>>>>>> Stashed changes
           notes: notes as string | undefined ?? null,
           userId: session.user.id,
         },
       })
-<<<<<<< Updated upstream
       sourceId = source.id
-=======
->>>>>>> Stashed changes
     }
 
-    // Recompute confidence as max across all sources
     const allSources = await tx.relationshipSource.findMany({
       where: { relationshipId: rel.id },
       select: { confidence: true },
@@ -284,11 +229,7 @@ export async function POST(request: Request) {
       data: { confidence: maxConfidence },
     })
 
-<<<<<<< Updated upstream
     return { id: rel.id, sourceId }
-=======
-    return { id: rel.id }
->>>>>>> Stashed changes
   })
 
   return NextResponse.json(result, { status: 201 })
