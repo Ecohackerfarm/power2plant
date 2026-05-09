@@ -20,7 +20,7 @@ export interface OrchestratorState {
   tasks: Record<string, TaskState>;
 }
 
-const STATE_PATH = join(process.cwd(), "orchestrate/state.json");
+const STATE_PATH = join(process.cwd(), "autodev/orchestrate/state.json");
 
 export function loadState(): OrchestratorState {
   if (!existsSync(STATE_PATH)) {
