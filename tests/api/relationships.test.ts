@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { POST } from '@/app/api/relationships/route'
+import { GET, POST } from '@/app/api/relationships/route'
 
 vi.mock('@/lib/prisma', () => ({
   default: {
     crop: { findMany: vi.fn() },
     relationshipSource: { findFirst: vi.fn(), create: vi.fn(), findMany: vi.fn() },
-    cropRelationship: { upsert: vi.fn(), update: vi.fn() },
+    cropRelationship: { upsert: vi.fn(), update: vi.fn(), findMany: vi.fn() },
     $transaction: vi.fn(),
   },
 }))
@@ -192,5 +192,81 @@ expect(createdSources[0].sourceType).toBe('SCIENTIFIC_PAPER')
     expect(createdSources[2].source).toBe('COMMUNITY')
     expect(createdSources[2].confidence).toBe('ANECDOTAL')
     expect(createdSources[2].url).toBeUndefined()
+  })
+})
+
+function makeGetReq(params: string) {
+  return new Request(`http://localhost/api/relationships?${params}`, { method: 'GET' })
+}
+
+describe('GET /api/relationships', () => {
+  function mockRelationships(overrides: Partial<any>[] = []) {
+    const defaults = [
+      { id: 'rel-3', type: 'COMPANION', reason: 'PEST_CONTROL', confidence: 0.75, notes: null, cropA: { id: 'crop-a', name: 'Tomato', botanicalName: 'Solanum lycopersicum' }, cropB: { id: 'crop-b', name: 'Basil', botanicalName: 'Ocimum basilicum' }, _count: { sources: 2 } },
+      { id: 'rel-2', type: 'AVOID', reason: 'ALLELOPATHY', confidence: 0.5, notes: null, cropA: { id: 'crop-c', name: 'Fennel', botanicalName: 'Foeniculum vulgare' }, cropB: { id: 'crop-d', name: 'Dill', botanicalName: 'Anethum graveolens' }, _count: { sources: 1 } },
+      { id: 'rel-1', type: 'COMPANION', reason: 'NUTRIENT', confidence: 0.25, notes: 'Three sisters', cropA: { id: 'crop-e', name: 'Corn', botanicalName: 'Zea mays' }, cropB: { id: 'crop-f', name: 'Bean', botanicalName: 'Phaseolus vulgaris' }, _count: { sources: 3 } },
+    ]
+    return overrides.length > 0 ? overrides : defaults
+  }
+
+  it('returns 200 with array of relationships and no nextCursor when results fit in one page', async () => {
+    const rows = mockRelationships()
+    vi.mocked(prisma.cropRelationship.findMany).mockResolvedValue(rows as any)
+    const res = await GET(makeGetReq(''))
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.relationships).toHaveLength(3)
+    expect(body.relationships[0].id).toBe('rel-3')
+    expect(body.relationships[0].cropA.name).toBe('Tomato')
+    expect(body.relationships[0].cropB.name).toBe('Basil')
+    expect(body.relationships[0].sourceCount).toBe(2)
+    expect(body.nextCursor).toBeNull()
+  })
+
+  it('returns nextCursor when results exceed limit', async () => {
+    const rows = Array.from({ length: 21 }, (_, i) => ({
+      id: `rel-${100 - i}`,
+      type: 'COMPANION' as const,
+      reason: null,
+      confidence: 0.25,
+      notes: null,
+      cropA: { id: `crop-${i}-a`, name: `CropA-${i}`, botanicalName: null },
+      cropB: { id: `crop-${i}-b`, name: `CropB-${i}`, botanicalName: null },
+      _count: { sources: 0 },
+    }))
+    vi.mocked(prisma.cropRelationship.findMany).mockResolvedValue(rows as any)
+    const res = await GET(makeGetReq('limit=20'))
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.relationships).toHaveLength(20)
+    expect(body.nextCursor).toBe('rel-81')
+  })
+
+  it('filters by ?q= — only relationships where cropA or cropB name matches', async () => {
+    const rows = mockRelationships()
+    vi.mocked(prisma.cropRelationship.findMany).mockResolvedValue(rows as any)
+    const res = await GET(makeGetReq('q=Tomato'))
+    expect(res.status).toBe(200)
+    expect(prisma.cropRelationship.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          OR: expect.arrayContaining([
+            expect.objectContaining({ cropA: expect.objectContaining({ OR: expect.arrayContaining([{ name: { contains: 'Tomato', mode: 'insensitive' } }]) }) }),
+          ]),
+        }),
+      }),
+    )
+  })
+
+  it('accepts ?cursor= and returns only relationships with id < cursor', async () => {
+    const rows = mockRelationships()
+    vi.mocked(prisma.cropRelationship.findMany).mockResolvedValue(rows as any)
+    const res = await GET(makeGetReq('cursor=rel-2'))
+    expect(res.status).toBe(200)
+    expect(prisma.cropRelationship.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ id: { lt: 'rel-2' } }),
+      }),
+    )
   })
 })
