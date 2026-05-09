@@ -4,6 +4,7 @@ import { join } from "path";
 export interface ModelsConfig {
   default: string[];
   maxRetries: number;
+  maxReviewRounds: number;
   timeoutMinutes: number;
   maxParallel: number;
   schedule: string;

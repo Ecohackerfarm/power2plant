@@ -6,6 +6,19 @@ import { runAgent, runQAReview, runImplFix, runSecurityGate, isAuthTouching, isP
 import { readFileSync, writeFileSync, unlinkSync, existsSync } from "fs";
 import { join } from "path";
 
+// Load env vars from .env and ~/.bashrc (non-overriding)
+function loadEnvFile(path: string): void {
+  try {
+    const content = readFileSync(path, "utf-8");
+    for (const line of content.split("\n")) {
+      const m = line.match(/^(?:export\s+)?([A-Z_][A-Z0-9_]*)=["']?([^"'\n]*)["']?\s*$/);
+      if (m && !(m[1] in process.env)) process.env[m[1]] = m[2];
+    }
+  } catch {}
+}
+loadEnvFile(join(process.cwd(), ".env"));
+loadEnvFile(join(process.env.HOME ?? "/home/agent", ".bashrc"));
+
 const LOCK_PATH = join(process.cwd(), "autodev/orchestrate/orchestrator.pid");
 
 function acquireLock(): void {
@@ -131,9 +144,11 @@ async function processTask(task: Task, config: ReturnType<typeof loadModels>, st
       const prUrl = createPR(task, wtPath);
       const prNumber = prUrl.split("/").pop()!;
 
-      const maxReviewRounds = 3;
+      const maxReviewRounds = config.maxReviewRounds ?? 3;
       for (let round = 0; round < maxReviewRounds; round++) {
         console.log(`[#${task.issueNumber}] QA review round ${round + 1}/${maxReviewRounds}`);
+        state.tasks[key] = { ...state.tasks[key], status: "qa", qaRound: round + 1 };
+        saveState(state);
         await runQAReview(task, attempt, round, model, wtPath, dbUrl, prNumber, timeoutMs);
         if (isPRApproved(prNumber)) {
           console.log(`[#${task.issueNumber}] PR approved`);
@@ -172,25 +187,82 @@ function printStatus(): void {
   const state = loadState();
   const tasks = loadTasks();
 
-  const icon: Record<string, string> = { done: "✓", failed: "✗", running: "⟳", pending: "·" };
+  const icon: Record<string, string> = { done: "✓", failed: "✗", running: "⟳", qa: "◎", pending: "·" };
 
-  console.log("\nTASK  ISSUE  ROLE                     STATUS    ATTEMPTS  MODEL                     PR");
-  console.log("────  ─────  ───────────────────────  ────────  ────────  ────────────────────────  ──────");
+  console.log("\nTASK  ISSUE  ROLE                     STATUS      ATTEMPTS  MODEL                     PR");
+  console.log("────  ─────  ───────────────────────  ──────────  ────────  ────────────────────────  ──────");
 
   for (const task of tasks) {
     const s = state.tasks[String(task.issueNumber)];
     const status = s?.status ?? "pending";
+    const statusLabel = status === "qa" ? `qa r${s?.qaRound ?? "?"}/${3}` : status;
     const attempts = s ? `${s.attempts}/${loadModels().maxRetries}` : "-";
     const model = s?.modelUsed?.split("/").pop() ?? "-";
     const pr = s?.pr ? `#${s.pr.split("/").pop()}` : "-";
     console.log(
-      ` ${icon[status] ?? "?"}    #${String(task.issueNumber).padEnd(4)}  ${task.role.padEnd(23)}  ${status.padEnd(8)}  ${attempts.padEnd(8)}  ${model.padEnd(24)}  ${pr}`
+      ` ${icon[status] ?? "?"}    #${String(task.issueNumber).padEnd(4)}  ${task.role.padEnd(23)}  ${statusLabel.padEnd(10)}  ${attempts.padEnd(8)}  ${model.padEnd(24)}  ${pr}`
     );
   }
 
   const failed = Object.values(state.tasks).filter((t) => t.status === "failed");
   if (failed.length > 0) {
     console.log(`\nFailed: ${failed.length} task(s). Inspect autodev/logs/<issue>/ for details.`);
+  }
+}
+
+async function continueTask(issueNumber: string): Promise<void> {
+  const config = loadModels();
+  const state = loadState();
+  const tasks = loadTasks();
+  const task = tasks.find((t) => String(t.issueNumber) === issueNumber);
+  if (!task) { console.error(`Issue #${issueNumber} not found in tasks.json`); process.exit(1); }
+
+  const taskState = state.tasks[issueNumber];
+  if (!taskState?.pr) { console.error(`No PR found for #${issueNumber} — use retry instead`); process.exit(1); }
+  const prNumber = taskState.pr.split("/").pop()!;
+
+  const timeoutMs = config.timeoutMinutes * 60 * 1000;
+  const model = getModel(0, config.default);
+  const wtPath = createWorktree(task.branch);
+
+  state.tasks[issueNumber] = { ...taskState, status: "running", worktree: wtPath };
+  saveState(state);
+
+  try {
+    const dbUrl = createAgentDb(task.issueNumber);
+    try {
+      // Start with impl-fix to address pending QA feedback, then re-review
+      console.log(`[#${task.issueNumber}] addressing pending QA feedback before re-review`);
+      await runImplFix(task, 0, 0, model, wtPath, dbUrl, prNumber, timeoutMs);
+
+      const maxReviewRounds = config.maxReviewRounds ?? 3;
+      for (let round = 0; round < maxReviewRounds; round++) {
+        console.log(`[#${task.issueNumber}] QA continue round ${round + 1}/${maxReviewRounds}`);
+        state.tasks[issueNumber] = { ...state.tasks[issueNumber], status: "qa", qaRound: round + 1 };
+        saveState(state);
+        await runQAReview(task, 0, round, model, wtPath, dbUrl, prNumber, timeoutMs);
+        if (isPRApproved(prNumber)) {
+          console.log(`[#${task.issueNumber}] PR approved`);
+          break;
+        }
+        if (round < maxReviewRounds - 1) {
+          await runImplFix(task, 0, round + 1, model, wtPath, dbUrl, prNumber, timeoutMs);
+        } else {
+          console.log(`[#${task.issueNumber}] max review rounds reached — PR left open for manual review`);
+        }
+      }
+    } finally {
+      dropAgentDb(task.issueNumber);
+    }
+    removeWorktree(task.branch);
+    state.tasks[issueNumber] = { ...state.tasks[issueNumber], status: "done", worktree: null };
+    saveState(state);
+    console.log(`[#${task.issueNumber}] done — PR: ${taskState.pr}`);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[#${task.issueNumber}] continue failed: ${msg}`);
+    state.tasks[issueNumber] = { ...state.tasks[issueNumber], status: "done", worktree: wtPath };
+    saveState(state);
   }
 }
 
@@ -282,6 +354,11 @@ switch (cmd) {
     if (!arg) { console.error("Usage: orchestrate release <version>  (e.g. 1.0.0)"); process.exit(1); }
     initRelease(arg);
     break;
+  case "continue":
+    if (!arg) { console.error("Usage: orchestrate continue <issue-number>"); process.exit(1); }
+    acquireLock();
+    continueTask(arg).catch(console.error);
+    break;
   default:
-    console.log("Usage: orchestrate <status|run|retry <issue>|logs <issue>|start|release <version>>");
+    console.log("Usage: orchestrate <status|run|retry <issue>|logs <issue>|start|release <version>|continue <issue>>");
 }

@@ -15,6 +15,7 @@ function sshExec(cmd: string): string {
 export function createAgentDb(issueNumber: number): string {
   const dbName = `power2plant_agent_${issueNumber}`;
   const seedPath = join(process.cwd(), "db/seed.sql");
+  execSync(`${PGENV} dropdb -h ${PG_HOST} -U ${PG_USER} --if-exists ${dbName}`);
   execSync(`${PGENV} createdb -h ${PG_HOST} -U ${PG_USER} ${dbName}`);
   execSync(`${PGENV} psql -h ${PG_HOST} -U ${PG_USER} ${dbName} < ${seedPath}`);
   // agents connect via internal container hostname
@@ -73,8 +74,8 @@ function logPath(issueNumber: number, attempt: number): string {
 }
 
 function spawnAgent(model: string, worktreePath: string, prompt: string, log: string, timeoutMs: number): Promise<void> {
-  const agentToken = process.env.AGENT_GITHUB_TOKEN;
-  if (!agentToken) throw new Error("AGENT_GITHUB_TOKEN not set");
+  const agentToken = process.env.AGENT_GITHUB_TOKEN ?? process.env.GH_TOKEN;
+  if (!agentToken) throw new Error("AGENT_GITHUB_TOKEN (or GH_TOKEN) not set");
   const out = createWriteStream(log, { flags: "w" });
   return new Promise((resolve, reject) => {
     const proc = spawn(
@@ -186,8 +187,8 @@ export function isAuthTouching(worktreePath: string): boolean {
 }
 
 export function createPR(task: Task, worktreePath: string): string {
-  const agentToken = process.env.AGENT_GITHUB_TOKEN;
-  if (!agentToken) throw new Error("AGENT_GITHUB_TOKEN not set");
+  const agentToken = process.env.AGENT_GITHUB_TOKEN ?? process.env.GH_TOKEN;
+  if (!agentToken) throw new Error("AGENT_GITHUB_TOKEN (or GH_TOKEN) not set");
   const reviewerToken = execSync("gh auth token").toString().trim();
   execSync(`git push "${authedRemote(worktreePath, reviewerToken)}" HEAD:${task.branch}`, { cwd: worktreePath });
   const base = execSync(

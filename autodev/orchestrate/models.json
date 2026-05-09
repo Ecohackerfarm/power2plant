@@ -3,6 +3,7 @@
     "openrouter/deepseek/deepseek-v4-flash"
   ],
   "maxRetries": 2,
+  "maxReviewRounds": 3,
   "timeoutMinutes": 25,
   "maxParallel": 2,
   "schedule": "0 */6 * * *"
