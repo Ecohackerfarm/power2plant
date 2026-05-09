@@ -177,7 +177,7 @@ export async function POST(request: Request) {
     if (sources && Array.isArray(sources) && sources.length > 0) {
       for (const [index, url] of sources.entries()) {
         const autoType = classifyUrl(url)
-        const st: SourceClassification = sourceTypeOverrides?.[index] ?? autoType
+        const st: SourceClassification = (sourceTypeOverrides as Record<string, SourceClassification> | undefined)?.[index] ?? autoType
         const src = await tx.relationshipSource.create({
           data: {
             relationshipId: rel.id,
@@ -204,7 +204,7 @@ export async function POST(request: Request) {
       })
       sourceId = testimony.id
     } else {
-      const testimonyConfidence = evidenceLevel as ConfidenceLevel | undefined ?? 'ANECDOTAL'
+      const testimonyConfidence = (evidenceLevel as ConfidenceLevel | undefined) ?? (SOURCE_CONFIDENCE[sourceType as keyof typeof SOURCE_CONFIDENCE] ?? 'ANECDOTAL')
       const source = await tx.relationshipSource.create({
         data: {
           relationshipId: rel.id,
