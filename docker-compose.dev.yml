@@ -3,7 +3,7 @@ services:
     build:
       context: .
       target: deps
-    command: sh -c "ssh-keygen -A && /usr/sbin/sshd && pnpm exec prisma generate && pnpm exec prisma migrate deploy && pnpm dev"
+    command: sh -c "ssh-keygen -A && /usr/sbin/sshd && pnpm exec prisma generate && { pnpm exec prisma migrate deploy || echo '[dev] WARNING: migration failed — fix and run prisma migrate deploy manually'; } && pnpm dev"
     ports:
       - "3000:3000"
       - "5555:5555"
