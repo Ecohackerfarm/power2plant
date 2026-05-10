@@ -3,7 +3,7 @@ import { readFileSync, mkdirSync, createWriteStream } from "fs";
 import { join } from "path";
 import type { Task } from "./planner.js";
 
-const SSH = `ssh -i /home/agent/.ssh/power2plant_dev -p 2222 -o StrictHostKeyChecking=no root@power2plant-app-1`;
+const SSH = `ssh -i /home/agent/.ssh/power2plant_dev -p 2222 -o StrictHostKeyChecking=no node@power2plant-app-1`;
 const PGENV = `PGPASSWORD=power2plant`;
 const PG_HOST = `db-dev`;
 const PG_USER = `power2plant`;
@@ -15,6 +15,7 @@ function sshExec(cmd: string): string {
 export function createAgentDb(issueNumber: number): string {
   const dbName = `power2plant_agent_${issueNumber}`;
   const seedPath = join(process.cwd(), "db/seed.sql");
+  execSync(`${PGENV} dropdb -h ${PG_HOST} -U ${PG_USER} --if-exists ${dbName}`);
   execSync(`${PGENV} createdb -h ${PG_HOST} -U ${PG_USER} ${dbName}`);
   execSync(`${PGENV} psql -h ${PG_HOST} -U ${PG_USER} ${dbName} < ${seedPath}`);
   // agents connect via internal container hostname
@@ -28,6 +29,12 @@ export function dropAgentDb(issueNumber: number): void {
   } catch {
     // best-effort
   }
+}
+
+function authedRemote(cwd: string, token: string): string {
+  const raw = execSync("git remote get-url origin", { cwd }).toString().trim();
+  const https = raw.replace(/^git@github\.com:/, "https://github.com/").replace(/https:\/\/[^@]+@/, "https://");
+  return https.replace("https://", `https://x-access-token:${token}@`);
 }
 
 const AUTH_PATTERNS = [
@@ -67,8 +74,8 @@ function logPath(issueNumber: number, attempt: number): string {
 }
 
 function spawnAgent(model: string, worktreePath: string, prompt: string, log: string, timeoutMs: number): Promise<void> {
-  const agentToken = process.env.AGENT_GITHUB_TOKEN;
-  if (!agentToken) throw new Error("AGENT_GITHUB_TOKEN not set");
+  const agentToken = process.env.AGENT_GITHUB_TOKEN ?? process.env.GH_TOKEN;
+  if (!agentToken) throw new Error("AGENT_GITHUB_TOKEN (or GH_TOKEN) not set");
   const out = createWriteStream(log, { flags: "w" });
   return new Promise((resolve, reject) => {
     const proc = spawn(
@@ -102,10 +109,10 @@ export async function runAgent(
 
 export async function runQAReview(
   task: Task, attempt: number, round: number,
-  worktreePath: string, dbUrl: string, prNumber: string, timeoutMs: number
+  model: string, worktreePath: string, dbUrl: string, prNumber: string, timeoutMs: number
 ): Promise<void> {
   return spawnAgent(
-    "opencode/hy3-preview-free", worktreePath,
+    model, worktreePath,
     buildGatePrompt("qa-test-reviewer.md", task, worktreePath, dbUrl,
       `Review PR #${prNumber} for issue #${task.issueNumber}: ${task.title}. Approve if correct and tests exist. Request changes with specific comments if not.`),
     ensureLog(task.issueNumber, `attempt-${attempt + 1}.qa-round${round + 1}.log`),
@@ -143,9 +150,7 @@ export async function runImplFix(
   const ahead = execSync(`git rev-list origin/${task.branch}..HEAD --count 2>/dev/null || echo 0`, { cwd: worktreePath, shell: "/bin/sh" }).toString().trim();
   if (parseInt(ahead) > 0) {
     const token = execSync("gh auth token").toString().trim();
-    const sshRemote = execSync("git remote get-url origin", { cwd: worktreePath }).toString().trim();
-    const httpsRemote = sshRemote.replace(/^git@github\.com:/, "https://github.com/");
-    execSync(`git push "${httpsRemote.replace("https://", `https://x-access-token:${token}@`)}" HEAD:${task.branch}`, { cwd: worktreePath });
+    execSync(`git push "${authedRemote(worktreePath, token)}" HEAD:${task.branch}`, { cwd: worktreePath });
   }
 }
 
@@ -182,15 +187,10 @@ export function isAuthTouching(worktreePath: string): boolean {
 }
 
 export function createPR(task: Task, worktreePath: string): string {
-  const agentToken = process.env.AGENT_GITHUB_TOKEN;
-  if (!agentToken) throw new Error("AGENT_GITHUB_TOKEN not set");
-  const sshRemote = execSync("git remote get-url origin", { cwd: worktreePath }).toString().trim();
-  const httpsRemote = sshRemote.replace(/^git@github\.com:/, "https://github.com/");
+  const agentToken = process.env.AGENT_GITHUB_TOKEN ?? process.env.GH_TOKEN;
+  if (!agentToken) throw new Error("AGENT_GITHUB_TOKEN (or GH_TOKEN) not set");
   const reviewerToken = execSync("gh auth token").toString().trim();
-  execSync(
-    `git push "${httpsRemote.replace("https://", `https://x-access-token:${reviewerToken}@`)}" HEAD:${task.branch}`,
-    { cwd: worktreePath }
-  );
+  execSync(`git push "${authedRemote(worktreePath, reviewerToken)}" HEAD:${task.branch}`, { cwd: worktreePath });
   const base = execSync(
     "git branch -r | grep -o 'release/v[0-9.]*' | sort -V | tail -1 || echo 'release/v0.8.0'",
     { cwd: worktreePath }

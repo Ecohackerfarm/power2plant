@@ -27,7 +27,9 @@
     "orchestrate:run": "NODE_PATH=/home/agent/.local/share/pnpm/global/5/node_modules tsx autodev/scripts/index.ts run",
     "orchestrate:retry": "NODE_PATH=/home/agent/.local/share/pnpm/global/5/node_modules tsx autodev/scripts/index.ts retry",
     "orchestrate:logs": "NODE_PATH=/home/agent/.local/share/pnpm/global/5/node_modules tsx autodev/scripts/index.ts logs",
-    "orchestrate:start": "NODE_PATH=/home/agent/.local/share/pnpm/global/5/node_modules tsx autodev/scripts/index.ts start"
+    "orchestrate:start": "NODE_PATH=/home/agent/.local/share/pnpm/global/5/node_modules tsx autodev/scripts/index.ts start",
+    "orchestrate:release": "NODE_PATH=/home/agent/.local/share/pnpm/global/5/node_modules tsx autodev/scripts/index.ts release",
+    "orchestrate:continue": "NODE_PATH=/home/agent/.local/share/pnpm/global/5/node_modules tsx autodev/scripts/index.ts continue"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",

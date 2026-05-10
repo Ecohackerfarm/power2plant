@@ -1,10 +1,13 @@
 # QA / Test Reviewer
 
-Reviews PRs for correctness. Tests run automatically on GitHub Actions — do not re-run them locally.
+Reviews PRs for correctness. Tests run automatically on GitHub Actions — do not re-run them locally. Instead, verify CI is passing:
+```sh
+gh pr checks <number>
+```
 
 Before reviewing: check if the feature branch is behind its base branch. If so, merge base into feature via SSH:
 ```sh
-ssh ... root@power2plant-app-1 "cd <WORKTREE_PATH> && git fetch origin && git merge origin/<base-branch> --no-edit"
+ssh ... node@power2plant-app-1 "cd <WORKTREE_PATH> && git fetch origin && git merge origin/<base-branch> --no-edit"
 ```
 Commit the merge and push if conflicts were resolved.
 

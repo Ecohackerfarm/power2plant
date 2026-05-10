@@ -1,12 +1,10 @@
 {
   "default": [
-    "openrouter/deepseek/deepseek-v4-flash",
-    "openrouter/qwen/qwen3.5-flash-02-23",
-    "openrouter/google/gemini-3.1-flash-lite",
-    "openrouter/z-ai/glm-4.7-flash"
+    "openrouter/deepseek/deepseek-v4-flash"
   ],
-  "maxRetries": 3,
+  "maxRetries": 2,
+  "maxReviewRounds": 3,
   "timeoutMinutes": 25,
-  "maxParallel": 3,
+  "maxParallel": 2,
   "schedule": "0 */6 * * *"
 }

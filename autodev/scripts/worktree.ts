@@ -18,10 +18,14 @@ export function createWorktree(branch: string): string {
   })();
 
   if (branchExists) {
-    // branch exists from prior attempt — reuse it, don't recreate
     execSync(`git worktree add "${path}" "${branch}"`, { stdio: "inherit" });
   } else {
-    execSync(`git worktree add "${path}" -b "${branch}"`, { stdio: "inherit" });
+    // Branch from latest release so PRs only show feature changes, not main divergence
+    const releaseBranch = execSync(
+      "git branch -r | grep -oP 'origin/release/v[0-9.]+' | sort -V | tail -1",
+      { stdio: "pipe" }
+    ).toString().trim() || "origin/release/v0.9.0";
+    execSync(`git worktree add "${path}" -b "${branch}" "${releaseBranch}"`, { stdio: "inherit" });
   }
   return path;
 }
@@ -31,9 +35,10 @@ export function removeWorktree(branch: string): void {
   try {
     execSync(`git worktree remove --force "${path}"`, { stdio: "pipe" });
   } catch {
-    // fallback: manual remove if git worktree remove fails (permission issues)
     if (existsSync(path)) {
-      rmSync(path, { recursive: true, force: true });
+      // delete via SSH as root (container agent writes files as root)
+      const SSH = `ssh -i /home/agent/.ssh/power2plant_dev -p 2222 -o StrictHostKeyChecking=no root@power2plant-app-1`;
+      try { execSync(`${SSH} "rm -rf '${path}'"`, { stdio: "pipe" }); } catch { rmSync(path, { recursive: true, force: true }); }
       execSync(`git worktree prune`, { stdio: "pipe" });
     }
   }
