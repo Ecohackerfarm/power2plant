@@ -144,7 +144,7 @@ describe('POST /api/relationships', () => {
     vi.mocked(prisma.crop.findMany).mockResolvedValue([{ id: 'crop-a' }, { id: 'crop-b' }] as any)
     vi.mocked(prisma.relationshipSource.findFirst).mockResolvedValue(null)
     mockTransaction()
-    const res = await POST(makeReq({ ...validBody, sourceType: 'SCIENTIFIC_PAPER' }))
+    const res = await POST(makeReq({ ...validBody, sourceType: 'SCIENTIFIC_PAPER', evidenceLevel: 'PEER_REVIEWED' }))
     expect(res.status).toBe(201)
     expect(capturedSourceData.data.sourceType).toBe('SCIENTIFIC_PAPER')
     expect(capturedSourceData.data.confidence).toBe('PEER_REVIEWED')
@@ -162,6 +162,84 @@ describe('POST /api/relationships', () => {
     const res = await POST(makeReq({ ...validBody, sources: ['https://example.com', 123] }))
     expect(res.status).toBe(400)
     expect((await res.json()).error).toContain('sources must be an array')
+  })
+
+  it('returns 400 when evidenceLevel is invalid', async () => {
+    vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as any)
+    const res = await POST(makeReq({ ...validBody, evidenceLevel: 'INVALID_LEVEL' }))
+    expect(res.status).toBe(400)
+    expect((await res.json()).error).toContain('evidenceLevel')
+  })
+
+  it('returns 400 when sourceTypeOverrides is not an object', async () => {
+    vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as any)
+    const res = await POST(makeReq({ ...validBody, sources: ['https://example.com'], sourceTypeOverrides: 'not-an-object' }))
+    expect(res.status).toBe(400)
+    expect((await res.json()).error).toContain('sourceTypeOverrides must be an object')
+  })
+
+  it('returns 400 when sourceTypeOverrides contains invalid source type', async () => {
+    vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as any)
+    const res = await POST(makeReq({ ...validBody, sources: ['https://example.com'], sourceTypeOverrides: { 0: 'INVALID_TYPE' } }))
+    expect(res.status).toBe(400)
+    expect((await res.json()).error).toContain('invalid sourceType for index')
+  })
+
+  it('returns 400 when sourceTypeOverrides is an array', async () => {
+    vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as any)
+    const res = await POST(makeReq({ ...validBody, sources: ['https://example.com'], sourceTypeOverrides: ['SCIENTIFIC_PAPER'] }))
+    expect(res.status).toBe(400)
+    expect((await res.json()).error).toContain('sourceTypeOverrides must be an object')
+  })
+
+  it('returns 400 when sourceTypeOverrides is null', async () => {
+    vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as any)
+    const res = await POST(makeReq({ ...validBody, sources: ['https://example.com'], sourceTypeOverrides: null }))
+    expect(res.status).toBe(400)
+    expect((await res.json()).error).toContain('sourceTypeOverrides must be an object')
+  })
+
+  it('applies evidenceLevel in no-sources path', async () => {
+    vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as any)
+    vi.mocked(prisma.crop.findMany).mockResolvedValue([{ id: 'crop-a' }, { id: 'crop-b' }] as any)
+    vi.mocked(prisma.relationshipSource.findFirst).mockResolvedValue(null)
+    mockTransaction()
+    const res = await POST(makeReq({ ...validBody, evidenceLevel: 'OBSERVED' }))
+    expect(res.status).toBe(201)
+    expect(capturedSourceData.data.confidence).toBe('OBSERVED')
+  })
+
+  it('applies sourceTypeOverrides in multi-source submission', async () => {
+    vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as any)
+    vi.mocked(prisma.crop.findMany).mockResolvedValue([{ id: 'crop-a' }, { id: 'crop-b' }] as any)
+    vi.mocked(prisma.relationshipSource.findFirst).mockResolvedValue(null)
+    vi.mocked(classifyUrl).mockReturnValue('BLOG_FORUM')
+    mockTransaction()
+    const res = await POST(makeReq({
+      ...validBody,
+      sources: ['https://example.com/article'],
+      sourceTypeOverrides: { 0: 'SCIENTIFIC_PAPER' },
+    }))
+    expect(res.status).toBe(201)
+    expect(createdSources[0].sourceType).toBe('SCIENTIFIC_PAPER')
+    expect(createdSources[0].confidence).toBe('PEER_REVIEWED')
+  })
+
+  it('applies evidenceLevel in multi-source path', async () => {
+    vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as any)
+    vi.mocked(prisma.crop.findMany).mockResolvedValue([{ id: 'crop-a' }, { id: 'crop-b' }] as any)
+    vi.mocked(prisma.relationshipSource.findFirst).mockResolvedValue(null)
+    vi.mocked(classifyUrl).mockReturnValue('BLOG_FORUM')
+    mockTransaction()
+    const res = await POST(makeReq({
+      ...validBody,
+      sources: ['https://example.com/article'],
+      evidenceLevel: 'OBSERVED',
+    }))
+    expect(res.status).toBe(201)
+    // The testimony source (last created) should have OBSERVED confidence
+    const testimonySource = createdSources[createdSources.length - 1]
+    expect(testimonySource.confidence).toBe('OBSERVED')
   })
 
   it('creates sources from URLs and testimony on multi-source submission', async () => {
