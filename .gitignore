@@ -12,6 +12,8 @@ deploy_keys/*_rsa
 deploy_keys/*_ed25519
 deploy_keys/*_ecdsa
 autodev/orchestrate/state.json
+webhook/hooks.json
+.git-credentials
 autodev/orchestrate/orchestrator.pid
 autodev/logs/
 .claude/settings.local.json
