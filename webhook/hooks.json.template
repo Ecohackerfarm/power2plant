@@ -1,0 +1,29 @@
+[
+  {
+    "id": "deploy-prod",
+    "execute-command": "/bin/sh",
+    "pass-arguments-to-command": [
+      { "source": "string", "name": "-c" },
+      { "source": "string", "name": "touch /run/p2p-deploy.trigger" }
+    ],
+    "response-message": "Deploy queued.",
+    "trigger-rule": {
+      "and": [
+        {
+          "match": {
+            "type": "payload-hmac-sha256",
+            "secret": "__WEBHOOK_SECRET__",
+            "parameter": { "source": "header", "name": "X-Hub-Signature-256" }
+          }
+        },
+        {
+          "match": {
+            "type": "value",
+            "value": "refs/heads/main",
+            "parameter": { "source": "payload", "name": "ref" }
+          }
+        }
+      ]
+    }
+  }
+]

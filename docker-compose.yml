@@ -3,12 +3,12 @@ services:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: power2plant
-      POSTGRES_PASSWORD: power2plant
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-power2plant}
       POSTGRES_DB: power2plant
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ${VOLUME_DATA_DIR:-./data}/postgres:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U power2plant"]
       interval: 5s
@@ -22,7 +22,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      DATABASE_URL: postgresql://power2plant:power2plant@db:5432/power2plant
+      DATABASE_URL: ${DATABASE_URL:-postgresql://power2plant:power2plant@db:5432/power2plant}
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL}
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
@@ -38,5 +38,4 @@ services:
     networks:
       - default
 
-volumes:
-  postgres_data:
+volumes: {}
