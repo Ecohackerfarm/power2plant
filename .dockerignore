@@ -3,6 +3,8 @@ node_modules
 .worktrees
 .env
 .env.local
+.env.*
+data
 *.log
 npm-debug.log*
 .DS_Store
