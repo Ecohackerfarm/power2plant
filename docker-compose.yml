@@ -18,7 +18,12 @@ services:
       - default
 
   app:
-    build: .
+    build:
+      context: .
+      args:
+        BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+        BETTER_AUTH_URL: ${BETTER_AUTH_URL}
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
     ports:
       - "3000:3000"
     environment:

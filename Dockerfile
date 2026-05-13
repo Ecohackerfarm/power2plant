@@ -36,6 +36,12 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+ARG BETTER_AUTH_SECRET
+ARG BETTER_AUTH_URL
+ARG NEXT_PUBLIC_APP_URL
+ENV BETTER_AUTH_SECRET=$BETTER_AUTH_SECRET \
+    BETTER_AUTH_URL=$BETTER_AUTH_URL \
+    NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
 RUN pnpm exec prisma generate
 RUN NODE_ENV=production pnpm build
 
