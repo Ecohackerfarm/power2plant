@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # ---- deps ----
-FROM node:20-alpine AS deps
+FROM node:22-alpine AS deps
 RUN apk add --no-cache \
     postgresql16-client \
     chromium \
@@ -26,11 +26,12 @@ RUN cp /home/node/.ssh/authorized_keys /root/.ssh/authorized_keys && \
     printf '\nPort 2222\nPasswordAuthentication no\nPermitRootLogin prohibit-password\nStrictModes no\n' >> /etc/ssh/sshd_config
 RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
+ARG FROZEN_LOCKFILE=true
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN if [ "$FROZEN_LOCKFILE" = "true" ]; then pnpm install --frozen-lockfile; else pnpm install; fi
 
 # ---- builder ----
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
@@ -39,7 +40,7 @@ RUN pnpm exec prisma generate
 RUN NODE_ENV=production pnpm build
 
 # ---- runner ----
-FROM node:20-alpine AS runner
+FROM node:22-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs && \

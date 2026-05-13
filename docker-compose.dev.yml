@@ -3,6 +3,8 @@ services:
     build:
       context: .
       target: deps
+      args:
+        FROZEN_LOCKFILE: "false"
     command: sh -c "ssh-keygen -A && /usr/sbin/sshd && pnpm exec prisma generate && { pnpm exec prisma migrate deploy || echo '[dev] migration failed — fix then run prisma migrate deploy manually'; } && pnpm dev"
     ports:
       - "3000:3000"
