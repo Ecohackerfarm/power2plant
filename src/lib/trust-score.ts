@@ -61,27 +61,32 @@ export async function computeAndSaveTrustScore(
     return 1.0
   }
 
+  // Fetch all MANUAL sources for this user in one query, then group in memory
+  const allManualSources = await client.relationshipSource.findMany({
+    where: { userId, source: 'MANUAL' },
+    select: { confidence: true, relationshipId: true, fetchedAt: true },
+  })
+
+  // Group by "relationshipId|YYYY-MM-DD" for O(1) lookup
+  const manualByKey = new Map<string, number[]>()
+  for (const s of allManualSources) {
+    const day = s.fetchedAt.toISOString().slice(0, 10)
+    const key = `${s.relationshipId}|${day}`
+    const bucket = manualByKey.get(key) ?? []
+    bucket.push(CONFIDENCE_VALUES[s.confidence as ConfidenceKey])
+    manualByKey.set(key, bucket)
+  }
+
   const history: SubmissionRecord[] = []
 
   for (const testimony of testimonies) {
-    const dayStart = new Date(testimony.fetchedAt)
-    dayStart.setHours(0, 0, 0, 0)
-    const dayEnd = new Date(dayStart)
-    dayEnd.setDate(dayEnd.getDate() + 1)
-
-    const urlSources = await client.relationshipSource.findMany({
-      where: {
-        userId,
-        source: 'MANUAL',
-        relationshipId: testimony.relationshipId,
-        fetchedAt: { gte: dayStart, lt: dayEnd },
-      },
-      select: { confidence: true },
-    })
+    const day = testimony.fetchedAt.toISOString().slice(0, 10)
+    const key = `${testimony.relationshipId}|${day}`
+    const urlConfidences = manualByKey.get(key) ?? []
 
     const claimedValue = CONFIDENCE_VALUES[testimony.confidence as ConfidenceKey]
-    const derivedValue = urlSources.length > 0
-      ? Math.max(...urlSources.map(s => CONFIDENCE_VALUES[s.confidence as ConfidenceKey]))
+    const derivedValue = urlConfidences.length > 0
+      ? Math.max(...urlConfidences)
       : CONFIDENCE_VALUES.ANECDOTAL
 
     history.push({ claimedValue, derivedValue })
