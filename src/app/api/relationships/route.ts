@@ -98,8 +98,8 @@ export async function POST(request: Request) {
   if (reason !== undefined && !VALID_REASONS.includes(reason as (typeof VALID_REASONS)[number])) {
     return NextResponse.json({ error: 'invalid reason' }, { status: 400 })
   }
-  if (notes !== undefined && (typeof notes !== 'string' || notes.length > 500)) {
-    return NextResponse.json({ error: 'notes must be a string of at most 500 chars' }, { status: 400 })
+  if (notes !== undefined && (typeof notes !== 'string' || notes.length > 2000)) {
+    return NextResponse.json({ error: 'notes must be a string of at most 2000 chars' }, { status: 400 })
   }
   if (sources !== undefined) {
     if (!Array.isArray(sources) || !sources.every(s => typeof s === 'string')) {
