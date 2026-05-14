@@ -22,6 +22,10 @@ vi.mock('@/lib/classify-url', () => ({
   classifyUrl: vi.fn(),
 }))
 
+vi.mock('@/lib/trust-score', () => ({
+  computeAndSaveTrustScore: vi.fn().mockResolvedValue(1.0),
+}))
+
 import prisma from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { classifyUrl } from '@/lib/classify-url'
