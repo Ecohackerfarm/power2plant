@@ -7,6 +7,10 @@ vi.mock('@/lib/prisma', () => ({
       findUnique: vi.fn(),
       upsert: vi.fn(),
     },
+    gardenShare: {
+      deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+    },
+    $transaction: vi.fn(ops => Promise.all(ops)),
   },
 }))
 

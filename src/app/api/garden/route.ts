@@ -85,12 +85,15 @@ export async function PUT(request: Request) {
     ...(wishlist !== undefined && { wishlist }),
   }
 
-  const garden = await prisma.userGarden.upsert({
-    where: { userId: session.user.id },
-    create: { userId: session.user.id, ...data },
-    update: data,
-    select: { lat: true, lng: true, minTempC: true, bedCount: true, bedCapacity: true, wishlist: true },
-  })
+  const [garden] = await prisma.$transaction([
+    prisma.userGarden.upsert({
+      where: { userId: session.user.id },
+      create: { userId: session.user.id, ...data },
+      update: data,
+      select: { lat: true, lng: true, minTempC: true, bedCount: true, bedCapacity: true, wishlist: true },
+    }),
+    prisma.gardenShare.deleteMany({ where: { userId: session.user.id } }),
+  ])
 
   return NextResponse.json(garden)
 }

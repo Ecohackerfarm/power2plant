@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useImperativeHandle, forwardRef } fro
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useSession } from '@/lib/auth-client'
+import { Share2 } from 'lucide-react'
 
 type PlantingStatus = 'PLANNED' | 'PLANTED' | 'HARVESTED'
 
@@ -43,6 +44,8 @@ export const MyGarden = forwardRef<MyGardenRef, MyGardenProps>(function MyGarden
   const { data: session } = useSession()
   const [beds, setBeds] = useState<Bed[]>([])
   const [loading, setLoading] = useState(false)
+  const [shareUrl, setShareUrl] = useState<string | null>(null)
+  const [sharing, setSharing] = useState(false)
 
   const fetchBeds = useCallback(async () => {
     if (!session) return
@@ -76,6 +79,21 @@ export const MyGarden = forwardRef<MyGardenRef, MyGardenProps>(function MyGarden
       body: JSON.stringify({ status: next }),
     })
     if (!res.ok) void fetchBeds()
+  }
+
+  async function handleShare() {
+    setSharing(true)
+    setShareUrl(null)
+    try {
+      const res = await fetch('/api/garden/share', { method: 'POST' })
+      if (!res.ok) return
+      const { token } = await res.json()
+      const url = `${window.location.origin}/share/${token}`
+      setShareUrl(url)
+      await navigator.clipboard.writeText(url).catch(() => {/* clipboard denied — link still shown */})
+    } finally {
+      setSharing(false)
+    }
   }
 
   if (!session) return null
@@ -113,14 +131,33 @@ export const MyGarden = forwardRef<MyGardenRef, MyGardenProps>(function MyGarden
               </Card>
             ))}
           </div>
-          {onAddMore && (
+          <div className="flex flex-wrap items-center gap-3">
+            {onAddMore && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onAddMore(beds.map(b => b.plantings.map(p => p.cropId)))}
+              >
+                Add more plants
+              </Button>
+            )}
             <Button
               variant="outline"
               size="sm"
-              onClick={() => onAddMore(beds.map(b => b.plantings.map(p => p.cropId)))}
+              onClick={handleShare}
+              disabled={sharing}
             >
-              Add more plants
+              <Share2 className="w-3.5 h-3.5 mr-1.5" />
+              {sharing ? 'Generating…' : 'Share plan'}
             </Button>
+          </div>
+          {shareUrl && (
+            <p className="text-sm text-muted-foreground">
+              Link copied!{' '}
+              <a href={shareUrl} target="_blank" rel="noopener noreferrer" className="underline text-foreground">
+                {shareUrl}
+              </a>
+            </p>
           )}
         </>
       )}
