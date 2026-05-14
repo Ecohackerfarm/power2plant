@@ -71,10 +71,10 @@ describe('POST /api/relationships', () => {
     expect((await res.json()).error).toContain('COMPANION or AVOID')
   })
 
-  it('returns 400 when notes exceed 500 chars', async () => {
+  it('returns 400 when notes exceed 2000 chars', async () => {
     vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as any)
     vi.mocked(prisma.crop.findMany).mockResolvedValue([{ id: 'crop-a' }, { id: 'crop-b' }] as any)
-    const res = await POST(makeReq({ ...validBody, notes: 'x'.repeat(501) }))
+    const res = await POST(makeReq({ ...validBody, notes: 'x'.repeat(2001) }))
     expect(res.status).toBe(400)
   })
 
