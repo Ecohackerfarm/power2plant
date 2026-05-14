@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useSession } from '@/lib/auth-client'
 import { Share2 } from 'lucide-react'
+import { toast } from 'sonner'
 
 type PlantingStatus = 'PLANNED' | 'PLANTED' | 'HARVESTED'
 
@@ -78,7 +79,10 @@ export const MyGarden = forwardRef<MyGardenRef, MyGardenProps>(function MyGarden
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: next }),
     })
-    if (!res.ok) void fetchBeds()
+    if (!res.ok) {
+      toast.error('Failed to update status — please try again.')
+      void fetchBeds()
+    }
   }
 
   async function handleShare() {
