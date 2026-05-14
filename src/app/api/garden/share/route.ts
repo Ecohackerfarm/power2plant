@@ -27,7 +27,7 @@ export async function POST(_request: Request) {
     return NextResponse.json({ error: 'No beds to share' }, { status: 400 })
   }
 
-  const token = randomBytes(6).toString('hex') // 12 hex chars — short but collision-safe
+  const token = randomBytes(16).toString('hex') // 32 hex chars — 128 bits, unguessable
   const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
 
   const snapshot = beds.map(b => ({
