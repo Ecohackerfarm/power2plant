@@ -105,6 +105,9 @@ export async function POST(request: Request) {
     if (!Array.isArray(sources) || !sources.every(s => typeof s === 'string')) {
       return NextResponse.json({ error: 'sources must be an array of strings' }, { status: 400 })
     }
+    if (sources.length > 20) {
+      return NextResponse.json({ error: 'sources must have at most 20 items' }, { status: 400 })
+    }
   }
   const { sourceType } = body
   if (sourceType !== undefined && !VALID_SOURCE_TYPES.includes(sourceType as (typeof VALID_SOURCE_TYPES)[number])) {
