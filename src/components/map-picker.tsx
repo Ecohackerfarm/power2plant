@@ -13,6 +13,10 @@ export function MapPicker({ onSelect, initialLat = 20, initialLng = 0 }: MapPick
   const divRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<Map | null>(null)
   const markerRef = useRef<Marker | null>(null)
+  // Keep a stable ref so the click handler always calls the latest onSelect
+  // without needing to recreate the Leaflet map on every render.
+  const onSelectRef = useRef(onSelect)
+  useEffect(() => { onSelectRef.current = onSelect }, [onSelect])
 
   useEffect(() => {
     if (!divRef.current || mapRef.current) return
@@ -36,7 +40,7 @@ export function MapPicker({ onSelect, initialLat = 20, initialLng = 0 }: MapPick
       map.on('click', (e: L.LeafletMouseEvent) => {
         markerRef.current?.remove()
         markerRef.current = L.marker(e.latlng).addTo(map)
-        onSelect(e.latlng.lat, e.latlng.lng)
+        onSelectRef.current(e.latlng.lat, e.latlng.lng)
       })
 
       mapRef.current = map

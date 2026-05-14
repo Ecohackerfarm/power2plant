@@ -27,6 +27,7 @@ export function ZoneDetector({ minTempC, onZoneDetected }: ZoneDetectorProps) {
       const res = await fetch(`/api/zone?lat=${lat}&lng=${lng}`)
       if (!res.ok) throw new Error('Could not look up climate data for this location.')
       const data = await res.json()
+      setShowMap(false)
       onZoneDetected(lat, lng, data.minTempC)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Unknown error')
@@ -81,7 +82,6 @@ export function ZoneDetector({ minTempC, onZoneDetected }: ZoneDetectorProps) {
         {showMap && (
           <MapPicker
             onSelect={(lat, lng) => {
-              setShowMap(false)
               fetchZone(lat, lng)
             }}
           />
