@@ -7,6 +7,7 @@ import { RecommendationDisplay } from '@/components/recommendation-display'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import type { RecommendResult } from '@/lib/recommend'
+import { PlantSearch } from '@/components/plant-search'
 import { AuthPanel } from '@/components/auth-panel'
 import { useSession } from '@/lib/auth-client'
 import Link from 'next/link'
@@ -105,6 +106,13 @@ export default function Home() {
       )}
 
       <ZoneDetector minTempC={state.minTempC} onZoneDetected={setZone} />
+
+      <PlantSearch
+        wishlistIds={state.wishlist}
+        onAdd={addToWishlist}
+        onRemove={removeFromWishlist}
+        onClearAll={clearWishlist}
+      />
 
       <BedConfig
         bedCount={state.bedCount}
