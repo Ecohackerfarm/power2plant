@@ -120,6 +120,7 @@ export async function POST(request: Request) {
 
   const result = await prisma.$transaction(async (tx) => {
     await tx.bed.deleteMany({ where: { gardenId: garden.id } })
+    await tx.gardenShare.deleteMany({ where: { userId: session.user.id } })
 
     const createdBeds = []
     for (const bed of beds) {
