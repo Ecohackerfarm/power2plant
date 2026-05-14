@@ -109,6 +109,9 @@ export function PlantSearch({ wishlistIds, onAdd, onRemove, onClearAll }: PlantS
       <CardContent className="space-y-4">
         <div className="space-y-1">
           <Label htmlFor="plant-search">Search by name or botanical name</Label>
+          <p className="text-xs text-muted-foreground italic">
+            Genus entries (e.g. Ocimum L.) represent the whole plant family — pick a species for more precise recommendations.
+          </p>
           <Input
             id="plant-search"
             placeholder="e.g. tomato, basil, sunflower…"
@@ -132,6 +135,7 @@ export function PlantSearch({ wishlistIds, onAdd, onRemove, onClearAll }: PlantS
                     cn => cn.toLowerCase().includes(q) && cn.toLowerCase() !== displayName.toLowerCase()
                   )
                 : undefined
+              const isGenus = crop.rank === 'genus'
               return (
                 <li
                   key={crop.id}
@@ -141,13 +145,17 @@ export function PlantSearch({ wishlistIds, onAdd, onRemove, onClearAll }: PlantS
                       ? 'opacity-50 cursor-default'
                       : 'cursor-pointer hover:bg-accent',
                     index === activeIndex && !added && 'bg-accent',
+                    isGenus && 'text-muted-foreground',
                   )}
                   onClick={() => { if (!added) handleAdd(crop) }}
                 >
                   <span className="flex-1 min-w-0">
-                    <span className="font-medium">{displayName}</span>
+                    <span className={cn('font-medium', isGenus && 'text-muted-foreground')}>{displayName}</span>
                     {displayName !== crop.botanicalName && (
                       <span className="text-muted-foreground italic ml-1">{crop.botanicalName}</span>
+                    )}
+                    {isGenus && (
+                      <span className="ml-1.5 inline-block bg-muted text-muted-foreground text-[10px] px-1 py-0.5 rounded font-normal not-italic">Genus</span>
                     )}
                     {matchedAlias && (
                       <span className="block text-xs text-muted-foreground">also: {matchedAlias}</span>

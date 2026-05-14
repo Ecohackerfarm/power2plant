@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { Prisma } from '@prisma/client'
 import prisma from '@/lib/prisma'
-import { rankCrops, type CropRow } from '@/lib/crop-rank'
+import { rankCrops, detectRank, type CropRow } from '@/lib/crop-rank'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -13,11 +13,12 @@ export async function GET(request: Request) {
     const ids = idsParam.split(',').map(s => s.trim()).filter(Boolean)
     if (ids.length === 0) return NextResponse.json({ crops: [] })
     const idList = Prisma.join(ids.map(id => Prisma.sql`${id}`))
-    const crops = await prisma.$queryRaw<CropRow[]>`
+    const raw = await prisma.$queryRaw<CropRow[]>`
       SELECT id, name, "botanicalName", "minTempC", "isCommonCrop", "commonNames"
       FROM "Crop"
       WHERE id IN (${idList})
     `
+    const crops = raw.map(c => ({ ...c, rank: detectRank(c.botanicalName) }))
     return NextResponse.json({ crops })
   }
 
@@ -38,6 +39,6 @@ export async function GET(request: Request) {
     LIMIT 40
   `
 
-  const crops = rankCrops(raw, q).slice(0, 20)
+  const crops = rankCrops(raw, q).slice(0, 20).map(c => ({ ...c, rank: detectRank(c.botanicalName) }))
   return NextResponse.json({ crops })
 }

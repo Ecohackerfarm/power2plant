@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { rankCrops, type CropRow } from '@/lib/crop-rank'
+import { rankCrops, detectRank, type CropRow } from '@/lib/crop-rank'
 
 function makeCrop(overrides: Partial<CropRow> & Pick<CropRow, 'id' | 'name' | 'botanicalName'>): CropRow {
   return {
@@ -96,5 +96,29 @@ describe('rankCrops', () => {
     const original = [...crops]
     rankCrops(crops, 'test')
     expect(crops[0].id).toBe(original[0].id)
+  })
+})
+
+describe('detectRank', () => {
+  it('single word genus', () => {
+    expect(detectRank('Rosa')).toBe('genus')
+    expect(detectRank('Allium')).toBe('genus')
+    expect(detectRank('Ocimum')).toBe('genus')
+  })
+
+  it('genus with author abbreviation', () => {
+    expect(detectRank('Ocimum L.')).toBe('genus')
+    expect(detectRank('Helianthus Michx.')).toBe('genus')
+  })
+
+  it('species with lowercase second word', () => {
+    expect(detectRank('Ocimum basilicum')).toBe('species')
+    expect(detectRank('Helianthus annuus')).toBe('species')
+    expect(detectRank('Beta vulgaris')).toBe('species')
+  })
+
+  it('cultivar / subspecies names', () => {
+    expect(detectRank('Cucurbita pepo var. cylindrica')).toBe('species')
+    expect(detectRank('Solanum lycopersicum')).toBe('species')
   })
 })

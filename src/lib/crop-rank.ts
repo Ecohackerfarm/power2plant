@@ -5,6 +5,14 @@ export interface CropRow {
   minTempC: number | null
   isCommonCrop: boolean
   commonNames: string[]
+  rank?: 'genus' | 'species'
+}
+
+// Genus: single capitalised word + optional author abbreviation (e.g. "Ocimum", "Ocimum L.")
+const GENUS_RE = /^[A-Z][a-z]+(\s+[A-Z][a-z.]*\.?)?$/
+
+export function detectRank(botanicalName: string): 'genus' | 'species' {
+  return GENUS_RE.test(botanicalName.trim()) ? 'genus' : 'species'
 }
 
 function score(crop: CropRow, ql: string): number {
