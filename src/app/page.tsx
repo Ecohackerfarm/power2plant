@@ -1,18 +1,18 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
+import Link from 'next/link'
 import { useGarden } from '@/hooks/use-garden'
 import { ZoneDetector } from '@/components/zone-detector'
 import { BedConfig } from '@/components/bed-config'
 import { RecommendationDisplay } from '@/components/recommendation-display'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import type { RecommendResult } from '@/lib/recommend'
-
-type RecommendResponse = RecommendResult & { alternatives: RecommendResult[] }
 import { PlantSearch } from '@/components/plant-search'
 import { AuthPanel } from '@/components/auth-panel'
 import { useSession } from '@/lib/auth-client'
-import Link from 'next/link'
+import type { RecommendResult } from '@/lib/recommend'
+
+type RecommendResponse = RecommendResult & { alternatives: RecommendResult[] }
 
 export default function Home() {
   const { data: session } = useSession()
@@ -22,7 +22,6 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null)
   const [lockedBeds, setLockedBeds] = useState<string[][] | null>(null)
   const autoTriggered = useRef(false)
-  const myGardenRef = useRef<{ refresh: () => void }>(null)
 
   const canRecommend = state.minTempC !== null && state.wishlist.length >= 2
 
@@ -145,7 +144,6 @@ export default function Home() {
         <RecommendationDisplay
           result={result}
           alternatives={result.alternatives}
-          onAccepted={() => myGardenRef.current?.refresh()}
         />
       )}
     </main>
