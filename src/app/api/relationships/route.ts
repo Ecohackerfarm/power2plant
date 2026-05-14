@@ -41,8 +41,8 @@ export async function GET(request: Request) {
     take: limit + 1,
     orderBy: { id: 'desc' },
     include: {
-      cropA: { select: { id: true, name: true, botanicalName: true } },
-      cropB: { select: { id: true, name: true, botanicalName: true } },
+      cropA: { select: { id: true, name: true, botanicalName: true, commonNames: true } },
+      cropB: { select: { id: true, name: true, botanicalName: true, commonNames: true } },
       _count: { select: { sources: true } },
     },
   })

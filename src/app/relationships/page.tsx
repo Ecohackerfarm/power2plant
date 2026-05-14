@@ -6,6 +6,7 @@ import { ArrowRight } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { getDisplayName } from '@/lib/recommend'
 
 type Relationship = {
   id: string
@@ -13,8 +14,8 @@ type Relationship = {
   reason: string | null
   confidence: string
   notes: string | null
-  cropA: { id: string; name: string; botanicalName: string }
-  cropB: { id: string; name: string; botanicalName: string }
+  cropA: { id: string; name: string; botanicalName: string; commonNames: string[] }
+  cropB: { id: string; name: string; botanicalName: string; commonNames: string[] }
   sourceCount: number
 }
 
@@ -122,8 +123,15 @@ export default function RelationshipsPage() {
                   <CardHeader>
                     <div className="flex items-start justify-between gap-4">
                       <CardTitle className="text-base">
-                        <span className="font-bold">{rel.cropA.name}</span> +{' '}
-                        <span className="font-bold">{rel.cropB.name}</span>
+                        <span className="font-bold">{getDisplayName(rel.cropA)}</span>
+                        {getDisplayName(rel.cropA) !== rel.cropA.botanicalName && (
+                          <span className="font-normal italic text-muted-foreground text-xs ml-1">{rel.cropA.botanicalName}</span>
+                        )}
+                        {' + '}
+                        <span className="font-bold">{getDisplayName(rel.cropB)}</span>
+                        {getDisplayName(rel.cropB) !== rel.cropB.botanicalName && (
+                          <span className="font-normal italic text-muted-foreground text-xs ml-1">{rel.cropB.botanicalName}</span>
+                        )}
                       </CardTitle>
                       <div className="flex items-center gap-2 shrink-0">
                         <Badge variant={rel.type === 'COMPANION' ? 'default' : 'destructive'}>
