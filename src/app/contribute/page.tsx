@@ -52,10 +52,11 @@ const SOURCE_TYPE_BADGE_VARIANTS: Record<SourceClassification, 'default' | 'seco
   PERSONAL_OBSERVATION: 'ghost',
 }
 
-function CropPicker({ label, value, onChange }: {
+function CropPicker({ label, value, onChange, showGenusHint = false }: {
   label: string
   value: Crop | null
   onChange: (crop: Crop | null) => void
+  showGenusHint?: boolean
 }) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<Crop[]>([])
@@ -114,6 +115,11 @@ function CropPicker({ label, value, onChange }: {
 
   return (
     <div className="space-y-1">
+      {showGenusHint && (
+        <p className="text-xs text-muted-foreground italic">
+          Genus entries (e.g. Ocimum L.) represent the whole plant family — pick a species for more precise recommendations.
+        </p>
+      )}
       <Input
         placeholder={`Search for ${label.toLowerCase()}…`}
         value={query}
@@ -123,16 +129,22 @@ function CropPicker({ label, value, onChange }: {
       />
       {results.length > 0 && (
         <ul ref={listRef} className="border rounded divide-y max-h-48 overflow-y-auto">
-          {results.map((crop, index) => (
-            <li
-              key={crop.id}
-              className={`px-3 py-2 text-sm cursor-pointer hover:bg-accent${index === activeIndex ? ' bg-accent' : ''}`}
-              onClick={() => pick(crop)}
-            >
-              <span className="font-medium">{getDisplayName(crop)}</span>
-              <span className="text-muted-foreground italic ml-1 text-xs">{crop.botanicalName}</span>
-            </li>
-          ))}
+          {results.map((crop, index) => {
+            const isGenus = crop.rank === 'genus'
+            return (
+              <li
+                key={crop.id}
+                className={`px-3 py-2 text-sm cursor-pointer hover:bg-accent${index === activeIndex ? ' bg-accent' : ''}${isGenus ? ' text-muted-foreground' : ''}`}
+                onClick={() => pick(crop)}
+              >
+                <span className={`font-medium${isGenus ? ' text-muted-foreground' : ''}`}>{getDisplayName(crop)}</span>
+                <span className="text-muted-foreground italic ml-1 text-xs">{crop.botanicalName}</span>
+                {isGenus && (
+                  <span className="ml-1.5 inline-block bg-muted text-muted-foreground text-[10px] px-1 py-0.5 rounded font-normal not-italic">Genus</span>
+                )}
+              </li>
+            )
+          })}
         </ul>
       )}
     </div>
@@ -228,7 +240,7 @@ export default function ContributePage() {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-1">
               <Label>Plant A</Label>
-              <CropPicker label="Plant A" value={cropA} onChange={setCropA} />
+              <CropPicker label="Plant A" value={cropA} onChange={setCropA} showGenusHint />
             </div>
 
             <div className="space-y-1">
