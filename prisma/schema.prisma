@@ -172,6 +172,7 @@ model user {
   email         String      @unique
   emailVerified Boolean     @default(false)
   image         String?
+  trustScore    Float       @default(1.0)
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   sessions      session[]
