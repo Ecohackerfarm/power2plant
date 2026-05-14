@@ -1,6 +1,6 @@
 'use client'
 import Link from 'next/link'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { ArrowRight } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -8,23 +8,41 @@ import { Button } from '@/components/ui/button'
 import { ConfidenceBadge } from '@/components/confidence-badge'
 import { getDisplayName, type RecommendResult, type BedResult } from '@/lib/recommend'
 import { useSession } from '@/lib/auth-client'
+import type { CSSProperties } from 'react'
 
-// Stable identity key for a bed: sorted crop IDs. Beds with the same key are identical
-// across plans and should not animate when switching.
+// Unique identity for a bed: sorted crop IDs. Empty beds disambiguated by index.
 function bedKey(bed: BedResult): string {
-  return bed.crops.map(c => c.id).sort().join(',')
+  const ids = bed.crops.map(c => c.id).sort().join(',')
+  return ids || `__empty_${bed.index}`
 }
 
-// Sort beds so companion-rich beds appear first. Users see their most informative beds
-// at the top rather than single-plant placeholders.
+// Sort beds: most companion-rich first. Stable tiebreaker: bed.index ascending.
 function sortByHints(beds: BedResult[]): BedResult[] {
   return [...beds].sort(
-    (a, b) => b.hints.length - a.hints.length || b.crops.length - a.crops.length,
+    (a, b) =>
+      b.hints.length - a.hints.length ||
+      b.crops.length - a.crops.length ||
+      a.index - b.index,
   )
 }
 
-type AnimPhase = 'idle' | 'exiting' | 'entering'
+// CSS keyframes defined once — no reliance on Tailwind JIT emitting animation classes.
+const SLIDE_CSS = `
+  @keyframes p2p-out-l { from{transform:translateX(0);opacity:1} to{transform:translateX(-115%);opacity:0} }
+  @keyframes p2p-out-r { from{transform:translateX(0);opacity:1} to{transform:translateX(115%);opacity:0}  }
+  @keyframes p2p-in-r  { from{transform:translateX(115%);opacity:0} to{transform:translateX(0);opacity:1}  }
+  @keyframes p2p-in-l  { from{transform:translateX(-115%);opacity:0} to{transform:translateX(0);opacity:1} }
+`
+const DUR = '280ms'
+const ANIM_LOOKUP: Record<string, string> = {
+  'exiting-fwd':  `p2p-out-l ${DUR} ease-in  forwards`,
+  'exiting-back': `p2p-out-r ${DUR} ease-in  forwards`,
+  'entering-fwd': `p2p-in-r  ${DUR} ease-out forwards`,
+  'entering-back': `p2p-in-l  ${DUR} ease-out forwards`,
+}
 const ANIM_MS = 280
+
+type AnimPhase = 'idle' | 'exiting' | 'entering'
 
 interface RecommendationDisplayProps {
   result: RecommendResult
@@ -37,42 +55,36 @@ export function RecommendationDisplay({ result, alternatives = [], onAccepted }:
   const [accepting, setAccepting] = useState(false)
   const [acceptError, setAcceptError] = useState<string | null>(null)
 
-  const allPlans = [result, ...alternatives]
-  // Pre-sort beds for every plan once
-  const planBeds = allPlans.map(p => sortByHints(p.beds))
+  const allPlans = useMemo(() => [result, ...alternatives], [result, alternatives])
+  const planBeds = useMemo(() => allPlans.map(p => sortByHints(p.beds)), [allPlans])
 
-  // `displayedIndex` drives what's rendered. It only changes AFTER the exit animation
-  // completes, so React can keep unchanged beds in the DOM without any jump.
+  // displayedIndex only advances AFTER the exit animation, so unchanged beds keep
+  // their React DOM nodes and don't animate at all.
   const [displayedIndex, setDisplayedIndex] = useState(0)
   const [animPhase, setAnimPhase] = useState<AnimPhase>('idle')
   const [isForward, setIsForward] = useState(true)
   const [changedKeys, setChangedKeys] = useState<Set<string>>(new Set())
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
+
   function selectPlan(newIdx: number) {
     if (newIdx === displayedIndex || animPhase !== 'idle') return
 
-    const oldBeds = planBeds[displayedIndex]
-    const newBeds = planBeds[newIdx]
-    const oldKeySet = new Set(oldBeds.map(bedKey))
-    const newKeySet = new Set(newBeds.map(bedKey))
-
-    // Beds that exist in old but not new — these slide out
-    const exitKeys = new Set([...oldKeySet].filter(k => !newKeySet.has(k)))
-    // Beds that exist in new but not old — these slide in
-    const enterKeys = new Set([...newKeySet].filter(k => !oldKeySet.has(k)))
+    const oldKeys = new Set(planBeds[displayedIndex].map(bedKey))
+    const newKeys = new Set(planBeds[newIdx].map(bedKey))
+    const exitKeys  = new Set([...oldKeys].filter(k => !newKeys.has(k)))
+    const enterKeys = new Set([...newKeys].filter(k => !oldKeys.has(k)))
 
     setIsForward(newIdx > displayedIndex)
     setChangedKeys(exitKeys)
     setAnimPhase('exiting')
 
-    // After exit completes: swap to new plan, trigger enter animation
     timerRef.current = setTimeout(() => {
       setDisplayedIndex(newIdx)
       setChangedKeys(enterKeys)
       setAnimPhase('entering')
 
-      // After enter completes: return to idle
       timerRef.current = setTimeout(() => {
         setAnimPhase('idle')
         setChangedKeys(new Set())
@@ -80,26 +92,28 @@ export function RecommendationDisplay({ result, alternatives = [], onAccepted }:
     }, ANIM_MS + 20)
   }
 
-  // What's visible right now
+  function bedAnimStyle(key: string): CSSProperties {
+    if (animPhase === 'idle' || !changedKeys.has(key)) return {}
+    const lookup = `${animPhase}-${isForward ? 'fwd' : 'back'}`
+    const anim = ANIM_LOOKUP[lookup]
+    return anim ? { animation: anim } : {}
+  }
+
   const beds = planBeds[displayedIndex]
   const plan = allPlans[displayedIndex]
 
-  // Build crop → display-position indices for "also in Bed N" notes
-  const cropDisplayBeds = new Map<string, number[]>()
-  beds.forEach((bed, di) => {
-    for (const crop of bed.crops) {
-      const list = cropDisplayBeds.get(crop.id) ?? []
-      list.push(di)
-      cropDisplayBeds.set(crop.id, list)
-    }
-  })
-
-  function animClass(key: string): string {
-    if (!changedKeys.has(key)) return ''
-    if (animPhase === 'exiting') return isForward ? 'animate-slide-out-left' : 'animate-slide-out-right'
-    if (animPhase === 'entering') return isForward ? 'animate-slide-in-right' : 'animate-slide-in-left'
-    return ''
-  }
+  // crop → display indices for "also in Bed N" cross-references
+  const cropDisplayBeds = useMemo(() => {
+    const m = new Map<string, number[]>()
+    beds.forEach((bed, di) => {
+      for (const crop of bed.crops) {
+        const list = m.get(crop.id) ?? []
+        list.push(di)
+        m.set(crop.id, list)
+      }
+    })
+    return m
+  }, [beds])
 
   const handleAccept = async () => {
     if (!session) return
@@ -127,6 +141,9 @@ export function RecommendationDisplay({ result, alternatives = [], onAccepted }:
 
   return (
     <div className="space-y-6">
+      {/* Keyframe definitions — inline so they work regardless of Tailwind JIT state */}
+      <style dangerouslySetInnerHTML={{ __html: SLIDE_CSS }} />
+
       <h2 className="text-xl font-semibold">Step 4 — Recommendations</h2>
 
       {allPlans.length > 1 && (
@@ -149,15 +166,13 @@ export function RecommendationDisplay({ result, alternatives = [], onAccepted }:
         </div>
       )}
 
-      {/* Grid: unchanged beds stay in DOM (same React key) — only different beds animate */}
+      {/* Grid: unchanged beds share a React key across plans → DOM stays, no animation */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {beds.map((bed, displayIdx) => {
           const key = bedKey(bed)
-          const cls = animClass(key)
-
           return (
             <div key={key} className="overflow-hidden">
-              <div className={cls || undefined}>
+              <div style={bedAnimStyle(key)}>
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base">Bed {displayIdx + 1}</CardTitle>
