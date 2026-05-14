@@ -34,6 +34,12 @@ const config: Config = {
       },
     },
   },
+  safelist: [
+    'animate-slide-out-left',
+    'animate-slide-out-right',
+    'animate-slide-in-right',
+    'animate-slide-in-left',
+  ],
   plugins: [],
 }
 export default config
