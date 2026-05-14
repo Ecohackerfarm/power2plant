@@ -1,4 +1,5 @@
 'use client'
+import { useTranslations } from 'next-intl'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -10,6 +11,8 @@ interface BedConfigProps {
 }
 
 export function BedConfig({ bedCount, bedCapacity, onChange }: BedConfigProps) {
+  const t = useTranslations('BedConfig')
+
   function handleCount(e: React.ChangeEvent<HTMLInputElement>) {
     const v = Math.max(1, parseInt(e.target.value) || 1)
     onChange(v, bedCapacity)
@@ -23,11 +26,11 @@ export function BedConfig({ bedCount, bedCapacity, onChange }: BedConfigProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Step 3 — Beds</CardTitle>
+        <CardTitle>{t('title')}</CardTitle>
       </CardHeader>
       <CardContent className="flex gap-6">
         <div className="space-y-1">
-          <Label htmlFor="bed-count">Number of beds</Label>
+          <Label htmlFor="bed-count">{t('bedCount')}</Label>
           <Input
             id="bed-count"
             type="number"
@@ -39,7 +42,7 @@ export function BedConfig({ bedCount, bedCapacity, onChange }: BedConfigProps) {
           />
         </div>
         <div className="space-y-1">
-          <Label htmlFor="bed-capacity">Plants per bed (max)</Label>
+          <Label htmlFor="bed-capacity">{t('bedCapacity')}</Label>
           <Input
             id="bed-capacity"
             type="number"
