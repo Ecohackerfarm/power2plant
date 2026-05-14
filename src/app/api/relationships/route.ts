@@ -3,6 +3,7 @@ import { headers } from 'next/headers'
 import prisma from '@/lib/prisma'
 import { SOURCE_CONFIDENCE } from '@/lib/source-confidence'
 import { classifyUrl } from '@/lib/classify-url'
+import { computeAndSaveTrustScore } from '@/lib/trust-score'
 import type { SourceClassification, ConfidenceLevel } from '@prisma/client'
 import { auth } from '@/lib/auth'
 
@@ -97,12 +98,15 @@ export async function POST(request: Request) {
   if (reason !== undefined && !VALID_REASONS.includes(reason as (typeof VALID_REASONS)[number])) {
     return NextResponse.json({ error: 'invalid reason' }, { status: 400 })
   }
-  if (notes !== undefined && (typeof notes !== 'string' || notes.length > 500)) {
-    return NextResponse.json({ error: 'notes must be a string of at most 500 chars' }, { status: 400 })
+  if (notes !== undefined && (typeof notes !== 'string' || notes.length > 2000)) {
+    return NextResponse.json({ error: 'notes must be a string of at most 2000 chars' }, { status: 400 })
   }
   if (sources !== undefined) {
     if (!Array.isArray(sources) || !sources.every(s => typeof s === 'string')) {
       return NextResponse.json({ error: 'sources must be an array of strings' }, { status: 400 })
+    }
+    if (sources.length > 20) {
+      return NextResponse.json({ error: 'sources must have at most 20 items' }, { status: 400 })
     }
   }
   const { sourceType } = body
@@ -220,10 +224,31 @@ export async function POST(request: Request) {
 
     const allSources = await tx.relationshipSource.findMany({
       where: { relationshipId: rel.id },
-      select: { confidence: true },
+      select: { confidence: true, source: true, userId: true },
     })
     const CONFIDENCE_VALUES = { ANECDOTAL: 0.25, TRADITIONAL: 0.5, OBSERVED: 0.75, PEER_REVIEWED: 1.0 }
-    const maxConfidence = Math.max(...allSources.map(s => CONFIDENCE_VALUES[s.confidence]))
+
+    // Collect unique userIds from COMMUNITY sources to batch-fetch trust scores
+    const communityUserIds = [...new Set(
+      allSources.filter(s => s.source === 'COMMUNITY' && s.userId).map(s => s.userId!)
+    )]
+    const userTrustScores = communityUserIds.length > 0
+      ? await tx.user.findMany({
+          where: { id: { in: communityUserIds } },
+          select: { id: true, trustScore: true },
+        })
+      : []
+    const trustByUser = Object.fromEntries(userTrustScores.map(u => [u.id, u.trustScore]))
+
+    const weightedConfidences = allSources.map(s => {
+      const base = CONFIDENCE_VALUES[s.confidence]
+      if (s.source === 'COMMUNITY' && s.userId) {
+        const trust = trustByUser[s.userId] ?? 1.0
+        return base * trust
+      }
+      return base
+    })
+    const maxConfidence = Math.max(...weightedConfidences)
     await tx.cropRelationship.update({
       where: { id: rel.id },
       data: { confidence: maxConfidence },
@@ -231,6 +256,9 @@ export async function POST(request: Request) {
 
     return { id: rel.id, sourceId }
   })
+
+  // Recompute trust score outside transaction (reads own writes)
+  await computeAndSaveTrustScore(session.user.id, prisma)
 
   return NextResponse.json(result, { status: 201 })
 }

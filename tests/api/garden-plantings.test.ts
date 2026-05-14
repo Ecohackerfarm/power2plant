@@ -11,6 +11,9 @@ vi.mock('@/lib/prisma', () => ({
       deleteMany: vi.fn(),
       create: vi.fn(),
     },
+    gardenShare: {
+      deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+    },
     crop: {
       findMany: vi.fn(),
     },
@@ -177,6 +180,9 @@ describe('POST /api/garden/plantings', () => {
             name: 'Bed 1',
             plantings: [{ cropId: 'crop-1', crop: { id: 'crop-1', name: 'Tomato', commonNames: ['Tomato'] } }],
           }),
+        },
+        gardenShare: {
+          deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
         },
       }
       return await fn(mockTx)

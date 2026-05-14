@@ -26,12 +26,12 @@ export async function POST(request: Request) {
     cropIds.length === 0 ||
     cropIds.length > 50 ||
     cropIds.some(id => typeof id !== 'string') ||
-    typeof bedCount !== 'number' || bedCount < 1 ||
-    typeof bedCapacity !== 'number' || bedCapacity < 1 ||
-    typeof minTempC !== 'number'
+    !Number.isFinite(bedCount) || bedCount < 1 || bedCount > 100 ||
+    !Number.isFinite(bedCapacity) || bedCapacity < 1 || bedCapacity > 100 ||
+    !Number.isFinite(minTempC)
   ) {
     return NextResponse.json(
-      { error: 'cropIds (1–50 strings), bedCount (≥1), bedCapacity (≥1), minTempC required' },
+      { error: 'cropIds (1–50 strings), bedCount (1–100), bedCapacity (1–100), minTempC required' },
       { status: 400 },
     )
   }

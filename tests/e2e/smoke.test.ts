@@ -33,3 +33,42 @@ test('zone API returns USDA zone for valid coords', async ({ request }) => {
   const body = await res.json()
   expect(body).toHaveProperty('minTempC')
 })
+
+test('recommendation flow: zone + 2 plants → beds render', async ({ page, request }) => {
+  // Fetch two real crop IDs and a zone value via API
+  const [cropsRes, zoneRes] = await Promise.all([
+    request.get('/api/crops?q=tomato'),
+    request.get('/api/zone?lat=40.7&lng=-74.0'),
+  ])
+  const { crops } = await cropsRes.json()
+  const { minTempC } = await zoneRes.json()
+  const [cropA, cropB] = crops
+
+  // Pre-seed localStorage so zone + wishlist are already set
+  await page.goto('/')
+  await page.evaluate(
+    ({ ids, zone }) => {
+      localStorage.setItem(
+        'power2plant:garden',
+        JSON.stringify({ lat: 40.7, lng: -74.0, minTempC: zone, bedCount: 3, bedCapacity: 3, wishlist: ids }),
+      )
+    },
+    { ids: [cropA.id, cropB.id], zone: minTempC },
+  )
+  await page.reload()
+
+  // Button should be enabled now
+  const btn = page.getByRole('button', { name: /get recommendations/i })
+  await expect(btn).toBeEnabled()
+  await btn.click()
+
+  // At least one bed card should render
+  await expect(page.getByText(/bed 1/i)).toBeVisible({ timeout: 10000 })
+})
+
+test('relationships API returns 401 for unauthenticated POST', async ({ request }) => {
+  const res = await request.post('/api/relationships', {
+    data: { cropAId: 'any', cropBId: 'other', type: 'COMPANION' },
+  })
+  expect(res.status()).toBe(401)
+})
