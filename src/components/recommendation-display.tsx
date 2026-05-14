@@ -8,8 +8,6 @@ import { Button } from '@/components/ui/button'
 import { ConfidenceBadge } from '@/components/confidence-badge'
 import { getDisplayName, type RecommendResult, type BedResult } from '@/lib/recommend'
 import { useSession } from '@/lib/auth-client'
-import type { CSSProperties } from 'react'
-
 // Unique identity for a bed: sorted crop IDs. Empty beds disambiguated by index.
 function bedKey(bed: BedResult): string {
   const ids = bed.crops.map(c => c.id).sort().join(',')
@@ -26,19 +24,11 @@ function sortByHints(beds: BedResult[]): BedResult[] {
   )
 }
 
-// CSS keyframes defined once — no reliance on Tailwind JIT emitting animation classes.
-const SLIDE_CSS = `
-  @keyframes p2p-out-l { from{transform:translateX(0);opacity:1} to{transform:translateX(-115%);opacity:0} }
-  @keyframes p2p-out-r { from{transform:translateX(0);opacity:1} to{transform:translateX(115%);opacity:0}  }
-  @keyframes p2p-in-r  { from{transform:translateX(115%);opacity:0} to{transform:translateX(0);opacity:1}  }
-  @keyframes p2p-in-l  { from{transform:translateX(-115%);opacity:0} to{transform:translateX(0);opacity:1} }
-`
-const DUR = '280ms'
-const ANIM_LOOKUP: Record<string, string> = {
-  'exiting-fwd':  `p2p-out-l ${DUR} ease-in  forwards`,
-  'exiting-back': `p2p-out-r ${DUR} ease-in  forwards`,
-  'entering-fwd': `p2p-in-r  ${DUR} ease-out forwards`,
-  'entering-back': `p2p-in-l  ${DUR} ease-out forwards`,
+const ANIM_CLASS: Record<string, string> = {
+  'exiting-fwd':   'animate-slide-out-left',
+  'exiting-back':  'animate-slide-out-right',
+  'entering-fwd':  'animate-slide-in-right',
+  'entering-back': 'animate-slide-in-left',
 }
 const ANIM_MS = 280
 
@@ -92,11 +82,9 @@ export function RecommendationDisplay({ result, alternatives = [], onAccepted }:
     }, ANIM_MS + 20)
   }
 
-  function bedAnimStyle(key: string): CSSProperties {
-    if (animPhase === 'idle' || !changedKeys.has(key)) return {}
-    const lookup = `${animPhase}-${isForward ? 'fwd' : 'back'}`
-    const anim = ANIM_LOOKUP[lookup]
-    return anim ? { animation: anim } : {}
+  function bedAnimClass(key: string): string | undefined {
+    if (animPhase === 'idle' || !changedKeys.has(key)) return undefined
+    return ANIM_CLASS[`${animPhase}-${isForward ? 'fwd' : 'back'}`]
   }
 
   const beds = planBeds[displayedIndex]
@@ -141,9 +129,6 @@ export function RecommendationDisplay({ result, alternatives = [], onAccepted }:
 
   return (
     <div className="space-y-6">
-      {/* Keyframe definitions — inline so they work regardless of Tailwind JIT state */}
-      <style dangerouslySetInnerHTML={{ __html: SLIDE_CSS }} />
-
       <h2 className="text-xl font-semibold">Step 4 — Recommendations</h2>
 
       {allPlans.length > 1 && (
@@ -172,7 +157,7 @@ export function RecommendationDisplay({ result, alternatives = [], onAccepted }:
           const key = bedKey(bed)
           return (
             <div key={key} className="overflow-hidden">
-              <div style={bedAnimStyle(key)}>
+              <div className={bedAnimClass(key)}>
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base">Bed {displayIdx + 1}</CardTitle>
