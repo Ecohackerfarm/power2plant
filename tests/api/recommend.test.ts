@@ -40,6 +40,36 @@ describe('POST /api/recommend', () => {
     expect(res.status).toBe(400)
   })
 
+  it('returns 400 when bedCount is NaN', async () => {
+    const req = new Request('http://localhost/api/recommend', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cropIds: ['c1'], bedCount: NaN, bedCapacity: 3, minTempC: -10 }),
+    })
+    const res = await POST(req)
+    expect(res.status).toBe(400)
+  })
+
+  it('returns 400 when bedCount exceeds 100', async () => {
+    const req = new Request('http://localhost/api/recommend', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cropIds: ['c1'], bedCount: 101, bedCapacity: 3, minTempC: -10 }),
+    })
+    const res = await POST(req)
+    expect(res.status).toBe(400)
+  })
+
+  it('returns 400 when bedCapacity exceeds 100', async () => {
+    const req = new Request('http://localhost/api/recommend', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cropIds: ['c1'], bedCount: 2, bedCapacity: 101, minTempC: -10 }),
+    })
+    const res = await POST(req)
+    expect(res.status).toBe(400)
+  })
+
   it('returns recommendation result for valid input', async () => {
     vi.mocked(prisma.$queryRaw).mockResolvedValue(fakeCrops)
     vi.mocked(prisma.cropRelationship.findMany).mockResolvedValue(fakeRels as any)
