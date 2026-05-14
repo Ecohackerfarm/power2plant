@@ -108,3 +108,15 @@ test('map picker: stays visible during zone fetch, hides after success', async (
   await expect(page.locator('.leaflet-container')).not.toBeVisible({ timeout: 5000 })
   await expect(page.getByText(/coldest winter night/i)).toBeVisible()
 })
+
+test('home page shows plant search (Step 2)', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.getByRole('textbox', { name: /search/i })).toBeVisible()
+})
+
+test('garden page has back link to home', async ({ page }) => {
+  await page.goto('/garden')
+  const link = page.getByRole('link', { name: /power2plant/i })
+  await expect(link).toBeVisible()
+  await expect(link).toHaveAttribute('href', '/')
+})
