@@ -168,6 +168,13 @@ describe('POST /api/relationships', () => {
     expect((await res.json()).error).toContain('sources must be an array')
   })
 
+  it('returns 400 when sources exceeds 20 items', async () => {
+    vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as any)
+    const res = await POST(makeReq({ ...validBody, sources: Array(21).fill('https://example.com') }))
+    expect(res.status).toBe(400)
+    expect((await res.json()).error).toContain('at most 20')
+  })
+
   it('returns 400 when evidenceLevel is invalid', async () => {
     vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as any)
     const res = await POST(makeReq({ ...validBody, evidenceLevel: 'INVALID_LEVEL' }))
