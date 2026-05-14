@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
-import Link from 'next/link'
+import { getTranslations } from 'next-intl/server'
+import { Link } from '@/i18n/navigation'
 import prisma from '@/lib/prisma'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
@@ -14,23 +15,26 @@ interface BedSnapshot {
   plants: Plant[]
 }
 
-export default async function SharePage({ params }: { params: Promise<{ token: string }> }) {
+export default async function SharePage({ params }: { params: Promise<{ token: string; locale: string }> }) {
   const { token } = await params
+  const t = await getTranslations('SharePage')
   const share = await prisma.gardenShare.findUnique({ where: { token } })
 
   if (!share || share.expiresAt < new Date()) {
     notFound()
   }
 
-  const beds = share.beds as BedSnapshot[]
+  const beds = share.beds as unknown as BedSnapshot[]
 
   return (
     <main className="max-w-3xl mx-auto px-4 py-8 space-y-6">
       <div>
-        <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">← power2plant</Link>
-        <h1 className="text-3xl font-bold mt-2">Shared garden plan</h1>
+        <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">
+          {t('backHome')}
+        </Link>
+        <h1 className="text-3xl font-bold mt-2">{t('title')}</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          This is a read-only snapshot. Valid until {share.expiresAt.toLocaleDateString()}.
+          {t('subtitle', { date: share.expiresAt.toLocaleDateString() })}
         </p>
       </div>
 
@@ -42,15 +46,12 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
             </CardHeader>
             <CardContent>
               {bed.plants.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Empty bed</p>
+                <p className="text-sm text-muted-foreground">{t('emptyBed')}</p>
               ) : (
                 <ul className="space-y-1">
                   {bed.plants.map((plant) => (
                     <li key={plant.id} className="text-sm">
-                      <Link
-                        href={`/plants/${plant.id}`}
-                        className="hover:underline"
-                      >
+                      <Link href={`/plants/${plant.id}`} className="hover:underline">
                         {plant.name}
                       </Link>
                       <span className="text-muted-foreground italic text-xs ml-1">{plant.botanicalName}</span>

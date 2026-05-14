@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import Link from 'next/link'
+import { useTranslations } from 'next-intl'
+import { Link } from '@/i18n/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ArrowRight } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
@@ -19,15 +20,6 @@ type Relationship = {
   sourceCount: number
 }
 
-const REASON_LABELS: Record<string, string> = {
-  PEST_CONTROL: 'Pest control',
-  POLLINATION: 'Pollination',
-  NUTRIENT: 'Nutrient sharing',
-  SHADE: 'Shade benefit',
-  ALLELOPATHY: 'Allelopathy',
-  OTHER: 'Other',
-}
-
 function debounce<T extends (...args: string[]) => void>(fn: T, delay: number): T {
   let timeout: NodeJS.Timeout
   return ((...args: string[]) => {
@@ -37,6 +29,7 @@ function debounce<T extends (...args: string[]) => void>(fn: T, delay: number): 
 }
 
 export default function RelationshipsPage() {
+  const t = useTranslations('Relationships')
   const [relationships, setRelationships] = useState<Relationship[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -82,14 +75,14 @@ export default function RelationshipsPage() {
     <main className="max-w-3xl mx-auto px-4 py-8 space-y-6">
       <div>
         <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">
-          ← Home
+          {t('backHome')}
         </Link>
-        <h1 className="text-3xl font-bold mt-2">Community observations</h1>
+        <h1 className="text-3xl font-bold mt-2">{t('title')}</h1>
       </div>
 
       <Input
         type="search"
-        placeholder="Search by crop name..."
+        placeholder={t('searchPlaceholder')}
         defaultValue={search}
         onChange={(e) => handleSearch(e.target.value)}
         className="max-w-sm"
@@ -109,7 +102,7 @@ export default function RelationshipsPage() {
           ))}
         </div>
       ) : relationships.length === 0 ? (
-        <p className="text-muted-foreground">No observations yet</p>
+        <p className="text-muted-foreground">{t('noObservations')}</p>
       ) : (
         <>
           <div className="space-y-4">
@@ -135,7 +128,7 @@ export default function RelationshipsPage() {
                       </CardTitle>
                       <div className="flex items-center gap-2 shrink-0">
                         <Badge variant={rel.type === 'COMPANION' ? 'default' : 'destructive'}>
-                          {rel.type === 'COMPANION' ? 'Companion' : 'Avoid'}
+                          {rel.type === 'COMPANION' ? t('companion') : t('avoid')}
                         </Badge>
                         <ArrowRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
@@ -144,15 +137,15 @@ export default function RelationshipsPage() {
                   <CardContent className="space-y-2">
                     {rel.reason && (
                       <p className="text-sm">
-                        <span className="text-muted-foreground">Reason:</span>{' '}
-                        {REASON_LABELS[rel.reason] ?? rel.reason}
+                        <span className="text-muted-foreground">{t('reason')}:</span>{' '}
+                        {rel.reason}
                       </p>
                     )}
                     <p className="text-sm">
-                      <span className="text-muted-foreground">Confidence:</span> {rel.confidence}
+                      <span className="text-muted-foreground">{t('confidence')}:</span> {rel.confidence}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {rel.sourceCount} source{rel.sourceCount !== 1 ? 's' : ''}
+                      {t('sourceCount', { count: rel.sourceCount })}
                     </p>
                   </CardContent>
                 </Card>
@@ -163,7 +156,7 @@ export default function RelationshipsPage() {
           {hasMore && (
             <div className="flex justify-center">
               <Button variant="outline" onClick={loadMore} disabled={loadingMore}>
-                {loadingMore ? 'Loading…' : 'Load more'}
+                {loadingMore ? t('loading') : t('loadMore')}
               </Button>
             </div>
           )}

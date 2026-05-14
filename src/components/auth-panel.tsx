@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -9,6 +10,7 @@ import { signIn, signUp, signOut, useSession } from '@/lib/auth-client'
 type Mode = 'signin' | 'signup'
 
 export function AuthPanel() {
+  const t = useTranslations('Auth')
   const { data: session, isPending } = useSession()
   const [mode, setMode] = useState<Mode>('signin')
   const [name, setName] = useState('')
@@ -24,12 +26,8 @@ export function AuthPanel() {
     return (
       <div className="flex items-center gap-3 text-sm">
         <span className="text-muted-foreground">{session.user.email ?? ''}</span>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => signOut()}
-        >
-          Sign out
+        <Button variant="outline" size="sm" onClick={() => signOut()}>
+          {t('signOut')}
         </Button>
       </div>
     )
@@ -58,7 +56,7 @@ export function AuthPanel() {
   if (!open) {
     return (
       <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
-        Sign in to save
+        {t('signInToSave')}
       </Button>
     )
   }
@@ -67,14 +65,14 @@ export function AuthPanel() {
     <Card className="w-80">
       <CardHeader className="pb-3">
         <CardTitle className="text-base">
-          {mode === 'signin' ? 'Sign in' : 'Create account'}
+          {mode === 'signin' ? t('signIn') : t('createAccount')}
         </CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-3">
           {mode === 'signup' && (
             <div className="space-y-1">
-              <Label htmlFor="auth-name">Name</Label>
+              <Label htmlFor="auth-name">{t('name')}</Label>
               <Input
                 id="auth-name"
                 value={name}
@@ -84,7 +82,7 @@ export function AuthPanel() {
             </div>
           )}
           <div className="space-y-1">
-            <Label htmlFor="auth-email">Email</Label>
+            <Label htmlFor="auth-email">{t('email')}</Label>
             <Input
               id="auth-email"
               type="email"
@@ -94,7 +92,7 @@ export function AuthPanel() {
             />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="auth-password">Password</Label>
+            <Label htmlFor="auth-password">{t('password')}</Label>
             <Input
               id="auth-password"
               type="password"
@@ -106,21 +104,21 @@ export function AuthPanel() {
           </div>
           {error && <p className="text-red-600 text-sm">{error}</p>}
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Please wait…' : mode === 'signin' ? 'Sign in' : 'Create account'}
+            {loading ? t('pleaseWait') : mode === 'signin' ? t('signIn') : t('createAccount')}
           </Button>
           <button
             type="button"
             className="text-sm text-muted-foreground hover:text-foreground w-full text-center"
             onClick={() => { setMode(m => m === 'signin' ? 'signup' : 'signin'); setError(null) }}
           >
-            {mode === 'signin' ? 'No account? Sign up' : 'Have an account? Sign in'}
+            {mode === 'signin' ? t('noAccount') : t('haveAccount')}
           </button>
           <button
             type="button"
             className="text-sm text-muted-foreground hover:text-foreground w-full text-center"
             onClick={() => setOpen(false)}
           >
-            Cancel
+            {t('cancel')}
           </button>
         </form>
       </CardContent>

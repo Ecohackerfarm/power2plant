@@ -1,6 +1,8 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
+import { useTranslations } from 'next-intl'
 import { useSession } from '@/lib/auth-client'
+import { Link } from '@/i18n/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,39 +12,8 @@ import { getDisplayName } from '@/lib/recommend'
 import { classifyUrl } from '@/lib/classify-url'
 import type { CropRow } from '@/lib/crop-rank'
 import type { SourceClassification } from '@prisma/client'
-import Link from 'next/link'
 
-type Crop = Pick<CropRow, 'id' | 'name' | 'botanicalName' | 'commonNames'>
-
-const TYPES = [
-  { value: 'COMPANION', label: 'They grow well together' },
-  { value: 'AVOID', label: 'They don\'t grow well together' },
-] as const
-
-const REASONS = [
-  { value: '', label: '— select a reason (optional) —' },
-  { value: 'PEST_CONTROL', label: 'Pest control' },
-  { value: 'POLLINATION', label: 'Pollination' },
-  { value: 'NUTRIENT', label: 'Nutrient sharing' },
-  { value: 'SHADE', label: 'Shade benefit' },
-  { value: 'ALLELOPATHY', label: 'Natural repellent (allelopathy)' },
-  { value: 'OTHER', label: 'Other' },
-] as const
-
-const EVIDENCE_LEVELS = [
-  { value: 'ANECDOTAL', label: 'I observed this personally' },
-  { value: 'TRADITIONAL', label: 'I\'ve read about this in resources' },
-  { value: 'OBSERVED', label: 'I can point to documentation' },
-  { value: 'PEER_REVIEWED', label: 'I have peer-reviewed sources' },
-] as const
-
-const SOURCE_TYPE_LABELS: Record<SourceClassification, string> = {
-  SCIENTIFIC_PAPER: 'Scientific paper',
-  ACADEMIC_RESOURCE: 'Academic resource',
-  GARDENING_GUIDE: 'Gardening guide',
-  BLOG_FORUM: 'Blog / Forum',
-  PERSONAL_OBSERVATION: 'Personal observation',
-}
+type Crop = Pick<CropRow, 'id' | 'name' | 'botanicalName' | 'commonNames' | 'rank'>
 
 const SOURCE_TYPE_BADGE_VARIANTS: Record<SourceClassification, 'default' | 'secondary' | 'destructive' | 'outline' | 'ghost' | 'link'> = {
   SCIENTIFIC_PAPER: 'default',
@@ -52,16 +23,27 @@ const SOURCE_TYPE_BADGE_VARIANTS: Record<SourceClassification, 'default' | 'seco
   PERSONAL_OBSERVATION: 'ghost',
 }
 
+const SOURCE_TYPES: SourceClassification[] = [
+  'SCIENTIFIC_PAPER', 'ACADEMIC_RESOURCE', 'GARDENING_GUIDE', 'BLOG_FORUM', 'PERSONAL_OBSERVATION',
+]
+
+const RELATIONSHIP_TYPES = ['COMPANION', 'AVOID'] as const
+const REASONS = ['PEST_CONTROL', 'POLLINATION', 'NUTRIENT', 'SHADE', 'ALLELOPATHY', 'OTHER'] as const
+const EVIDENCE_LEVELS = ['ANECDOTAL', 'TRADITIONAL', 'OBSERVED', 'PEER_REVIEWED'] as const
+
 function CropPicker({ label, value, onChange, showGenusHint = false }: {
   label: string
   value: Crop | null
   onChange: (crop: Crop | null) => void
   showGenusHint?: boolean
+  genusHint?: string
+  changeLabel?: string
 }) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<Crop[]>([])
   const [activeIndex, setActiveIndex] = useState(-1)
   const listRef = useRef<HTMLUListElement>(null)
+  const t = useTranslations('Contribute')
 
   useEffect(() => {
     if (query.trim().length < 2) { setResults([]); setActiveIndex(-1); return }
@@ -107,7 +89,7 @@ function CropPicker({ label, value, onChange, showGenusHint = false }: {
           className="text-xs text-muted-foreground hover:text-foreground underline"
           onClick={() => { onChange(null); setQuery('') }}
         >
-          change
+          {t('change')}
         </button>
       </div>
     )
@@ -116,12 +98,10 @@ function CropPicker({ label, value, onChange, showGenusHint = false }: {
   return (
     <div className="space-y-1">
       {showGenusHint && (
-        <p className="text-xs text-muted-foreground italic">
-          Genus entries (e.g. Ocimum L.) represent the whole plant family — pick a species for more precise recommendations.
-        </p>
+        <p className="text-xs text-muted-foreground italic">{t('genusHint')}</p>
       )}
       <Input
-        placeholder={`Search for ${label.toLowerCase()}…`}
+        placeholder={t('searchFor', { label: label.toLowerCase() })}
         value={query}
         onChange={e => setQuery(e.target.value)}
         onKeyDown={handleKeyDown}
@@ -152,6 +132,7 @@ function CropPicker({ label, value, onChange, showGenusHint = false }: {
 }
 
 export default function ContributePage() {
+  const t = useTranslations('Contribute')
   const { data: session, isPending } = useSession()
   const [cropA, setCropA] = useState<Crop | null>(null)
   const [cropB, setCropB] = useState<Crop | null>(null)
@@ -171,7 +152,8 @@ export default function ContributePage() {
     return (
       <main className="max-w-xl mx-auto px-4 py-8">
         <p className="text-muted-foreground">
-          <Link href="/" className="underline">Sign in</Link> to contribute companion planting observations.
+          <Link href="/" className="underline">{t('signInLink')}</Link>{' '}
+          {t('signInPrompt')}
         </p>
       </main>
     )
@@ -217,72 +199,76 @@ export default function ContributePage() {
   return (
     <main className="max-w-xl mx-auto px-4 py-8 space-y-6">
       <div>
-        <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">← Back</Link>
-        <h1 className="text-2xl font-bold mt-2">Contribute an observation</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Share what you've noticed in your garden. Your observations help improve recommendations for everyone.
-        </p>
+        <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">{t('back')}</Link>
+        <h1 className="text-2xl font-bold mt-2">{t('title')}</h1>
+        <p className="text-muted-foreground text-sm mt-1">{t('subtitle')}</p>
       </div>
 
       {result === 'success' && (
-        <p className="text-green-700 text-sm font-medium">Thanks! Your observation has been recorded.</p>
+        <p className="text-green-700 text-sm font-medium">{t('success')}</p>
       )}
       {result === 'ratelimit' && (
-        <p className="text-amber-700 text-sm">You already submitted a relationship for this pair today.</p>
+        <p className="text-amber-700 text-sm">{t('rateLimit')}</p>
       )}
       {result === 'error' && (
-        <p className="text-red-600 text-sm">Something went wrong. Please try again.</p>
+        <p className="text-red-600 text-sm">{t('error')}</p>
       )}
 
       <Card>
-        <CardHeader><CardTitle>New observation</CardTitle></CardHeader>
+        <CardHeader><CardTitle>{t('newObservation')}</CardTitle></CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-1">
-              <Label>Plant A</Label>
-              <CropPicker label="Plant A" value={cropA} onChange={setCropA} showGenusHint />
+              <Label>{t('plantA')}</Label>
+              <CropPicker label={t('plantA')} value={cropA} onChange={setCropA} showGenusHint />
             </div>
 
             <div className="space-y-1">
-              <Label>Plant B</Label>
-              <CropPicker label="Plant B" value={cropB} onChange={setCropB} />
+              <Label>{t('plantB')}</Label>
+              <CropPicker label={t('plantB')} value={cropB} onChange={setCropB} />
             </div>
 
             <div className="space-y-2">
-              <Label>Relationship</Label>
+              <Label>{t('relationship')}</Label>
               <div className="flex flex-col gap-2">
-                {TYPES.map(t => (
-                  <label key={t.value} className="flex items-center gap-2 text-sm cursor-pointer">
+                {RELATIONSHIP_TYPES.map(rt => (
+                  <label key={rt} className="flex items-center gap-2 text-sm cursor-pointer">
                     <input
                       type="radio"
                       name="type"
-                      value={t.value}
-                      checked={type === t.value}
-                      onChange={() => setType(t.value)}
+                      value={rt}
+                      checked={type === rt}
+                      onChange={() => setType(rt)}
                     />
-                    {t.label}
+                    {t(rt as 'COMPANION' | 'AVOID')}
                   </label>
                 ))}
               </div>
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="reasons">Reasons <span className="text-muted-foreground font-normal">(optional, select all that apply)</span></Label>
+              <Label htmlFor="reasons">
+                {t('reasons')}{' '}
+                <span className="text-muted-foreground font-normal">{t('optionalSelectAll')}</span>
+              </Label>
               <select
                 id="reasons"
                 className="w-full border rounded-lg px-3 py-2 text-sm bg-background"
                 multiple
                 value={reasons}
-                onChange={e => setReasons(Array.from(e.target.selectedOptions).map(option => option.value))}
+                onChange={e => setReasons(Array.from(e.target.selectedOptions).map(o => o.value))}
               >
-                {REASONS.slice(1).map(r => (
-                  <option key={r.value} value={r.value}>{r.label}</option>
+                {REASONS.map(r => (
+                  <option key={r} value={r}>{t(r)}</option>
                 ))}
               </select>
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="notes">Notes <span className="text-muted-foreground font-normal">(optional, max 2000 chars)</span></Label>
+              <Label htmlFor="notes">
+                {t('notes')}{' '}
+                <span className="text-muted-foreground font-normal">{t('notesOptional')}</span>
+              </Label>
               <textarea
                 id="notes"
                 className="w-full border rounded-lg px-3 py-2 text-sm bg-background resize-none"
@@ -290,35 +276,36 @@ export default function ContributePage() {
                 maxLength={2000}
                 value={notes}
                 onChange={e => setNotes(e.target.value)}
-                placeholder="e.g. Planted together for 3 seasons, noticed fewer aphids…"
+                placeholder={t('notesPlaceholder')}
               />
               <p className="text-xs text-muted-foreground text-right">{notes.length}/2000</p>
             </div>
 
             <div className="space-y-2">
-              <Label>Evidence level</Label>
-              <p className="text-xs text-muted-foreground">Select the highest quality evidence you have for this observation.</p>
+              <Label>{t('evidenceLevel')}</Label>
+              <p className="text-xs text-muted-foreground">{t('evidenceLevelHint')}</p>
               <div className="flex flex-col gap-2">
                 {EVIDENCE_LEVELS.map(el => (
-                  <label key={el.value} className="flex items-center gap-2 text-sm cursor-pointer">
+                  <label key={el} className="flex items-center gap-2 text-sm cursor-pointer">
                     <input
                       type="radio"
                       name="evidenceLevel"
-                      value={el.value}
-                      checked={evidenceLevel === el.value}
-                      onChange={() => setEvidenceLevel(el.value)}
+                      value={el}
+                      checked={evidenceLevel === el}
+                      onChange={() => setEvidenceLevel(el)}
                     />
-                    {el.label}
+                    {t(el)}
                   </label>
                 ))}
               </div>
             </div>
 
             <div className="space-y-1">
-              <Label>Sources <span className="text-muted-foreground font-normal">(optional)</span></Label>
-              <p className="text-xs text-muted-foreground">
-                doi.org and PubMed links are recognised automatically as scientific papers.
-              </p>
+              <Label>
+                {t('sources')}{' '}
+                <span className="text-muted-foreground font-normal">{t('sourcesOptional')}</span>
+              </Label>
+              <p className="text-xs text-muted-foreground">{t('sourcesHint')}</p>
               {sourceUrls.map((url, idx) => {
                 const detected = sourceTypes[idx] ?? 'BLOG_FORUM'
                 const override = sourceOverrides[idx]
@@ -344,7 +331,7 @@ export default function ContributePage() {
                       />
                       <div className="flex items-center gap-2">
                         <Badge variant={SOURCE_TYPE_BADGE_VARIANTS[displayType]}>
-                          {SOURCE_TYPE_LABELS[displayType]}
+                          {t(displayType)}
                         </Badge>
                         <select
                           className="text-xs border rounded px-1 py-0.5 bg-background"
@@ -356,9 +343,9 @@ export default function ContributePage() {
                             setSourceOverrides(next)
                           }}
                         >
-                          <option value="">Auto-detected</option>
-                          {(Object.entries(SOURCE_TYPE_LABELS) as [SourceClassification, string][]).map(([key, label]) => (
-                            <option key={key} value={key}>{label}</option>
+                          <option value="">{t('autoDetected')}</option>
+                          {SOURCE_TYPES.map(key => (
+                            <option key={key} value={key}>{t(key)}</option>
                           ))}
                         </select>
                         <button
@@ -370,7 +357,7 @@ export default function ContributePage() {
                             setSourceOverrides(sourceOverrides.filter((_, i) => i !== idx))
                           }}
                         >
-                          remove
+                          {t('remove')}
                         </button>
                       </div>
                     </div>
@@ -387,7 +374,7 @@ export default function ContributePage() {
                 disabled={sourceUrls.length >= 20}
                 className="mt-2"
               >
-                Add source
+                {t('addSource')}
               </Button>
             </div>
 
@@ -396,7 +383,7 @@ export default function ContributePage() {
               disabled={!cropA || !cropB || submitting}
               className="w-full"
             >
-              {submitting ? 'Submitting…' : 'Submit observation'}
+              {submitting ? t('submitting') : t('submit')}
             </Button>
           </form>
         </CardContent>
