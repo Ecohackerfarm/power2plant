@@ -184,7 +184,8 @@ chmod 600 $PROJECT_PATH/prod/.env
 
 `scripts/server/setup.sh` generates and installs:
 - `/etc/systemd/system/${PROJECT}-{prod,dev,deploy.path,deploy.service}`
-- `/etc/nginx/sites-available/${PROJECT}` (symlinked to enabled)
+- `/etc/nginx/conf.d/${PROJECT}-rate-limits.conf` — `limit_req_zone` for `/share/*` (60 req/min per IP)
+- `/etc/nginx/sites-available/${PROJECT}` (symlinked to enabled) — includes rate-limited `/share/` location
 - `$PROJECT_PATH/prod/webhook/hooks.json` (from template, secret substituted)
 
 ```sh
@@ -224,8 +225,9 @@ systemctl status ${PROJECT}-prod
 docker compose --project-directory $PROJECT_PATH/prod logs -f app
 ```
 
-> Prod app binds as `:::3000:3000` — nginx proxies to `[::1]:3000`. If the app
-> isn't reachable via nginx, verify the port binding in `docker ps`.
+> Prod app binds `:::3000` — host nginx proxies to `[::1]:3000`. `/share/*` traffic
+> is rate-limited to 60 req/min per IP (burst 10) at the nginx layer.
+> If the app isn't reachable via nginx, verify the port binding in `docker ps`.
 
 ---
 

@@ -110,7 +110,16 @@ echo "    wrote ${PROJECT}-deploy.path and ${PROJECT}-deploy.service"
 touch /run/p2p-deploy.trigger
 chmod 777 /run/p2p-deploy.trigger  # world-writable sentinel (no sensitive content)
 
-# ── Nginx config ──────────────────────────────────────────────────────────────
+# ── Nginx rate-limit zone ─────────────────────────────────────────────────────
+# limit_req_zone must live in the http{} context → /etc/nginx/conf.d/
+cat > "/etc/nginx/conf.d/${PROJECT}-rate-limits.conf" <<'RLCONF'
+# 60 req/min per IP on /share/* (token-guessing mitigation)
+# 10m shared memory ≈ 160k tracked IPs
+limit_req_zone $binary_remote_addr zone=p2p_share_rl:10m rate=1r/s;
+RLCONF
+echo "    wrote /etc/nginx/conf.d/${PROJECT}-rate-limits.conf"
+
+# ── Nginx site config ─────────────────────────────────────────────────────────
 # Single-quoted NGINX heredoc prevents shell expansion — nginx vars ($host etc.) preserved.
 # sed substitutes only $DOMAIN.
 nginx_template=$(cat <<'NGINX'
@@ -124,6 +133,19 @@ server {
     location /hooks/ {
         proxy_pass http://[::1]:9000/hooks/;
         proxy_read_timeout 10s;
+    }
+
+    # Rate-limited: 60 req/min per IP, burst of 10
+    location /share/ {
+        limit_req zone=p2p_share_rl burst=10 nodelay;
+        limit_req_status 429;
+
+        proxy_pass http://[::1]:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 60s;
     }
 
     location / {
