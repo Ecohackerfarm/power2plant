@@ -138,6 +138,22 @@
   --sidebar-ring: oklch(0.7 0.1 145);
 }
 
+/* Plan-switching slide animations for RecommendationDisplay */
+@theme {
+  --animate-slide-out-left:  slideOutLeft  280ms ease-in  forwards;
+  --animate-slide-out-right: slideOutRight 280ms ease-in  forwards;
+  --animate-slide-in-right:  slideInRight  280ms ease-out forwards;
+  --animate-slide-in-left:   slideInLeft   280ms ease-out forwards;
+}
+
+@keyframes slideOutLeft  { from{transform:translateX(0);opacity:1}   to{transform:translateX(-115%);opacity:0} }
+@keyframes slideOutRight { from{transform:translateX(0);opacity:1}   to{transform:translateX(115%);opacity:0}  }
+@keyframes slideInRight  { from{transform:translateX(115%);opacity:0} to{transform:translateX(0);opacity:1}   }
+@keyframes slideInLeft   { from{transform:translateX(-115%);opacity:0} to{transform:translateX(0);opacity:1}  }
+
+/* Force-include the four utility classes (v4 @source inline replaces safelist) */
+@source inline("{animate-slide-out-left,animate-slide-out-right,animate-slide-in-right,animate-slide-in-left}");
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

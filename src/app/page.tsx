@@ -1,25 +1,27 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
+import Link from 'next/link'
 import { useGarden } from '@/hooks/use-garden'
 import { ZoneDetector } from '@/components/zone-detector'
 import { BedConfig } from '@/components/bed-config'
 import { RecommendationDisplay } from '@/components/recommendation-display'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import type { RecommendResult } from '@/lib/recommend'
+import { PlantSearch } from '@/components/plant-search'
 import { AuthPanel } from '@/components/auth-panel'
 import { useSession } from '@/lib/auth-client'
-import Link from 'next/link'
+import type { RecommendResult } from '@/lib/recommend'
+
+type RecommendResponse = RecommendResult & { alternatives: RecommendResult[] }
 
 export default function Home() {
   const { data: session } = useSession()
   const { state, hydrated, setZone, addToWishlist, removeFromWishlist, clearWishlist, setBeds } = useGarden()
-  const [result, setResult] = useState<RecommendResult | null>(null)
+  const [result, setResult] = useState<RecommendResponse | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [lockedBeds, setLockedBeds] = useState<string[][] | null>(null)
   const autoTriggered = useRef(false)
-  const myGardenRef = useRef<{ refresh: () => void }>(null)
 
   const canRecommend = state.minTempC !== null && state.wishlist.length >= 2
 
@@ -106,6 +108,13 @@ export default function Home() {
 
       <ZoneDetector minTempC={state.minTempC} onZoneDetected={setZone} />
 
+      <PlantSearch
+        wishlistIds={state.wishlist}
+        onAdd={addToWishlist}
+        onRemove={removeFromWishlist}
+        onClearAll={clearWishlist}
+      />
+
       <BedConfig
         bedCount={state.bedCount}
         bedCapacity={state.bedCapacity}
@@ -131,7 +140,12 @@ export default function Home() {
 
       {error && <p className="text-red-600">{error}</p>}
 
-      {result && <RecommendationDisplay result={result} onAccepted={() => myGardenRef.current?.refresh()} />}
+      {result && (
+        <RecommendationDisplay
+          result={result}
+          alternatives={result.alternatives}
+        />
+      )}
     </main>
   )
 }

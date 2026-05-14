@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { Prisma } from '@prisma/client'
 import prisma from '@/lib/prisma'
-import { recommend, type RelationshipInput, type CropInput } from '@/lib/recommend'
+import { recommend, recommendAlternatives, type RelationshipInput, type CropInput } from '@/lib/recommend'
 
 interface RecommendBody {
   cropIds: string[]
@@ -70,7 +70,20 @@ const allIds = [...new Set([...cropIds, ...(existingBeds ?? []).flat()])]
     }),
   ])
 
-  const result = recommend(crops, relationships as RelationshipInput[], bedCount, bedCapacity, minTempC, existingBeds)
+  // With locked beds, skip alternative generation — alternatives don't make sense
+  // when some beds are already fixed by existingBeds.
+  if (existingBeds) {
+    const result = recommend(crops, relationships as RelationshipInput[], bedCount, bedCapacity, minTempC, existingBeds)
+    return NextResponse.json({ ...result, alternatives: [] })
+  }
 
-  return NextResponse.json(result)
+  const [primary, ...alternatives] = recommendAlternatives(
+    crops,
+    relationships as RelationshipInput[],
+    bedCount,
+    bedCapacity,
+    minTempC,
+  )
+
+  return NextResponse.json({ ...primary, alternatives })
 }
