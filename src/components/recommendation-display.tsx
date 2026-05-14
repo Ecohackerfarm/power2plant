@@ -11,13 +11,18 @@ import { useSession } from '@/lib/auth-client'
 
 interface RecommendationDisplayProps {
   result: RecommendResult
+  alternatives?: RecommendResult[]
   onAccepted?: () => void
 }
 
-export function RecommendationDisplay({ result, onAccepted }: RecommendationDisplayProps) {
+export function RecommendationDisplay({ result, alternatives = [], onAccepted }: RecommendationDisplayProps) {
   const { data: session } = useSession()
   const [accepting, setAccepting] = useState(false)
   const [acceptError, setAcceptError] = useState<string | null>(null)
+  const [selectedIndex, setSelectedIndex] = useState(0)
+
+  const allPlans = [result, ...alternatives]
+  const active = allPlans[selectedIndex] ?? result
 
   const handleAccept = async () => {
     if (!session) return
@@ -28,7 +33,7 @@ export function RecommendationDisplay({ result, onAccepted }: RecommendationDisp
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          beds: result.beds.map((bed) => ({
+          beds: active.beds.map((bed) => ({
             name: `Bed ${bed.index + 1}`,
             cropIds: bed.crops.map((c) => c.id),
           })),
@@ -45,19 +50,38 @@ export function RecommendationDisplay({ result, onAccepted }: RecommendationDisp
 
   // Build cropId → bed indices map for "also in Bed X" notes
   const cropBeds = new Map<string, number[]>()
-  for (const bed of result.beds) {
+  for (const bed of active.beds) {
     for (const crop of bed.crops) {
       const list = cropBeds.get(crop.id) ?? []
       list.push(bed.index)
       cropBeds.set(crop.id, list)
     }
   }
+
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-semibold">Step 4 — Recommendations</h2>
 
+      {allPlans.length > 1 && (
+        <div className="flex gap-2 flex-wrap">
+          {allPlans.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => { setSelectedIndex(i); setAcceptError(null) }}
+              className={`px-3 py-1 text-sm rounded border transition-colors ${
+                selectedIndex === i
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'border-border hover:bg-muted'
+              }`}
+            >
+              Plan {String.fromCharCode(65 + i)}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {result.beds.map(bed => (
+        {active.beds.map(bed => (
           <Card key={bed.index}>
             <CardHeader className="pb-2">
               <CardTitle className="text-base">Bed {bed.index + 1}</CardTitle>
@@ -126,13 +150,13 @@ export function RecommendationDisplay({ result, onAccepted }: RecommendationDisp
         </div>
       )}
 
-      {result.overflow.length > 0 && (
+      {active.overflow.length > 0 && (
         <div>
           <h3 className="font-medium mb-2 text-amber-700">
-            Overflow — no bed space ({result.overflow.length} plants)
+            Overflow — no bed space ({active.overflow.length} plants)
           </h3>
           <div className="flex flex-wrap gap-2">
-            {result.overflow.map(crop => (
+            {active.overflow.map(crop => (
               <Badge key={crop.id} variant="outline" className="cursor-pointer">
                 <Link href={`/plants/${crop.id}`}>{getDisplayName(crop)}</Link>
               </Badge>
@@ -144,13 +168,13 @@ export function RecommendationDisplay({ result, onAccepted }: RecommendationDisp
         </div>
       )}
 
-      {result.conflicts.length > 0 && (
+      {active.conflicts.length > 0 && (
         <div>
           <h3 className="font-medium mb-2 text-red-700">
             Conflicts — incompatible plants in same bed
           </h3>
           <ul className="space-y-1">
-            {result.conflicts.map((c, i) => (
+            {active.conflicts.map((c, i) => (
               <li key={i} className="text-sm text-red-700">
                 {getDisplayName(c.a)} and {getDisplayName(c.b)} should not share a bed
               </li>

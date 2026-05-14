@@ -90,6 +90,7 @@ describe('POST /api/recommend', () => {
     expect(body.beds).toBeDefined()
     expect(body.overflow).toBeDefined()
     expect(body.conflicts).toBeDefined()
+    expect(Array.isArray(body.alternatives)).toBe(true)
   })
 
   it('queries relationships only between the requested crops', async () => {
@@ -175,5 +176,7 @@ describe('POST /api/recommend', () => {
     const body = await res.json()
     // c1 must be in bed 0 (locked)
     expect(body.beds[0].crops.map((c: any) => c.id)).toContain('c1')
+    // No alternatives when existingBeds locks the arrangement
+    expect(body.alternatives).toEqual([])
   })
 })
