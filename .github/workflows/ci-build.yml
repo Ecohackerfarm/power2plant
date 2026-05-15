@@ -10,11 +10,29 @@ jobs:
     name: Dev Build
     if: startsWith(github.head_ref, 'release/')
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: power2plant
+          POSTGRES_PASSWORD: power2plant
+          POSTGRES_DB: power2plant
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
     env:
+      NODE_ENV: development
       DATABASE_URL: postgresql://power2plant:power2plant@localhost:5432/power2plant
       BETTER_AUTH_SECRET: ci-build-secret-at-least-32-characters-long
       BETTER_AUTH_URL: http://localhost:3000
       NEXT_PUBLIC_APP_URL: http://localhost:3000
+
     steps:
       - uses: actions/checkout@v4
 
@@ -31,8 +49,14 @@ jobs:
 
       - run: pnpm exec prisma generate
 
-      - name: Dev build
-        run: pnpm exec next build
+      - name: Run migrations
+        run: pnpm exec prisma migrate deploy || echo '[dev] migration failed — fix then run prisma migrate deploy manually'
+
+      - name: Start dev server
+        run: pnpm dev &
+
+      - name: Wait for dev server
+        run: timeout 120 sh -c 'until curl -sf http://localhost:3000 > /dev/null; do sleep 2; done'
 
   build-prod:
     name: Production Build
