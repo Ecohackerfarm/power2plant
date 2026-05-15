@@ -1,0 +1,65 @@
+name: Build Check
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-dev:
+    name: Dev Build
+    if: startsWith(github.head_ref, 'release/')
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://power2plant:power2plant@localhost:5432/power2plant
+      BETTER_AUTH_SECRET: ci-build-secret-at-least-32-characters-long
+      BETTER_AUTH_URL: http://localhost:3000
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      NODE_ENV: development
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm exec prisma generate
+
+      - name: Dev build
+        run: pnpm exec next build
+
+  build-prod:
+    name: Production Build
+    if: startsWith(github.head_ref, 'release/')
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://power2plant:power2plant@localhost:5432/power2plant
+      BETTER_AUTH_SECRET: ci-build-secret-at-least-32-characters-long
+      BETTER_AUTH_URL: http://localhost:3000
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      NODE_ENV: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm exec prisma generate
+
+      - name: Production build
+        run: pnpm build
