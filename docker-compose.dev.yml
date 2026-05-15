@@ -12,6 +12,7 @@ services:
       - "2222:2222"
     environment:
       NODE_ENV: development
+      CI: "true"
       DATABASE_URL: postgresql://power2plant:power2plant@db:5432/power2plant
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-dev-secret-change-in-production}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
