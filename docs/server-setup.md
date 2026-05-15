@@ -180,13 +180,14 @@ chmod 600 $PROJECT_PATH/prod/.env
 
 ---
 
-## 7. Install services and nginx
+## 7. Install services and nginx (bootstrap)
 
 `scripts/server/setup.sh` generates and installs:
 - `/etc/systemd/system/${PROJECT}-{prod,dev,deploy.path,deploy.service}`
 - `/etc/nginx/conf.d/${PROJECT}-rate-limits.conf` — `limit_req_zone` for `/share/*` (60 req/min per IP)
 - `/etc/nginx/sites-available/${PROJECT}` (symlinked to enabled) — includes rate-limited `/share/` location
-- `$PROJECT_PATH/prod/webhook/hooks.json` (from template, secret substituted)
+- `$PROJECT_PATH/prod/webhook/hooks.json` (from template, secret substituted; only on first run)
+- Removes `/etc/nginx/sites-enabled/default` so the stock catch-all stops shadowing the project site
 
 ```sh
 cd $PROJECT_PATH/prod
@@ -195,13 +196,20 @@ bash scripts/server/setup.sh
 
 Script validates all variables are set and errors with missing names if not.
 
+The script is **cert-aware**: on the first run no Let's Encrypt cert exists yet, so it installs an HTTP-only bootstrap nginx config (port 80, proxies `/` to the app) that passes `nginx -t`. After step 8 obtains the cert, **re-run the script** — it detects the cert and installs the full HTTPS config with `:80 → :443` redirect.
+
 ---
 
 ## 8. TLS cert
 
-After nginx is running (step 7 reloads it):
+After step 7's bootstrap nginx is reloaded:
 ```sh
 certbot --nginx -d $DOMAIN --non-interactive --agree-tos -m $ADMIN_EMAIL
+```
+
+Then re-run setup.sh to swap in the HTTPS config:
+```sh
+bash scripts/server/setup.sh
 ```
 
 Verify auto-renew:
@@ -225,7 +233,7 @@ systemctl status ${PROJECT}-prod
 docker compose --project-directory $PROJECT_PATH/prod logs -f app
 ```
 
-> Prod app binds `:::3000` — host nginx proxies to `[::1]:3000`. `/share/*` traffic
+> Prod app binds `127.0.0.1:3000` — host nginx proxies to `127.0.0.1:3000`. `/share/*` traffic
 > is rate-limited to 60 req/min per IP (burst 10) at the nginx layer.
 > If the app isn't reachable via nginx, verify the port binding in `docker ps`.
 
@@ -291,14 +299,14 @@ ssh -i /home/ai/.ssh/power2plant_dev -p 2222 -o StrictHostKeyChecking=no node@ap
 
 ## 12. Port map
 
-| Port | Bound to        | Service                             |
-|------|-----------------|-------------------------------------|
-| 22   | host            | host SSH                            |
-| 80   | `[::]:80`       | nginx → HTTPS redirect              |
-| 443  | `[::]:443`      | nginx → prod app + /hooks/          |
-| 3000 | `:::3000`       | prod app (Docker, not direct)       |
-| 2222 | Docker-internal | dev app SSH (ai agent only)         |
-| 9000 | `[::]:9000`     | webhook (proxied via nginx /hooks/) |
+| Port | Bound to            | Service                             |
+|------|---------------------|-------------------------------------|
+| 22   | host                | host SSH                            |
+| 80   | `0.0.0.0:80,[::]:80`| nginx → HTTPS redirect              |
+| 443  | `[::]:443`          | nginx → prod app + /hooks/          |
+| 3000 | `127.0.0.1:3000`    | prod app (Docker, not direct)       |
+| 2222 | Docker-internal     | dev app SSH (ai agent only)         |
+| 9000 | `127.0.0.1:9000`    | webhook (proxied via nginx /hooks/) |
 
 Port 9000 blocked by ufw — only reachable through nginx `/hooks/`.
 

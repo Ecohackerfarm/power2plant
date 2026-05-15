@@ -106,10 +106,6 @@ TimeoutStartSec=600
 EOF
 echo "    wrote ${PROJECT}-deploy.path and ${PROJECT}-deploy.service"
 
-# ── Sentinel file ─────────────────────────────────────────────────────────────
-touch /run/p2p-deploy.trigger
-chmod 777 /run/p2p-deploy.trigger  # world-writable sentinel (no sensitive content)
-
 # ── Nginx rate-limit zone ─────────────────────────────────────────────────────
 # limit_req_zone must live in the http{} context → /etc/nginx/conf.d/
 cat > "/etc/nginx/conf.d/${PROJECT}-rate-limits.conf" <<'RLCONF'
@@ -121,8 +117,18 @@ echo "    wrote /etc/nginx/conf.d/${PROJECT}-rate-limits.conf"
 
 # ── Nginx site config ─────────────────────────────────────────────────────────
 # Single-quoted NGINX heredoc prevents shell expansion — nginx vars ($host etc.) preserved.
-# sed substitutes only $DOMAIN.
-nginx_template=$(cat <<'NGINX'
+# sed substitutes only __DOMAIN__.
+#
+# Cert chicken-and-egg: certbot needs nginx serving :80 to validate, but a
+# config referencing a non-existent fullchain.pem fails `nginx -t`. So:
+#   - cert absent → install HTTP-only bootstrap (proxies / to app, no SSL block)
+#   - cert present → install full HTTPS config with :80 → :443 redirect
+# Operator runs setup.sh, then certbot, then setup.sh again to swap to HTTPS.
+cert_path="/etc/letsencrypt/live/${DOMAIN}/fullchain.pem"
+
+if [[ -f "$cert_path" ]]; then
+  nginx_mode="https"
+  nginx_template=$(cat <<'NGINX'
 server {
     listen [::]:443 ssl;
     server_name __DOMAIN__;
@@ -131,7 +137,7 @@ server {
     ssl_certificate_key /etc/letsencrypt/live/__DOMAIN__/privkey.pem;
 
     location /hooks/ {
-        proxy_pass http://[::1]:9000/hooks/;
+        proxy_pass http://127.0.0.1:9000/hooks/;
         proxy_read_timeout 10s;
     }
 
@@ -140,7 +146,7 @@ server {
         limit_req zone=p2p_share_rl burst=10 nodelay;
         limit_req_status 429;
 
-        proxy_pass http://[::1]:3000;
+        proxy_pass http://127.0.0.1:3000;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -149,7 +155,7 @@ server {
     }
 
     location / {
-        proxy_pass http://[::1]:3000;
+        proxy_pass http://127.0.0.1:3000;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -160,11 +166,39 @@ server {
 
 server {
     listen [::]:80;
+    listen 80;
     server_name __DOMAIN__;
     return 301 https://$host$request_uri;
 }
 NGINX
 )
+else
+  nginx_mode="http-bootstrap"
+  nginx_template=$(cat <<'NGINX'
+# Bootstrap config — no cert yet. After certbot succeeds, re-run setup.sh
+# to install the full HTTPS config.
+server {
+    listen [::]:80;
+    listen 80;
+    server_name __DOMAIN__;
+
+    location /hooks/ {
+        proxy_pass http://127.0.0.1:9000/hooks/;
+        proxy_read_timeout 10s;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 60s;
+    }
+}
+NGINX
+)
+fi
 
 echo "$nginx_template" | sed "s/__DOMAIN__/${DOMAIN}/g" \
   > "/etc/nginx/sites-available/${PROJECT}"
@@ -172,7 +206,12 @@ echo "$nginx_template" | sed "s/__DOMAIN__/${DOMAIN}/g" \
 if [[ ! -e "/etc/nginx/sites-enabled/${PROJECT}" ]]; then
   ln -s "/etc/nginx/sites-available/${PROJECT}" "/etc/nginx/sites-enabled/${PROJECT}"
 fi
-echo "    wrote nginx config for ${DOMAIN}"
+
+# Stock Ubuntu nginx ships a `default` site with `listen 80 default_server`
+# and `server_name _` — it wins for IPv4 traffic without a Host match.
+rm -f /etc/nginx/sites-enabled/default
+
+echo "    wrote nginx config for ${DOMAIN} (${nginx_mode})"
 
 # ── Git credential store ─────────────────────────────────────────────────────
 git_creds="${PROJECT_PATH}/.git-credentials"
@@ -183,10 +222,15 @@ sudo -u "$DEPLOY_USERNAME" git config --global credential.helper store
 echo "    wrote .git-credentials for ${GITHUB_USER}"
 
 # ── Webhook hooks.json from template ─────────────────────────────────────────
+# Only write if absent — re-running setup with a freshly-rolled WEBHOOK_SECRET
+# would otherwise silently invalidate the GitHub webhook. To rotate, delete
+# hooks.json first.
 hooks_template="${PROD_PATH}/webhook/hooks.json.template"
 hooks_out="${PROD_PATH}/webhook/hooks.json"
 if [[ ! -f "$hooks_template" ]]; then
   echo "Warning: $hooks_template not found — skipping hooks.json generation." >&2
+elif [[ -f "$hooks_out" ]]; then
+  echo "    webhook/hooks.json exists, leaving in place (delete to regenerate)"
 else
   sed "s/__WEBHOOK_SECRET__/${WEBHOOK_SECRET}/g" "$hooks_template" > "$hooks_out"
   chmod 600 "$hooks_out"
@@ -206,8 +250,13 @@ echo ""
 echo "Done. Remaining manual steps:"
 echo "  1. Create/verify prod .env:  ${PROD_PATH}/.env"
 echo "  2. Start services:           systemctl start ${PROJECT}-prod ${PROJECT}-dev"
-echo "  3. Get TLS cert:"
+if [[ "$nginx_mode" == "http-bootstrap" ]]; then
+echo "  3. Get TLS cert (nginx is in HTTP-only bootstrap mode):"
 echo "       certbot --nginx -d ${DOMAIN} --non-interactive --agree-tos -m ${ADMIN_EMAIL}"
+echo "     Then re-run THIS script to install the full HTTPS config."
+else
+echo "  3. (TLS cert already installed — HTTPS config in place.)"
+fi
 echo "  4. Start webhook:"
 echo "       cd ${PROD_PATH}/webhook && sudo -u ${DEPLOY_USERNAME} docker compose up -d"
 echo "  5. Add GitHub webhook:"
