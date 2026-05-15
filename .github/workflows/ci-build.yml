@@ -15,7 +15,6 @@ jobs:
       BETTER_AUTH_SECRET: ci-build-secret-at-least-32-characters-long
       BETTER_AUTH_URL: http://localhost:3000
       NEXT_PUBLIC_APP_URL: http://localhost:3000
-      NODE_ENV: development
     steps:
       - uses: actions/checkout@v4
 
