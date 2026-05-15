@@ -22,7 +22,7 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
     notFound()
   }
 
-  const beds = share.beds as BedSnapshot[]
+  const beds = share.beds as unknown as BedSnapshot[]
 
   return (
     <main className="max-w-3xl mx-auto px-4 py-8 space-y-6">

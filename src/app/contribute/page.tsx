@@ -12,7 +12,7 @@ import type { CropRow } from '@/lib/crop-rank'
 import type { SourceClassification } from '@prisma/client'
 import Link from 'next/link'
 
-type Crop = Pick<CropRow, 'id' | 'name' | 'botanicalName' | 'commonNames'>
+type Crop = Pick<CropRow, 'id' | 'name' | 'botanicalName' | 'commonNames' | 'rank'>
 
 const TYPES = [
   { value: 'COMPANION', label: 'They grow well together' },
