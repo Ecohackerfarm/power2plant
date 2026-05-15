@@ -131,6 +131,7 @@ if [[ -f "$cert_path" ]]; then
   nginx_template=$(cat <<'NGINX'
 server {
     listen [::]:443 ssl;
+    listen 443 ssl;
     server_name __DOMAIN__;
 
     ssl_certificate     /etc/letsencrypt/live/__DOMAIN__/fullchain.pem;
