@@ -237,6 +237,23 @@ docker compose --project-directory $PROJECT_PATH/prod logs -f app
 > is rate-limited to 60 req/min per IP (burst 10) at the nginx layer.
 > If the app isn't reachable via nginx, verify the port binding in `docker ps`.
 
+### Seed plant data (first install only)
+
+The app starts with an empty DB. `scripts/server/seed-bootstrap.sh` loads
+`db/seed.sql` (committed plant data) the first time, then writes a sentinel
+to `$VOLUME_DATA_DIR/seeded.marker` so it never runs again. `deploy.sh` invokes
+it on every deploy and the sentinel turns subsequent calls into a no-op —
+production data is never clobbered.
+
+Run it once manually after first start, since the first deploy hasn't happened yet:
+```sh
+DEPLOY_USERNAME=$DEPLOY_USERNAME PROJECT_PATH=$PROJECT_PATH/prod \
+  bash $PROJECT_PATH/prod/scripts/server/seed-bootstrap.sh
+```
+
+To intentionally reseed after a volume loss + recovery decision: delete the
+sentinel, then the next deploy (or manual run) reseeds.
+
 ---
 
 ## 10. Start webhook
