@@ -23,6 +23,7 @@
     "research:extract": "tsx scripts/research/extract.ts",
     "research:import": "tsx scripts/research/import.ts",
     "enrich:wikipedia": "tsx scripts/enrich/wikipedia-names.ts",
+    "enrich:translate-names": "tsx scripts/enrich/translate-names.ts",
     "orchestrate:status": "NODE_PATH=/home/agent/.local/share/pnpm/global/5/node_modules tsx autodev/scripts/index.ts status",
     "orchestrate:run": "NODE_PATH=/home/agent/.local/share/pnpm/global/5/node_modules tsx autodev/scripts/index.ts run",
     "orchestrate:retry": "NODE_PATH=/home/agent/.local/share/pnpm/global/5/node_modules tsx autodev/scripts/index.ts retry",

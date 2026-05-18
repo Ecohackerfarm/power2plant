@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -18,6 +18,7 @@ interface AddBedFormProps {
 
 export function AddBedForm({ onSaved }: AddBedFormProps) {
   const t = useTranslations('AddBedForm')
+  const locale = useLocale()
   const [bedName, setBedName] = useState('')
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<Crop[]>([])
@@ -30,7 +31,7 @@ export function AddBedForm({ onSaved }: AddBedFormProps) {
     const timer = setTimeout(async () => {
       setSearching(true)
       try {
-        const res = await fetch(`/api/crops?q=${encodeURIComponent(query.trim())}`)
+        const res = await fetch(`/api/crops?q=${encodeURIComponent(query.trim())}&locale=${locale}`)
         const data = await res.json()
         setResults(data.crops ?? [])
       } finally {

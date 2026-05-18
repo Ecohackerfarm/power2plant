@@ -21,8 +21,20 @@ model Crop {
   plantings       Planting[]
   relationshipsA  CropRelationship[] @relation("CropA")
   relationshipsB  CropRelationship[] @relation("CropB")
+  translations    CropTranslation[]
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
+}
+
+model CropTranslation {
+  id          String   @id @default(cuid())
+  cropId      String
+  locale      String
+  commonNames String[]
+  crop        Crop     @relation(fields: [cropId], references: [id], onDelete: Cascade)
+
+  @@unique([cropId, locale])
+  @@index([locale])
 }
 
 model CropSource {
