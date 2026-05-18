@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback, useImperativeHandle, forwardRef } from 'react'
+import { useTranslations } from 'next-intl'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useSession } from '@/lib/auth-client'
@@ -41,7 +42,14 @@ const STATUS_COLOR: Record<PlantingStatus, string> = {
   HARVESTED: 'text-amber-600',
 }
 
+const STATUS_KEY: Record<PlantingStatus, 'planned' | 'planted' | 'harvested'> = {
+  PLANNED: 'planned',
+  PLANTED: 'planted',
+  HARVESTED: 'harvested',
+}
+
 export const MyGarden = forwardRef<MyGardenRef, MyGardenProps>(function MyGarden({ onAddMore }, ref) {
+  const t = useTranslations('MyGarden')
   const { data: session } = useSession()
   const [beds, setBeds] = useState<Bed[]>([])
   const [loading, setLoading] = useState(false)
@@ -80,7 +88,7 @@ export const MyGarden = forwardRef<MyGardenRef, MyGardenProps>(function MyGarden
       body: JSON.stringify({ status: next }),
     })
     if (!res.ok) {
-      toast.error('Failed to update status — please try again.')
+      toast.error(t('statusError'))
       void fetchBeds()
     }
   }
@@ -104,11 +112,10 @@ export const MyGarden = forwardRef<MyGardenRef, MyGardenProps>(function MyGarden
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-semibold">My Garden</h2>
       {loading ? (
-        <p className="text-sm text-muted-foreground">Loading...</p>
+        <p className="text-sm text-muted-foreground">{t('loading')}</p>
       ) : beds.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No plan saved yet.</p>
+        <p className="text-sm text-muted-foreground">{t('empty')}</p>
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -126,7 +133,7 @@ export const MyGarden = forwardRef<MyGardenRef, MyGardenProps>(function MyGarden
                           className={`text-xs font-medium hover:underline ${STATUS_COLOR[p.status]}`}
                           onClick={() => void cycleStatus(p.plantingId, p.status)}
                         >
-                          {p.status.toLowerCase()}
+                          {t(STATUS_KEY[p.status])}
                         </button>
                       </li>
                     ))}
@@ -142,7 +149,7 @@ export const MyGarden = forwardRef<MyGardenRef, MyGardenProps>(function MyGarden
                 size="sm"
                 onClick={() => onAddMore(beds.map(b => b.plantings.map(p => p.cropId)))}
               >
-                Add more plants
+                {t('addMorePlants')}
               </Button>
             )}
             <Button
@@ -152,12 +159,12 @@ export const MyGarden = forwardRef<MyGardenRef, MyGardenProps>(function MyGarden
               disabled={sharing}
             >
               <Share2 className="w-3.5 h-3.5 mr-1.5" />
-              {sharing ? 'Generating…' : 'Share plan'}
+              {sharing ? t('generating') : t('shareGarden')}
             </Button>
           </div>
           {shareUrl && (
             <p className="text-sm text-muted-foreground">
-              Link copied!{' '}
+              {t('copied')}{' '}
               <a href={shareUrl} target="_blank" rel="noopener noreferrer" className="underline text-foreground">
                 {shareUrl}
               </a>

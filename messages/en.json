@@ -59,6 +59,7 @@
     "title": "Step 4 — Recommendations",
     "alternativeArrangements": "Alternative arrangements:",
     "plan": "Plan {letter}",
+    "bedName": "Bed {n}",
     "empty": "Empty",
     "alsoIn": "also in {beds}",
     "addToGarden": "Add to garden…",
@@ -66,6 +67,8 @@
     "saving": "…",
     "acceptPlan": "Accept this plan",
     "acceptSaving": "Saving…",
+    "planSaved": "Plan saved to garden!",
+    "bedSaved": "\"{name}\" saved to garden!",
     "noBeds": "No beds with plants to save.",
     "gardenFull": "Garden full — max 20 beds.",
     "overflow": "Overflow — no bed space ({count} plants)",
@@ -217,17 +220,20 @@
   "MyGarden": {
     "loading": "Loading…",
     "empty": "No beds saved yet.",
+    "addMorePlants": "Add more plants",
     "shareGarden": "Share garden plan",
+    "generating": "Generating…",
     "copyLink": "Copy link",
     "copied": "Copied!",
     "shareFailed": "Failed to create share link",
+    "statusError": "Failed to update status — please try again.",
     "deleteBed": "Delete",
     "confirmDelete": "Delete bed \"{name}\"?",
     "cycleStatus": "Mark as",
-    "planted": "Planted",
-    "growing": "Growing",
-    "harvested": "Harvested",
-    "planned": "Planned"
+    "planted": "planted",
+    "growing": "growing",
+    "harvested": "harvested",
+    "planned": "planned"
   },
   "AddBedForm": {
     "title": "Add a bed",
@@ -235,6 +241,8 @@
     "bedNamePlaceholder": "e.g. Raised Bed 1",
     "searchLabel": "Add plants",
     "searchPlaceholder": "Search plants…",
+    "searching": "Searching…",
+    "added": "Added",
     "addBed": "Add bed",
     "adding": "Adding…"
   },
@@ -242,6 +250,15 @@
     "anecdotal": "anecdotal",
     "traditional": "traditional",
     "observed": "observed",
-    "peerReviewed": "peer-reviewed"
+    "peerReviewed": "peer-reviewed",
+    "title": "Confidence levels",
+    "peerReviewedLabel": "Peer-Reviewed",
+    "peerReviewedDesc": "Confirmed by peer-reviewed scientific research. Highest reliability.",
+    "observedLabel": "Observed",
+    "observedDesc": "Supported by structured field observation or multiple independent reports.",
+    "traditionalLabel": "Traditional",
+    "traditionalDesc": "Passed down through gardening tradition. Widely practiced but not formally studied.",
+    "anecdotalLabel": "Anecdotal",
+    "anecdotalDesc": "Based on individual gardener reports or folk wisdom. Treat as a starting point."
   }
 }

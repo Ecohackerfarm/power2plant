@@ -1,29 +1,17 @@
 'use client'
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 
-const LEVELS: { key: string; label: string; description: string }[] = [
-  {
-    key: 'peer-reviewed',
-    label: 'Peer-Reviewed',
-    description: 'Confirmed by peer-reviewed scientific research. Highest reliability.',
-  },
-  {
-    key: 'observed',
-    label: 'Observed',
-    description: 'Supported by structured field observation or multiple independent reports.',
-  },
-  {
-    key: 'traditional',
-    label: 'Traditional',
-    description: 'Passed down through gardening tradition. Widely practiced but not formally studied.',
-  },
-  {
-    key: 'anecdotal',
-    label: 'Anecdotal',
-    description: 'Based on individual gardener reports or folk wisdom. Treat as a starting point.',
-  },
-]
+const LEVEL_KEYS = ['peerReviewed', 'observed', 'traditional', 'anecdotal'] as const
+type LevelKey = typeof LEVEL_KEYS[number]
+
+const LEVEL_KEY_MAP: Record<string, LevelKey> = {
+  'peer-reviewed': 'peerReviewed',
+  'observed': 'observed',
+  'traditional': 'traditional',
+  'anecdotal': 'anecdotal',
+}
 
 interface ConfidenceBadgeProps {
   level: string
@@ -32,6 +20,8 @@ interface ConfidenceBadgeProps {
 
 export function ConfidenceBadge({ level, className }: ConfidenceBadgeProps) {
   const [open, setOpen] = useState(false)
+  const t = useTranslations('ConfidenceBadge')
+  const levelKey: LevelKey = LEVEL_KEY_MAP[level] ?? 'anecdotal'
 
   return (
     <span className="relative inline-block">
@@ -44,7 +34,7 @@ export function ConfidenceBadge({ level, className }: ConfidenceBadgeProps) {
         )}
         aria-expanded={open}
       >
-        {level}
+        {t(levelKey)}
       </button>
 
       {open && (
@@ -55,16 +45,18 @@ export function ConfidenceBadge({ level, className }: ConfidenceBadgeProps) {
             aria-hidden
           />
           <div className="absolute bottom-full left-0 mb-2 w-72 bg-popover border rounded-lg shadow-lg p-3 z-10 text-left">
-            <p className="text-xs font-semibold mb-2 text-foreground">Confidence levels</p>
+            <p className="text-xs font-semibold mb-2 text-foreground">{t('title')}</p>
             <ul className="space-y-1.5">
-              {LEVELS.map(({ key, label, description }) => (
+              {LEVEL_KEYS.map(key => (
                 <li
                   key={key}
-                  className={cn('text-xs', key === level ? 'text-foreground' : 'text-muted-foreground')}
+                  className={cn('text-xs', key === levelKey ? 'text-foreground' : 'text-muted-foreground')}
                 >
-                  <span className={cn('font-medium', key === level && 'underline')}>{label}</span>
+                  <span className={cn('font-medium', key === levelKey && 'underline')}>
+                    {t(`${key}Label`)}
+                  </span>
                   {' — '}
-                  {description}
+                  {t(`${key}Desc`)}
                 </li>
               ))}
             </ul>

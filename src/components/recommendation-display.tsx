@@ -1,6 +1,7 @@
 'use client'
-import Link from 'next/link'
 import { useState, useRef, useEffect, useMemo } from 'react'
+import { useTranslations } from 'next-intl'
+import { Link } from '@/i18n/navigation'
 import { ArrowRight } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -44,6 +45,7 @@ interface RecommendationDisplayProps {
 }
 
 export function RecommendationDisplay({ result, alternatives = [], onAccepted }: RecommendationDisplayProps) {
+  const t = useTranslations('Recommendations')
   const { data: session } = useSession()
   const [accepting, setAccepting] = useState(false)
   const [acceptError, setAcceptError] = useState<string | null>(null)
@@ -119,7 +121,7 @@ export function RecommendationDisplay({ result, alternatives = [], onAccepted }:
     try {
       const bedsToSave = beds.filter(b => b.crops.length > 0)
       if (bedsToSave.length === 0) {
-        setAcceptError('No beds with plants to save.')
+        setAcceptError(t('noBeds'))
         return
       }
       const res = await fetch('/api/garden/plantings', {
@@ -127,13 +129,13 @@ export function RecommendationDisplay({ result, alternatives = [], onAccepted }:
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           beds: bedsToSave.map((bed, di) => ({
-            name: `Bed ${di + 1}`,
+            name: t('bedName', { n: di + 1 }),
             cropIds: bed.crops.map(c => c.id),
           })),
         }),
       })
       if (!res.ok) throw new Error('Failed to save plan')
-      toast.success('Plan saved to garden!')
+      toast.success(t('planSaved'))
       onAccepted?.()
     } catch (e) {
       setAcceptError(e instanceof Error ? e.message : 'Unknown error')
@@ -165,7 +167,7 @@ export function RecommendationDisplay({ result, alternatives = [], onAccepted }:
 
       const allBeds = [...existingPayload, newBed]
       if (allBeds.length > 20) {
-        toast.error('Garden full — max 20 beds.')
+        toast.error(t('gardenFull'))
         return
       }
 
@@ -175,7 +177,7 @@ export function RecommendationDisplay({ result, alternatives = [], onAccepted }:
         body: JSON.stringify({ beds: allBeds }),
       })
       if (!postRes.ok) throw new Error('Failed to save bed')
-      toast.success(`"${newBed.name}" saved to garden!`)
+      toast.success(t('bedSaved', { name: newBed.name }))
       setPendingBedKey(null)
       onAccepted?.()
     } catch (e) {
@@ -187,11 +189,11 @@ export function RecommendationDisplay({ result, alternatives = [], onAccepted }:
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold">Step 4 — Recommendations</h2>
+      <h2 className="text-xl font-semibold">{t('title')}</h2>
 
       {allPlans.length > 1 && (
         <div className="flex gap-2 flex-wrap items-center">
-          <span className="text-sm text-muted-foreground">Alternative arrangements:</span>
+          <span className="text-sm text-muted-foreground">{t('alternativeArrangements')}</span>
           {allPlans.map((_, i) => (
             <button
               key={i}
@@ -203,7 +205,7 @@ export function RecommendationDisplay({ result, alternatives = [], onAccepted }:
                   : 'border-border hover:bg-muted disabled:opacity-50'
               }`}
             >
-              Plan {String.fromCharCode(65 + i)}
+              {t('plan', { letter: String.fromCharCode(65 + i) })}
             </button>
           ))}
         </div>
@@ -213,7 +215,7 @@ export function RecommendationDisplay({ result, alternatives = [], onAccepted }:
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {beds.map((bed, displayIdx) => {
           const key = bedKey(bed)
-          const defaultName = `Bed ${displayIdx + 1}`
+          const defaultName = t('bedName', { n: displayIdx + 1 })
           const isPending = pendingBedKey === key
           return (
             <div key={key} className="overflow-hidden">
@@ -224,14 +226,14 @@ export function RecommendationDisplay({ result, alternatives = [], onAccepted }:
                   </CardHeader>
                   <CardContent>
                     {bed.crops.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">Empty</p>
+                      <p className="text-sm text-muted-foreground">{t('empty')}</p>
                     ) : (
                       <>
                         <ul className="space-y-1">
                           {bed.crops.map(crop => {
                             const otherDisplayBeds = (cropDisplayBeds.get(crop.id) ?? [])
                               .filter(di => di !== displayIdx)
-                              .map(di => `Bed ${di + 1}`)
+                              .map(di => t('bedName', { n: di + 1 }))
                             return (
                               <li key={crop.id} className="text-sm">
                                 <Link
@@ -242,7 +244,7 @@ export function RecommendationDisplay({ result, alternatives = [], onAccepted }:
                                 </Link>
                                 {otherDisplayBeds.length > 0 && (
                                   <span className="text-xs text-muted-foreground ml-1">
-                                    · also in {otherDisplayBeds.join(', ')}
+                                    · {t('alsoIn', { beds: otherDisplayBeds.join(', ') })}
                                   </span>
                                 )}
                               </li>
@@ -291,7 +293,7 @@ export function RecommendationDisplay({ result, alternatives = [], onAccepted }:
                                   onClick={() => void handleSaveBed(bed, defaultName)}
                                   disabled={savingBed}
                                 >
-                                  {savingBed ? '…' : 'Save'}
+                                  {savingBed ? t('saving') : t('save')}
                                 </Button>
                                 <Button
                                   size="sm"
@@ -312,7 +314,7 @@ export function RecommendationDisplay({ result, alternatives = [], onAccepted }:
                                 }}
                                 disabled={animPhase !== 'idle'}
                               >
-                                Add to garden…
+                                {t('addToGarden')}
                               </button>
                             )}
                           </div>
@@ -330,7 +332,7 @@ export function RecommendationDisplay({ result, alternatives = [], onAccepted }:
       {session && (
         <div className="pt-4">
           <Button size="lg" onClick={handleAccept} disabled={accepting || animPhase !== 'idle'}>
-            {accepting ? 'Saving…' : 'Accept this plan'}
+            {accepting ? t('acceptSaving') : t('acceptPlan')}
           </Button>
           {acceptError && <p className="text-red-600 mt-2">{acceptError}</p>}
         </div>
@@ -339,7 +341,7 @@ export function RecommendationDisplay({ result, alternatives = [], onAccepted }:
       {plan.overflow.length > 0 && (
         <div>
           <h3 className="font-medium mb-2 text-amber-700">
-            Overflow — no bed space ({plan.overflow.length} plants)
+            {t('overflow', { count: plan.overflow.length })}
           </h3>
           <div className="flex flex-wrap gap-2">
             {plan.overflow.map(crop => (
@@ -348,27 +350,21 @@ export function RecommendationDisplay({ result, alternatives = [], onAccepted }:
               </Badge>
             ))}
           </div>
-          <p className="text-sm text-muted-foreground mt-1">
-            Add more beds or increase capacity to fit these plants.
-          </p>
+          <p className="text-sm text-muted-foreground mt-1">{t('overflowHint')}</p>
         </div>
       )}
 
       {plan.conflicts.length > 0 && (
         <div>
-          <h3 className="font-medium mb-2 text-red-700">
-            Conflicts — incompatible plants in same bed
-          </h3>
+          <h3 className="font-medium mb-2 text-red-700">{t('conflicts')}</h3>
           <ul className="space-y-1">
             {plan.conflicts.map((c, i) => (
               <li key={i} className="text-sm text-red-700">
-                {getDisplayName(c.a)} and {getDisplayName(c.b)} should not share a bed
+                {t('conflictItem', { a: getDisplayName(c.a), b: getDisplayName(c.b) })}
               </li>
             ))}
           </ul>
-          <p className="text-sm text-muted-foreground mt-1">
-            Add more beds to separate these plants.
-          </p>
+          <p className="text-sm text-muted-foreground mt-1">{t('conflictsHint')}</p>
         </div>
       )}
     </div>
