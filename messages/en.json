@@ -157,9 +157,12 @@
     "SHADE": "Shade Benefit",
     "ALLELOPATHY": "Natural Repellent",
     "COMPANION": "Companion",
+    "AVOID": "Antagonists",
     "ATTRACTS": "Attracts Beneficials",
+    "REPELS": "Repels Pests",
     "NURSE": "Nurse Plant",
-    "TRAP_CROP": "Trap Crop"
+    "TRAP_CROP": "Trap Crop",
+    "OTHER": "Other"
   },
   "RelationshipPage": {
     "back": "← Back",
@@ -177,7 +180,9 @@
     "ONE_WAY": "One-way",
     "UNKNOWN_DIRECTION": "Direction unknown",
     "COMPANION": "Companion Planting",
+    "AVOID": "Antagonists",
     "ATTRACTS": "Attracts Beneficials",
+    "REPELS": "Repels Pests",
     "NURSE": "Nurse Plant",
     "TRAP_CROP": "Trap Crop",
     "PEST_CONTROL": "Pest Control",
@@ -185,6 +190,7 @@
     "NUTRIENT": "Nutrient Sharing",
     "SHADE": "Shade Benefit",
     "ALLELOPATHY": "Natural Repellent",
+    "OTHER": "Other",
     "ANECDOTAL": "anecdotal",
     "TRADITIONAL": "traditional",
     "OBSERVED": "observed",
@@ -203,6 +209,7 @@
     "GBIF": "GBIF",
     "COMMUNITY": "Community",
     "MANUAL": "Manual",
+    "RESEARCH": "Research",
     "link": "link"
   },
   "GardenPage": {

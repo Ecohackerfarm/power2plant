@@ -157,9 +157,12 @@
     "SHADE": "Schattennutzung",
     "ALLELOPATHY": "Natürliches Abwehrmittel",
     "COMPANION": "Mischkulturpartner",
+    "AVOID": "Schlechte Nachbarn",
     "ATTRACTS": "Nützlinge anziehen",
+    "REPELS": "Schädlinge abwehren",
     "NURSE": "Amme",
-    "TRAP_CROP": "Fangpflanze"
+    "TRAP_CROP": "Fangpflanze",
+    "OTHER": "Sonstiges"
   },
   "RelationshipPage": {
     "back": "← Zurück",
@@ -177,7 +180,9 @@
     "ONE_WAY": "Einseitig",
     "UNKNOWN_DIRECTION": "Richtung unbekannt",
     "COMPANION": "Mischkultur",
+    "AVOID": "Schlechte Nachbarn",
     "ATTRACTS": "Nützlinge anziehen",
+    "REPELS": "Schädlinge abwehren",
     "NURSE": "Amme",
     "TRAP_CROP": "Fangpflanze",
     "PEST_CONTROL": "Schädlingsbekämpfung",
@@ -185,6 +190,7 @@
     "NUTRIENT": "Nährstoffaustausch",
     "SHADE": "Schattennutzung",
     "ALLELOPATHY": "Natürliches Abwehrmittel",
+    "OTHER": "Sonstiges",
     "ANECDOTAL": "anekdotisch",
     "TRADITIONAL": "traditionell",
     "OBSERVED": "beobachtet",
@@ -203,6 +209,7 @@
     "GBIF": "GBIF",
     "COMMUNITY": "Community",
     "MANUAL": "Manuell",
+    "RESEARCH": "Forschung",
     "link": "Link"
   },
   "GardenPage": {
