@@ -59,6 +59,7 @@
     "title": "Schritt 4 — Empfehlungen",
     "alternativeArrangements": "Alternative Anordnungen:",
     "plan": "Plan {letter}",
+    "bedName": "Beet {n}",
     "empty": "Leer",
     "alsoIn": "auch in {beds}",
     "addToGarden": "Zum Garten hinzufügen…",
@@ -66,6 +67,8 @@
     "saving": "…",
     "acceptPlan": "Diesen Plan übernehmen",
     "acceptSaving": "Wird gespeichert…",
+    "planSaved": "Plan im Garten gespeichert!",
+    "bedSaved": "\"{name}\" im Garten gespeichert!",
     "noBeds": "Keine Beete mit Pflanzen zum Speichern.",
     "gardenFull": "Garten voll — max. 20 Beete.",
     "overflow": "Überlauf — kein Beetplatz ({count} Pflanzen)",
@@ -154,9 +157,12 @@
     "SHADE": "Schattennutzung",
     "ALLELOPATHY": "Natürliches Abwehrmittel",
     "COMPANION": "Mischkulturpartner",
+    "AVOID": "Schlechte Nachbarn",
     "ATTRACTS": "Nützlinge anziehen",
+    "REPELS": "Schädlinge abwehren",
     "NURSE": "Amme",
-    "TRAP_CROP": "Fangpflanze"
+    "TRAP_CROP": "Fangpflanze",
+    "OTHER": "Sonstiges"
   },
   "RelationshipPage": {
     "back": "← Zurück",
@@ -174,7 +180,9 @@
     "ONE_WAY": "Einseitig",
     "UNKNOWN_DIRECTION": "Richtung unbekannt",
     "COMPANION": "Mischkultur",
+    "AVOID": "Schlechte Nachbarn",
     "ATTRACTS": "Nützlinge anziehen",
+    "REPELS": "Schädlinge abwehren",
     "NURSE": "Amme",
     "TRAP_CROP": "Fangpflanze",
     "PEST_CONTROL": "Schädlingsbekämpfung",
@@ -182,6 +190,7 @@
     "NUTRIENT": "Nährstoffaustausch",
     "SHADE": "Schattennutzung",
     "ALLELOPATHY": "Natürliches Abwehrmittel",
+    "OTHER": "Sonstiges",
     "ANECDOTAL": "anekdotisch",
     "TRADITIONAL": "traditionell",
     "OBSERVED": "beobachtet",
@@ -200,6 +209,7 @@
     "GBIF": "GBIF",
     "COMMUNITY": "Community",
     "MANUAL": "Manuell",
+    "RESEARCH": "Forschung",
     "link": "Link"
   },
   "GardenPage": {
@@ -217,17 +227,20 @@
   "MyGarden": {
     "loading": "Wird geladen…",
     "empty": "Noch keine Beete gespeichert.",
+    "addMorePlants": "Weitere Pflanzen hinzufügen",
     "shareGarden": "Gartenplan teilen",
+    "generating": "Wird generiert…",
     "copyLink": "Link kopieren",
     "copied": "Kopiert!",
     "shareFailed": "Link konnte nicht erstellt werden",
+    "statusError": "Status konnte nicht aktualisiert werden — bitte erneut versuchen.",
     "deleteBed": "Löschen",
     "confirmDelete": "Beet \"{name}\" löschen?",
     "cycleStatus": "Markieren als",
-    "planted": "Gepflanzt",
-    "growing": "Wächst",
-    "harvested": "Geerntet",
-    "planned": "Geplant"
+    "planted": "gepflanzt",
+    "growing": "wächst",
+    "harvested": "geerntet",
+    "planned": "geplant"
   },
   "AddBedForm": {
     "title": "Beet hinzufügen",
@@ -235,6 +248,8 @@
     "bedNamePlaceholder": "z. B. Hochbeet 1",
     "searchLabel": "Pflanzen hinzufügen",
     "searchPlaceholder": "Pflanzen suchen…",
+    "searching": "Suche läuft…",
+    "added": "Hinzugefügt",
     "addBed": "Beet hinzufügen",
     "adding": "Wird hinzugefügt…"
   },
@@ -242,6 +257,15 @@
     "anecdotal": "anekdotisch",
     "traditional": "traditionell",
     "observed": "beobachtet",
-    "peerReviewed": "peer-reviewed"
+    "peerReviewed": "peer-reviewed",
+    "title": "Zuverlässigkeitsstufen",
+    "peerReviewedLabel": "Peer-Review",
+    "peerReviewedDesc": "Durch peer-reviewte wissenschaftliche Forschung bestätigt. Höchste Zuverlässigkeit.",
+    "observedLabel": "Beobachtet",
+    "observedDesc": "Durch strukturierte Feldbeobachtung oder mehrere unabhängige Berichte belegt.",
+    "traditionalLabel": "Traditionell",
+    "traditionalDesc": "Aus der Gartenbautradition überliefert. Weit verbreitet, aber nicht formal untersucht.",
+    "anecdotalLabel": "Anekdotisch",
+    "anecdotalDesc": "Basiert auf einzelnen Gärtnerberichten oder Volksweisheit. Als Ausgangspunkt betrachten."
   }
 }
