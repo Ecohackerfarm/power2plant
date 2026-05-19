@@ -154,12 +154,69 @@ When a logged-in user's email is in `ADMIN_EMAILS`, the global nav header shows 
 
 ---
 
-## 6. New Environment Variables
+## 6. Email Digest
+
+Admins can opt in to receive a summary of new (OPEN) feedback via email on a daily or weekly schedule.
+
+### Settings storage
+
+Single `AppConfig` row in DB (singleton pattern, id = `"singleton"`):
+
+```prisma
+model AppConfig {
+  id                   String   @id @default("singleton")
+  feedbackDigestEnabled Boolean @default(false)
+  feedbackDigestFreq   String   @default("daily")  // "daily" | "weekly"
+  feedbackDigestEmails String[] @default([])
+  updatedAt            DateTime @updatedAt
+}
+```
+
+SMTP credentials stay in env vars only — never stored in DB.
+
+### Digest endpoint
+
+`POST /api/admin/feedback/digest` — protected by `Authorization: Bearer $CRON_SECRET` header (not session — called by cron, not browser).
+
+Logic:
+1. Read `AppConfig` — if `feedbackDigestEnabled` is false, exit early.
+2. Query OPEN feedback since last digest window (daily = last 24h, weekly = last 7d).
+3. If count = 0, skip sending.
+4. Render plain-text + HTML email: count, list of reports (date, mode, page, message snippet).
+5. Send via Nodemailer to each address in `feedbackDigestEmails`.
+
+### Cron trigger
+
+Docker-compose `cron` service runs `curl -X POST .../api/admin/feedback/digest` with `Authorization` header.
+- Daily: `0 7 * * *` (07:00 UTC)
+- Weekly: `0 7 * * 1` (Monday 07:00 UTC)
+- Schedule driven by `feedbackDigestFreq` — cron runs daily, endpoint skips if weekly and today is not Monday.
+
+### Admin settings UI — `/admin/settings`
+
+Extend admin section with a settings page:
+- Toggle: digest on/off
+- Frequency selector: daily / weekly
+- Recipient email list (add/remove)
+- SMTP test button (sends a test email)
+- Save → `PATCH /api/admin/config`
+
+Link "Settings" added to admin nav alongside "Feedback".
+
+---
+
+## 7. New Environment Variables
 
 | Variable | Description |
 |----------|-------------|
 | `FEEDBACK_IP_SALT` | Static secret for IP hashing |
 | `ADMIN_EMAILS` | Comma-separated admin email allowlist |
+| `CRON_SECRET` | Bearer token for digest cron endpoint |
+| `SMTP_HOST` | SMTP server hostname |
+| `SMTP_PORT` | SMTP port (e.g. 587) |
+| `SMTP_USER` | SMTP username |
+| `SMTP_PASS` | SMTP password |
+| `SMTP_FROM` | Sender address (e.g. `noreply@power2plant.app`) |
 
 ---
 
@@ -168,6 +225,7 @@ When a logged-in user's email is in `ADMIN_EMAILS`, the global nav header shows 
 | Package | Use | License |
 |---------|-----|---------|
 | `html-to-image` | DOM-to-JPEG capture (OTHER mode) | MIT |
+| `nodemailer` | SMTP email sending | MIT |
 
 No other new dependencies. Rate limiting is query-based (no Redis needed at this scale).
 
