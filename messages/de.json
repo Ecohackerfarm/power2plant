@@ -24,6 +24,21 @@
     "detectZoneFirst": "Zuerst Zone ermitteln.",
     "addAtLeast2": "Mindestens 2 Pflanzen zur Wunschliste hinzufügen."
   },
+  "Landing": {
+    "title": "power2plant",
+    "subtitle": "Begleitpflanzung — Gartenplaner",
+    "lookupTitle": "Pflanze nachschlagen",
+    "lookupDesc": "Begleiter und Antagonisten für jede Pflanze finden",
+    "planTitle": "Beete planen",
+    "planDesc": "Du weißt, was du anbauen willst — finde, was zusammenpasst",
+    "gardenTitle": "Mein Garten",
+    "gardenDesc": "Schau, wie die Pflanzen in deinen Beeten miteinander auskommen"
+  },
+  "Nav": {
+    "lookup": "Pflanze nachschlagen",
+    "plan": "Beete planen",
+    "garden": "Mein Garten"
+  },
   "ZoneDetector": {
     "title": "Schritt 1 — Deine Klimazone",
     "detect": "Standort ermitteln",

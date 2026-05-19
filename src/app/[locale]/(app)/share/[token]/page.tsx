@@ -29,9 +29,6 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
   return (
     <main className="max-w-3xl mx-auto px-4 py-8 space-y-6">
       <div>
-        <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">
-          {t('backHome')}
-        </Link>
         <h1 className="text-3xl font-bold mt-2">{t('title')}</h1>
         <p className="text-muted-foreground text-sm mt-1">
           {t('subtitle', { date: share.expiresAt.toLocaleDateString() })}
