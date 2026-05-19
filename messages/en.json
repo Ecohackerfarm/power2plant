@@ -24,6 +24,21 @@
     "detectZoneFirst": "Detect your zone first.",
     "addAtLeast2": "Add at least 2 plants to your wishlist."
   },
+  "Landing": {
+    "title": "power2plant",
+    "subtitle": "Companion planting garden planner",
+    "lookupTitle": "Look up a crop",
+    "lookupDesc": "Find companions and antagonists for any plant",
+    "planTitle": "Plan beds",
+    "planDesc": "Know what you want to grow — find what fits together",
+    "gardenTitle": "My garden",
+    "gardenDesc": "See how the plants in your beds get along"
+  },
+  "Nav": {
+    "lookup": "Look up a crop",
+    "plan": "Plan beds",
+    "garden": "My garden"
+  },
   "ZoneDetector": {
     "title": "Step 1 — Your Growing Zone",
     "detect": "Detect my location",

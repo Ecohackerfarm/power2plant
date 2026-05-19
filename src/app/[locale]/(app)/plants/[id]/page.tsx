@@ -59,11 +59,6 @@ export default function PlantPage() {
 
   return (
     <main className="max-w-3xl mx-auto px-4 py-8 space-y-6">
-      <div>
-        <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">
-          {t('backToPlan')}
-        </Link>
-      </div>
 
       <div>
         <h1 className="text-2xl font-bold">{displayName}</h1>

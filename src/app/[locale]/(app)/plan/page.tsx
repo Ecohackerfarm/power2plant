@@ -7,16 +7,13 @@ import { ZoneDetector } from '@/components/zone-detector'
 import { BedConfig } from '@/components/bed-config'
 import { RecommendationDisplay } from '@/components/recommendation-display'
 import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
 import { PlantSearch } from '@/components/plant-search'
-import { AuthPanel } from '@/components/auth-panel'
-import { LocaleSwitcher } from '@/components/locale-switcher'
 import { useSession } from '@/lib/auth-client'
 import type { RecommendResult } from '@/lib/recommend'
 
 type RecommendResponse = RecommendResult & { alternatives: RecommendResult[] }
 
-export default function Home() {
+export default function PlanPage() {
   const t = useTranslations('Home')
   const { data: session } = useSession()
   const { state, hydrated, setZone, addToWishlist, removeFromWishlist, clearWishlist, setBeds } = useGarden()
@@ -67,29 +64,6 @@ export default function Home() {
 
   return (
     <main className="max-w-3xl mx-auto px-4 py-8 space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">power2plant</h1>
-          <p className="text-muted-foreground mt-1">{t('subtitle')}</p>
-          <div className="flex gap-4 text-sm text-muted-foreground mt-1">
-            <Link href="/contribute" className="hover:text-foreground">
-              {t('contributeLink')}
-            </Link>
-            <Link href="/relationships" className="hover:text-foreground">
-              {t('browseLink')}
-            </Link>
-          </div>
-        </div>
-        <div className="flex flex-col items-end gap-2">
-          <div className="flex items-center gap-3">
-            <LocaleSwitcher />
-            <AuthPanel />
-          </div>
-        </div>
-      </div>
-
-      <Separator />
-
       <div className="flex justify-center">
         <Link
           href="/garden"
