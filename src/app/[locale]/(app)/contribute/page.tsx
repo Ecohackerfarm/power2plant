@@ -200,7 +200,6 @@ export default function ContributePage() {
   return (
     <main className="max-w-xl mx-auto px-4 py-8 space-y-6">
       <div>
-        <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">{t('back')}</Link>
         <h1 className="text-2xl font-bold mt-2">{t('title')}</h1>
         <p className="text-muted-foreground text-sm mt-1">{t('subtitle')}</p>
       </div>
