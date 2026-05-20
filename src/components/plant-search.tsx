@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useTranslations, useLocale } from 'next-intl'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -19,6 +20,8 @@ interface PlantSearchProps {
 }
 
 export function PlantSearch({ wishlistIds, onAdd, onRemove, onClearAll }: PlantSearchProps) {
+  const t = useTranslations('PlantSearch')
+  const locale = useLocale()
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<Crop[]>([])
   const [wishlistCrops, setWishlistCrops] = useState<Crop[]>([])
@@ -26,12 +29,10 @@ export function PlantSearch({ wishlistIds, onAdd, onRemove, onClearAll }: PlantS
   const [activeIndex, setActiveIndex] = useState(-1)
   const listRef = useRef<HTMLUListElement>(null)
 
-  // Rehydrate wishlist crop objects after page refresh (wishlistIds restored from storage
-  // but wishlistCrops local state starts empty).
   useEffect(() => {
     const missing = wishlistIds.filter(id => !wishlistCrops.find(c => c.id === id))
     if (missing.length === 0) return
-    fetch(`/api/crops?ids=${missing.join(',')}`)
+    fetch(`/api/crops?ids=${missing.join(',')}&locale=${locale}`)
       .then(r => r.ok ? r.json() : { crops: [] })
       .then(({ crops }: { crops: Crop[] }) => {
         setWishlistCrops(prev => {
@@ -39,7 +40,7 @@ export function PlantSearch({ wishlistIds, onAdd, onRemove, onClearAll }: PlantS
           return [...prev, ...crops.filter(c => !existingIds.has(c.id))]
         })
       })
-      .catch(() => {/* network error — wishlist badges stay empty but IDs preserved */})
+      .catch(() => {})
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wishlistIds])
 
@@ -52,7 +53,7 @@ export function PlantSearch({ wishlistIds, onAdd, onRemove, onClearAll }: PlantS
     const timer = setTimeout(async () => {
       setSearching(true)
       try {
-        const res = await fetch(`/api/crops?q=${encodeURIComponent(query.trim())}`)
+        const res = await fetch(`/api/crops?q=${encodeURIComponent(query.trim())}&locale=${locale}`)
         const data = await res.json()
         setResults(data.crops ?? [])
         setActiveIndex(-1)
@@ -104,17 +105,15 @@ export function PlantSearch({ wishlistIds, onAdd, onRemove, onClearAll }: PlantS
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Step 2 — Choose Plants</CardTitle>
+        <CardTitle>{t('title')}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-1">
-          <Label htmlFor="plant-search">Search by name or botanical name</Label>
-          <p className="text-xs text-muted-foreground italic">
-            Genus entries (e.g. Ocimum L.) represent the whole plant family — pick a species for more precise recommendations.
-          </p>
+          <Label htmlFor="plant-search">{t('label')}</Label>
+          <p className="text-xs text-muted-foreground italic">{t('genusHint')}</p>
           <Input
             id="plant-search"
-            placeholder="e.g. tomato, basil, sunflower…"
+            placeholder={t('placeholder')}
             value={query}
             onChange={e => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -122,7 +121,7 @@ export function PlantSearch({ wishlistIds, onAdd, onRemove, onClearAll }: PlantS
           />
         </div>
 
-        {searching && <p className="text-sm text-muted-foreground">Searching…</p>}
+        {searching && <p className="text-sm text-muted-foreground">{t('searching')}</p>}
 
         {results.length > 0 && (
           <ul ref={listRef} className="space-y-0.5 max-h-64 overflow-y-auto border rounded p-1">
@@ -141,9 +140,7 @@ export function PlantSearch({ wishlistIds, onAdd, onRemove, onClearAll }: PlantS
                   key={crop.id}
                   className={cn(
                     'flex items-center text-sm px-2 py-1.5 rounded select-none',
-                    added
-                      ? 'opacity-50 cursor-default'
-                      : 'cursor-pointer hover:bg-accent',
+                    added ? 'opacity-50 cursor-default' : 'cursor-pointer hover:bg-accent',
                     index === activeIndex && !added && 'bg-accent',
                     isGenus && 'text-muted-foreground',
                   )}
@@ -155,14 +152,16 @@ export function PlantSearch({ wishlistIds, onAdd, onRemove, onClearAll }: PlantS
                       <span className="text-muted-foreground italic ml-1">{crop.botanicalName}</span>
                     )}
                     {isGenus && (
-                      <span className="ml-1.5 inline-block bg-muted text-muted-foreground text-[10px] px-1 py-0.5 rounded font-normal not-italic">Genus</span>
+                      <span className="ml-1.5 inline-block bg-muted text-muted-foreground text-[10px] px-1 py-0.5 rounded font-normal not-italic">
+                        {t('genus')}
+                      </span>
                     )}
                     {matchedAlias && (
-                      <span className="block text-xs text-muted-foreground">also: {matchedAlias}</span>
+                      <span className="block text-xs text-muted-foreground">{t('also', { name: matchedAlias })}</span>
                     )}
                   </span>
                   {added && (
-                    <span className="text-xs text-muted-foreground ml-2 shrink-0">Added</span>
+                    <span className="text-xs text-muted-foreground ml-2 shrink-0">{t('added')}</span>
                   )}
                 </li>
               )
@@ -175,12 +174,12 @@ export function PlantSearch({ wishlistIds, onAdd, onRemove, onClearAll }: PlantS
             <Separator />
             <div>
               <div className="flex items-center justify-between mb-2">
-                <p className="text-sm font-medium">Your wishlist ({wishlistCrops.length} plants)</p>
+                <p className="text-sm font-medium">{t('wishlist', { count: wishlistCrops.length })}</p>
                 <button
                   onClick={() => { setWishlistCrops([]); onClearAll() }}
                   className="text-xs text-muted-foreground hover:text-foreground"
                 >
-                  Clear all
+                  {t('clearAll')}
                 </button>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -202,7 +201,7 @@ export function PlantSearch({ wishlistIds, onAdd, onRemove, onClearAll }: PlantS
         )}
 
         {wishlistIds.length < 2 && (
-          <p className="text-sm text-muted-foreground">Add at least 2 plants to get a recommendation.</p>
+          <p className="text-sm text-muted-foreground">{t('addAtLeast2')}</p>
         )}
       </CardContent>
     </Card>

@@ -5,7 +5,14 @@ services:
       target: deps
       args:
         FROZEN_LOCKFILE: "false"
-    command: sh -c "ssh-keygen -A && /usr/sbin/sshd && pnpm exec prisma generate && { pnpm exec prisma migrate deploy || echo '[dev] migration failed — fix then run prisma migrate deploy manually'; } && pnpm dev"
+    command: >
+      sh -c "
+        mkdir -p /run/ssh-persist &&
+        [ -f /run/ssh-persist/ssh_host_ed25519_key ] || ssh-keygen -q -t ed25519 -f /run/ssh-persist/ssh_host_ed25519_key -N '' &&
+        /usr/sbin/sshd -o 'HostKey /run/ssh-persist/ssh_host_ed25519_key' &&
+        chown -R node:node /app/node_modules /app/.next 2>/dev/null || true &&
+        exec su node -s /bin/sh -c 'pnpm exec prisma generate && { pnpm exec prisma migrate deploy || echo \"[dev] migration failed — fix then run prisma migrate deploy manually\"; } && pnpm dev'
+      "
     ports: !override
       - "3000:3000"
       - "5555:5555"
@@ -21,6 +28,7 @@ services:
       - .:/app
       - /app/node_modules
       - /app/.next
+      - ./data/app-dev-ssh:/run/ssh-persist
     healthcheck:
       test: ["CMD-SHELL", "wget -qO /dev/null http://127.0.0.1:3000/ || exit 1"]
       interval: 30s

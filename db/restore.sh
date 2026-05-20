@@ -1,6 +1,10 @@
 #!/bin/sh
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT_DIR="$(dirname "$SCRIPT_DIR")"
+[ -f "$ROOT_DIR/.env" ] && . "$ROOT_DIR/.env"
+
 DB_URL="${DATABASE_URL:-postgresql://power2plant:power2plant@localhost:5432/power2plant}"
 DUMP="$(dirname "$0")/seed.sql"
 
