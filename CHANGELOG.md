@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.12.0] - 2026-05-20
+
+### Added
+- Landing hub with global site header and navigation (#124, #125)
+- i18n infrastructure with German (de) as first locale (#118)
+- i18n phase 2: `CropTranslation` table, enrichment script, locale-aware crop search
+- i18n phase 3: `useTranslations` wired into remaining components
+- `pnpm translate --fetch` / `--import` two-step plant name translation script
+- `dev.sh` with `up`/`down`/`build`/`rebuild` commands
+
+### Fixed
+- GBIF enrichment: retry logic added, delay reduced to 200ms
+- E2E smoke tests updated for new landing hub and i18n routing
+
 ## [v0.8.0] - 2026-05-05
 
 ### Changed

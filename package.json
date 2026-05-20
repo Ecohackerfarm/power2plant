@@ -1,6 +1,6 @@
 {
   "name": "power2plant",
-  "version": "0.1.0",
+  "version": "0.12.0",
   "description": "Companion planting recommendations for your garden beds",
   "license": "MIT",
   "scripts": {
