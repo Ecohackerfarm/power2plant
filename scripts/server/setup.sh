@@ -235,7 +235,6 @@ elif [[ -f "$hooks_out" ]]; then
 else
   sed "s/__WEBHOOK_SECRET__/${WEBHOOK_SECRET}/g" "$hooks_template" > "$hooks_out"
   chmod 644 "$hooks_out"
-  chown 1000:1000 "$hooks_out"
   echo "    wrote webhook/hooks.json"
 fi
 

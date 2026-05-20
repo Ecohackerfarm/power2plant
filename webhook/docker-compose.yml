@@ -2,7 +2,6 @@ services:
   webhook:
     image: almir/webhook
     container_name: power2plant-webhook
-    user: "1000:1000"
     restart: unless-stopped
     ports:
       - "127.0.0.1:9000:9000"
