@@ -6,6 +6,10 @@ set -e
 # datasets (Crop / CropRelationship / their sources). Auth and per-user
 # garden tables stay empty so we never commit personal data.
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT_DIR="$(dirname "$SCRIPT_DIR")"
+[ -f "$ROOT_DIR/.env" ] && . "$ROOT_DIR/.env"
+
 DB_URL="${DATABASE_URL:-postgresql://power2plant:power2plant@localhost:5432/power2plant}"
 OUT="$(dirname "$0")/seed.sql"
 
