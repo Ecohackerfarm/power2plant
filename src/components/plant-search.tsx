@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -21,6 +21,7 @@ interface PlantSearchProps {
 
 export function PlantSearch({ wishlistIds, onAdd, onRemove, onClearAll }: PlantSearchProps) {
   const t = useTranslations('PlantSearch')
+  const locale = useLocale()
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<Crop[]>([])
   const [wishlistCrops, setWishlistCrops] = useState<Crop[]>([])
@@ -31,7 +32,7 @@ export function PlantSearch({ wishlistIds, onAdd, onRemove, onClearAll }: PlantS
   useEffect(() => {
     const missing = wishlistIds.filter(id => !wishlistCrops.find(c => c.id === id))
     if (missing.length === 0) return
-    fetch(`/api/crops?ids=${missing.join(',')}`)
+    fetch(`/api/crops?ids=${missing.join(',')}&locale=${locale}`)
       .then(r => r.ok ? r.json() : { crops: [] })
       .then(({ crops }: { crops: Crop[] }) => {
         setWishlistCrops(prev => {
@@ -52,7 +53,7 @@ export function PlantSearch({ wishlistIds, onAdd, onRemove, onClearAll }: PlantS
     const timer = setTimeout(async () => {
       setSearching(true)
       try {
-        const res = await fetch(`/api/crops?q=${encodeURIComponent(query.trim())}`)
+        const res = await fetch(`/api/crops?q=${encodeURIComponent(query.trim())}&locale=${locale}`)
         const data = await res.json()
         setResults(data.crops ?? [])
         setActiveIndex(-1)

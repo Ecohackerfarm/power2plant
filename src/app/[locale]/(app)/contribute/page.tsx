@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { useSession } from '@/lib/auth-client'
 import { Link } from '@/i18n/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -44,11 +44,12 @@ function CropPicker({ label, value, onChange, showGenusHint = false }: {
   const [activeIndex, setActiveIndex] = useState(-1)
   const listRef = useRef<HTMLUListElement>(null)
   const t = useTranslations('Contribute')
+  const locale = useLocale()
 
   useEffect(() => {
     if (query.trim().length < 2) { setResults([]); setActiveIndex(-1); return }
     const timer = setTimeout(async () => {
-      const res = await fetch(`/api/crops?q=${encodeURIComponent(query.trim())}`)
+      const res = await fetch(`/api/crops?q=${encodeURIComponent(query.trim())}&locale=${locale}`)
       const data = await res.json()
       setResults(data.crops ?? [])
       setActiveIndex(-1)
