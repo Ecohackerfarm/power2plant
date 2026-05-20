@@ -234,8 +234,8 @@ elif [[ -f "$hooks_out" ]]; then
   echo "    webhook/hooks.json exists, leaving in place (delete to regenerate)"
 else
   sed "s/__WEBHOOK_SECRET__/${WEBHOOK_SECRET}/g" "$hooks_template" > "$hooks_out"
-  chmod 600 "$hooks_out"
-  chown "${DEPLOY_USERNAME}:${DEPLOY_USERNAME}" "$hooks_out"
+  chmod 644 "$hooks_out"
+  chown 1000:1000 "$hooks_out"
   echo "    wrote webhook/hooks.json"
 fi
 
