@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
+import { useTranslations, useLocale } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -16,6 +17,8 @@ interface AddBedFormProps {
 }
 
 export function AddBedForm({ onSaved }: AddBedFormProps) {
+  const t = useTranslations('AddBedForm')
+  const locale = useLocale()
   const [bedName, setBedName] = useState('')
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<Crop[]>([])
@@ -28,7 +31,7 @@ export function AddBedForm({ onSaved }: AddBedFormProps) {
     const timer = setTimeout(async () => {
       setSearching(true)
       try {
-        const res = await fetch(`/api/crops?q=${encodeURIComponent(query.trim())}`)
+        const res = await fetch(`/api/crops?q=${encodeURIComponent(query.trim())}&locale=${locale}`)
         const data = await res.json()
         setResults(data.crops ?? [])
       } finally {
@@ -86,24 +89,24 @@ export function AddBedForm({ onSaved }: AddBedFormProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Add a Bed</CardTitle>
+        <CardTitle className="text-base">{t('title')}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <Input
-          placeholder='Bed name (optional, e.g. "North Bed")'
+          placeholder={t('bedNamePlaceholder')}
           value={bedName}
           onChange={e => setBedName(e.target.value)}
           maxLength={50}
         />
         <div className="space-y-1">
           <Input
-            placeholder="Search for plants to add…"
+            placeholder={t('searchPlaceholder')}
             value={query}
             onChange={e => setQuery(e.target.value)}
             autoComplete="off"
-            aria-label="Search plants"
+            aria-label={t('searchLabel')}
           />
-          {searching && <p className="text-xs text-muted-foreground">Searching…</p>}
+          {searching && <p className="text-xs text-muted-foreground">{t('searching')}</p>}
           {results.length > 0 && (
             <ul className="space-y-0.5 max-h-48 overflow-y-auto border rounded p-1">
               {results.map(crop => {
@@ -123,7 +126,7 @@ export function AddBedForm({ onSaved }: AddBedFormProps) {
                         <span className="text-muted-foreground italic ml-1 text-xs">{crop.botanicalName}</span>
                       )}
                     </span>
-                    {added && <span className="text-xs text-muted-foreground ml-2">Added</span>}
+                    {added && <span className="text-xs text-muted-foreground ml-2">{t('added')}</span>}
                   </li>
                 )
               })}
@@ -154,7 +157,7 @@ export function AddBedForm({ onSaved }: AddBedFormProps) {
           disabled={saving || selectedCrops.length === 0}
           size="sm"
         >
-          {saving ? 'Saving…' : 'Save Bed'}
+          {saving ? t('adding') : t('addBed')}
         </Button>
       </CardContent>
     </Card>

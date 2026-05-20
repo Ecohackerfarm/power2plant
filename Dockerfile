@@ -18,9 +18,14 @@ ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser
 #   root@ — for direct orchestrator/manual use
 RUN mkdir -p /home/node/.ssh && chmod 700 /home/node/.ssh && chown node:node /home/node/.ssh && \
     mkdir -p /root/.ssh && chmod 700 /root/.ssh
-COPY deploy_keys/agent.pub /home/node/.ssh/authorized_keys
-RUN cp /home/node/.ssh/authorized_keys /root/.ssh/authorized_keys && \
-    chmod 600 /home/node/.ssh/authorized_keys /root/.ssh/authorized_keys && \
+COPY deploy_keys/agent.pub /tmp/agent.pub
+COPY deploy_keys/ssh_wrapper.sh /usr/local/bin/ssh_wrapper.sh
+# Force node@ SSH sessions to start in /app — wrapper handles cd + original command
+RUN chmod +x /usr/local/bin/ssh_wrapper.sh && \
+    printf 'command="/usr/local/bin/ssh_wrapper.sh" ' > /home/node/.ssh/authorized_keys && \
+    cat /tmp/agent.pub >> /home/node/.ssh/authorized_keys && \
+    cp /tmp/agent.pub /root/.ssh/authorized_keys
+RUN chmod 600 /home/node/.ssh/authorized_keys /root/.ssh/authorized_keys && \
     chown node:node /home/node/.ssh/authorized_keys && \
     passwd -d node && \
     printf '\nPort 2222\nPasswordAuthentication no\nPermitRootLogin prohibit-password\nStrictModes no\n' >> /etc/ssh/sshd_config
