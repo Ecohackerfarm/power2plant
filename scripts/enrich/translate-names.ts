@@ -27,7 +27,7 @@ const GBIF_API = 'https://api.gbif.org/v1'
 const USER_AGENT = 'power2plant/0.12 (https://github.com/Ecohackerfarm/power2plant; mailto:admin@power2plant.app)'
 
 const WIKIDATA_BATCH = 50   // taxa per SPARQL query
-const GBIF_DELAY_MS  = 500  // GBIF rate-limit headroom
+const GBIF_DELAY_MS  = 200  // GBIF rate-limit headroom
 const WD_DELAY_MS    = 1500 // Wikidata polite crawl delay between batches
 const WD_RETRY_WAIT  = 10000 // wait after 429 before retry
 
@@ -154,10 +154,23 @@ interface GbifMatchResult { usageKey?: number; matchType?: string }
 interface GbifVernacular { vernacularName: string; language?: string }
 interface GbifVernacularResult { results: GbifVernacular[] }
 
+async function fetchWithRetry(url: string, retries = 5): Promise<Response> {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await fetch(url, { headers: { 'User-Agent': USER_AGENT } })
+    } catch (err) {
+      if (attempt === retries) throw err
+      const delay = 5000 * 2 ** attempt
+      console.error(`  [retry ${attempt + 1}/${retries}] network error, waiting ${delay}ms...`)
+      await sleep(delay)
+    }
+  }
+  throw new Error('unreachable')
+}
+
 async function fetchGbifNames(botanicalName: string, gbifLang: string): Promise<string[]> {
-  const matchRes = await fetch(
+  const matchRes = await fetchWithRetry(
     `${GBIF_API}/species/match?name=${encodeURIComponent(botanicalName)}`,
-    { headers: { 'User-Agent': USER_AGENT } },
   )
   if (!matchRes.ok) return []
   const match = await matchRes.json() as GbifMatchResult
@@ -166,9 +179,8 @@ async function fetchGbifNames(botanicalName: string, gbifLang: string): Promise<
 
   await sleep(GBIF_DELAY_MS)
 
-  const vernRes = await fetch(
+  const vernRes = await fetchWithRetry(
     `${GBIF_API}/species/${match.usageKey}/vernacularNames?limit=20`,
-    { headers: { 'User-Agent': USER_AGENT } },
   )
   if (!vernRes.ok) return []
   const vern = await vernRes.json() as GbifVernacularResult
