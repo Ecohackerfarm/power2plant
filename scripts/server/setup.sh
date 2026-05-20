@@ -86,7 +86,7 @@ cat > "/etc/systemd/system/${PROJECT}-deploy.path" <<EOF
 Description=Watch for ${PROJECT} deploy trigger
 
 [Path]
-PathExists=/run/p2p-deploy.trigger
+PathExists=/run/p2p/deploy.trigger
 Unit=${PROJECT}-deploy.service
 
 [Install]
@@ -238,6 +238,12 @@ else
   chown "${DEPLOY_USERNAME}:${DEPLOY_USERNAME}" "$hooks_out"
   echo "    wrote webhook/hooks.json"
 fi
+
+# ── tmpfiles.d: /run/p2p owned by deploy user ────────────────────────────────
+echo "d /run/p2p 0755 ${DEPLOY_USERNAME} ${DEPLOY_USERNAME} -" \
+  > /etc/tmpfiles.d/p2p.conf
+systemd-tmpfiles --create /etc/tmpfiles.d/p2p.conf
+echo "    wrote /etc/tmpfiles.d/p2p.conf and created /run/p2p"
 
 # ── Reload and enable ─────────────────────────────────────────────────────────
 systemctl daemon-reload

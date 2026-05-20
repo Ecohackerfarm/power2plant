@@ -7,7 +7,7 @@ set -euo pipefail
 : "${DEPLOY_USERNAME:?not set — run scripts/server/setup.sh to reinstall the service unit}"
 : "${PROJECT_PATH:?not set — run scripts/server/setup.sh to reinstall the service unit}"
 
-rm -f /run/p2p-deploy.trigger
+rm -f /run/p2p/deploy.trigger
 cd "$PROJECT_PATH"
 sudo -u "$DEPLOY_USERNAME" git pull origin main
 sudo -u "$DEPLOY_USERNAME" docker compose up -d --build
