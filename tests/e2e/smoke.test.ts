@@ -117,6 +117,44 @@ test('plan page shows plant search', async ({ page }) => {
   await expect(page.getByRole('textbox', { name: /search/i })).toBeVisible()
 })
 
+test('sign-in panel: opens as dropdown without shifting header layout', async ({ page }) => {
+  await page.goto('/plan')
+  const header = page.getByRole('banner')
+  const headerBox = await header.boundingBox()
+  expect(headerBox).not.toBeNull()
+
+  await page.getByRole('button', { name: /sign in/i }).click()
+
+  const form = page.getByLabel(/email/i).first()
+  await expect(form).toBeVisible()
+
+  // Header height must not change
+  const headerBoxAfter = await header.boundingBox()
+  expect(headerBoxAfter!.height).toBe(headerBox!.height)
+
+  // Form must be fully within viewport
+  const formCard = page.getByLabel(/email/i).first()
+  const cardBox = await formCard.boundingBox()
+  expect(cardBox).not.toBeNull()
+  const viewport = page.viewportSize()!
+  expect(cardBox!.x).toBeGreaterThanOrEqual(0)
+  expect(cardBox!.y).toBeGreaterThanOrEqual(0)
+  expect(cardBox!.x + cardBox!.width).toBeLessThanOrEqual(viewport.width)
+})
+
+test('sign-in panel: opens on landing page without layout shift', async ({ page }) => {
+  await page.goto('/')
+  const heading = page.getByRole('heading', { name: 'power2plant' })
+  const headingBoxBefore = await heading.boundingBox()
+  expect(headingBoxBefore).not.toBeNull()
+
+  await page.getByRole('button', { name: /sign in/i }).click()
+  await expect(page.getByLabel(/email/i).first()).toBeVisible()
+
+  const headingBoxAfter = await heading.boundingBox()
+  expect(headingBoxAfter!.y).toBe(headingBoxBefore!.y)
+})
+
 test('garden page has back link to home', async ({ page }) => {
   await page.goto('/garden')
   const link = page.getByRole('link', { name: /power2plant/i })
