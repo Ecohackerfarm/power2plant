@@ -74,6 +74,7 @@ model RelationshipSource {
   source         SourceType
   sourceType     SourceClassification?
   confidence     ConfidenceLevel      @default(ANECDOTAL)
+  position       RelationshipType?
   url            String?
   notes          String?
   fetchedAt      DateTime             @default(now())

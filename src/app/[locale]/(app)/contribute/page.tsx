@@ -138,6 +138,7 @@ export default function ContributePage() {
   const [cropA, setCropA] = useState<Crop | null>(null)
   const [cropB, setCropB] = useState<Crop | null>(null)
   const [type, setType] = useState<'COMPANION' | 'AVOID'>('COMPANION')
+  const [position, setPosition] = useState<'COMPANION' | 'AVOID' | null>(null)
   const [reasons, setReasons] = useState<string[]>([])
   const [notes, setNotes] = useState('')
   const [evidenceLevel, setEvidenceLevel] = useState<string>('ANECDOTAL')
@@ -178,6 +179,7 @@ export default function ContributePage() {
           cropAId: cropA.id,
           cropBId: cropB.id,
           type,
+          position: position ?? type,
           reason: reasons.length > 0 ? reasons : undefined,
           notes: notes || undefined,
           sources: urls.length > 0 ? urls : undefined,
@@ -189,7 +191,7 @@ export default function ContributePage() {
       if (!res.ok) { setResult('error'); return }
       setResult('success')
       setCropA(null); setCropB(null); setReasons([]); setNotes(''); setEvidenceLevel('ANECDOTAL')
-      setSourceUrls([]); setSourceTypes([]); setSourceOverrides([])
+      setSourceUrls([]); setSourceTypes([]); setSourceOverrides([]); setPosition(null)
     } catch {
       setResult('error')
     } finally {
@@ -377,6 +379,27 @@ export default function ContributePage() {
                 {t('addSource')}
               </Button>
             </div>
+
+            {sourceUrls.some(Boolean) && (
+              <div className="space-y-1">
+                <Label>{t('sourcePosition')}</Label>
+                <p className="text-xs text-muted-foreground">{t('sourcePositionHint')}</p>
+                <div className="flex gap-4">
+                  {RELATIONSHIP_TYPES.map(rt => (
+                    <label key={rt} className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input
+                        type="radio"
+                        name="position"
+                        value={rt}
+                        checked={(position ?? type) === rt}
+                        onChange={() => setPosition(rt)}
+                      />
+                      {t(rt as 'COMPANION' | 'AVOID')}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <Button
               type="submit"
