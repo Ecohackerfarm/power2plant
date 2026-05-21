@@ -6,6 +6,7 @@ vi.mock('@/lib/prisma', () => ({
     crop: { findMany: vi.fn() },
     relationshipSource: { findFirst: vi.fn(), create: vi.fn(), findMany: vi.fn() },
     cropRelationship: { upsert: vi.fn(), update: vi.fn(), findMany: vi.fn() },
+    user: { findMany: vi.fn() },
     $transaction: vi.fn(),
   },
 }))
@@ -355,6 +356,72 @@ describe('GET /api/relationships', () => {
     expect(prisma.cropRelationship.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({ id: { lt: 'rel-2' } }),
+      }),
+    )
+  })
+
+  it('two-crop search: detects two crop names and queries their relationship', async () => {
+    vi.mocked(prisma.crop.findMany)
+      .mockResolvedValueOnce([{ id: 'crop-c' }] as any)  // crops matching "Fennel"
+      .mockResolvedValueOnce([{ id: 'crop-d' }] as any)  // crops matching "Strawberry"
+    const rows = mockRelationships([
+      { id: 'rel-2', type: 'AVOID', reason: 'ALLELOPATHY', confidence: 0.5, notes: null, cropA: { id: 'crop-c', name: 'Fennel', botanicalName: 'Foeniculum vulgare' }, cropB: { id: 'crop-d', name: 'Strawberry', botanicalName: 'Fragaria x ananassa' }, _count: { sources: 1 } },
+    ])
+    vi.mocked(prisma.cropRelationship.findMany).mockResolvedValue(rows as any)
+
+    const res = await GET(makeGetReq('q=Fennel+Strawberry'))
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.relationships).toHaveLength(1)
+    expect(prisma.cropRelationship.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          OR: expect.arrayContaining([
+            expect.objectContaining({ cropAId: { in: ['crop-c'] }, cropBId: { in: ['crop-d'] } }),
+            expect.objectContaining({ cropAId: { in: ['crop-d'] }, cropBId: { in: ['crop-c'] } }),
+          ]),
+        }),
+      }),
+    )
+  })
+
+  it('two-crop search: falls back to single-crop filter when only one term matches', async () => {
+    vi.mocked(prisma.crop.findMany)
+      .mockResolvedValueOnce([{ id: 'crop-x' }] as any)  // "Some" matches
+      .mockResolvedValueOnce([] as any)                   // "UnknownPlant" doesn't match
+    const rows = mockRelationships()
+    vi.mocked(prisma.cropRelationship.findMany).mockResolvedValue(rows as any)
+
+    const res = await GET(makeGetReq('q=Some+UnknownPlant'))
+    expect(res.status).toBe(200)
+    // should fall back to single-term filter (OR with cropA/cropB)
+    expect(prisma.cropRelationship.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          OR: expect.arrayContaining([
+            expect.objectContaining({ cropA: expect.anything() }),
+          ]),
+        }),
+      }),
+    )
+  })
+
+  it('two-crop search: comma-separated input resolves correctly', async () => {
+    vi.mocked(prisma.crop.findMany)
+      .mockResolvedValueOnce([{ id: 'crop-a' }] as any)
+      .mockResolvedValueOnce([{ id: 'crop-b' }] as any)
+    const rows = mockRelationships()
+    vi.mocked(prisma.cropRelationship.findMany).mockResolvedValue(rows as any)
+
+    const res = await GET(makeGetReq('q=Tomato%2CBasil'))
+    expect(res.status).toBe(200)
+    expect(prisma.cropRelationship.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          OR: expect.arrayContaining([
+            expect.objectContaining({ cropAId: { in: ['crop-a'] } }),
+          ]),
+        }),
       }),
     )
   })
