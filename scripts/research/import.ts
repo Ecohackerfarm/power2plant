@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { PrismaClient, RelationshipType } from '@prisma/client'
+import { computeRelationshipConfidence } from '../import/confidence'
 
 const prisma = new PrismaClient()
 
@@ -20,22 +21,39 @@ interface AggregatedPair {
   cropA: string
   cropB: string
   type: 'COMPANION' | 'AVOID'
-  confidence: number
   reason: string | null
   notes: string
   papers: Array<{ doi: string | null; title: string; year: number }>
 }
 
+// Prefer botanicalName exact match, then name/commonNames with deterministic ordering
+// (isCommonCrop first, then oldest record). Logs a warning when multiple name matches exist.
 async function resolveCropId(name: string): Promise<string | null> {
-  const crop = await prisma.crop.findFirst({
+  // 1. Exact botanicalName
+  const byBotanical = await prisma.crop.findUnique({ where: { botanicalName: name } })
+  if (byBotanical) return byBotanical.id
+
+  // 2. name / commonNames — fetch all matches so we can warn on ambiguity
+  const matches = await prisma.crop.findMany({
     where: {
       OR: [
         { name: { equals: name, mode: 'insensitive' } },
         { commonNames: { has: name } },
       ],
     },
+    orderBy: [{ isCommonCrop: 'desc' }, { createdAt: 'asc' }],
+    select: { id: true, botanicalName: true, isCommonCrop: true },
   })
-  return crop?.id ?? null
+
+  if (matches.length === 0) return null
+  if (matches.length > 1) {
+    console.warn(
+      `AMBIGUOUS name "${name}" matches ${matches.length} crops: ` +
+      matches.map(m => m.botanicalName).join(', ') +
+      ` — using ${matches[0].botanicalName}`
+    )
+  }
+  return matches[0].id
 }
 
 function aggregateByPair(relationships: ExtractedRelationship[]): AggregatedPair[] {
@@ -54,16 +72,11 @@ function aggregateByPair(relationships: ExtractedRelationship[]): AggregatedPair
   for (const [, agg] of pairMap) {
     const winningType: 'COMPANION' | 'AVOID' = agg.companion >= agg.avoid ? 'COMPANION' : 'AVOID'
     const winningEntries = agg.entries.filter(e => e.type === winningType)
-    // Pick the highest-confidence entry for metadata (notes/reason)
     const best = winningEntries.reduce((a, b) => a.confidence >= b.confidence ? a : b)
-    const totalScore = winningType === 'COMPANION' ? agg.companion : agg.avoid
-    const totalAll = agg.companion + agg.avoid
     results.push({
       cropA: agg.entries[0].cropA,
       cropB: agg.entries[0].cropB,
       type: winningType,
-      // Normalize: winning confidence as fraction of all evidence
-      confidence: Math.min(totalScore / totalAll, 1),
       reason: best.reason,
       notes: best.notes,
       papers: agg.entries.map(e => ({ doi: e.doi, title: e.title, year: e.year })),
@@ -104,14 +117,12 @@ async function main(): Promise<void> {
         type: pair.type as RelationshipType,
         direction: 'MUTUAL',
         reason: pair.reason as any,
-        confidence: pair.confidence,
+        // confidence is set after sources are added via recompute below
+        confidence: 0.25,
         notes: pair.notes,
       },
-      update: {
-        type: pair.type as RelationshipType,
-        confidence: pair.confidence,
-        notes: pair.notes,
-      },
+      // Don't overwrite type/confidence set by other importers — sources are the authority
+      update: {},
       include: { sources: true },
     })
 
@@ -129,7 +140,7 @@ async function main(): Promise<void> {
             relationshipId: relationship.id,
             source: 'RESEARCH',
             confidence: 'PEER_REVIEWED',
-            url: paper.doi ? `https://doi.org/${paper.doi}` : null,
+            url: paperUrl,
             notes: `${paper.title} (${paper.year})`,
           },
         })
@@ -137,9 +148,24 @@ async function main(): Promise<void> {
       }
     }
 
+    // Recompute confidence as max(source evidence levels) across all sources,
+    // including any pre-existing ones from other importers.
+    const allSources = await prisma.relationshipSource.findMany({
+      where: { relationshipId: relationship.id },
+      select: { confidence: true },
+    })
+    const recomputedConfidence = computeRelationshipConfidence(allSources.map(s => s.confidence))
+    await prisma.cropRelationship.update({
+      where: { id: relationship.id },
+      data: { confidence: recomputedConfidence },
+    })
+
     if (addedSources > 0) {
       imported++
-      console.log(`IMPORT: ${pair.cropA} + ${pair.cropB} → ${pair.type} (${pair.confidence.toFixed(2)}, ${pair.papers.length} papers, ${addedSources} new sources)`)
+      console.log(
+        `IMPORT: ${pair.cropA} + ${pair.cropB} → ${pair.type}` +
+        ` (conf ${recomputedConfidence.toFixed(2)}, ${pair.papers.length} papers, ${addedSources} new sources)`
+      )
     } else {
       skippedExisting++
     }
