@@ -64,14 +64,18 @@ export default function PlantPage() {
   const genusWord = crop.botanicalName.trim().split(/\s+/)[0]
 
   return (
-    <main className="max-w-3xl mx-auto px-4 py-8 space-y-6">
+    <main
+      className="max-w-3xl mx-auto px-4 py-8 space-y-6"
+      data-entity-type="crop"
+      data-entity-id={id}
+    >
 
-      <div>
+      <div data-feedback-target="crop:name">
         <h1 className="text-2xl font-bold">{displayName}</h1>
         {displayName !== crop.botanicalName && (
           <p className="text-muted-foreground italic">{crop.botanicalName}</p>
         )}
-        <div className="flex gap-2 mt-2 flex-wrap">
+        <div className="flex gap-2 mt-2 flex-wrap" data-feedback-target="crop:growing-info">
           {crop.isNitrogenFixer && <Badge variant="secondary">{t('nitrogenFixer')}</Badge>}
           {crop.minTempC !== null && (
             <Badge variant="outline">{t('hardyTo', { temp: crop.minTempC })}</Badge>
@@ -89,7 +93,7 @@ export default function PlantPage() {
       </div>
 
       {crop.wikipedia && (crop.wikipedia.extract || crop.wikipedia.thumbnail) && (
-        <div className="flex gap-4">
+        <div className="flex gap-4" data-feedback-target="crop:description">
           {crop.wikipedia.thumbnail && (
             <img
               src={crop.wikipedia.thumbnail}
@@ -147,7 +151,7 @@ export default function PlantPage() {
         </div>
       )}
 
-      <div>
+      <div data-feedback-target="crop:companions">
         <h2 className="font-semibold mb-3">
           {t('companions')}
           <span className="text-muted-foreground font-normal text-sm ml-2">({companions.length})</span>

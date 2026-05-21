@@ -36,6 +36,9 @@ function RelationshipCard({ rel, t }: { rel: Relationship; t: (k: string) => str
       key={rel.id}
       href={`/plants/${rel.cropA.id}/companions/${rel.cropB.id}`}
       className="block group"
+      data-feedback-target={`relationship:${rel.id}`}
+      data-entity-type="relationship"
+      data-entity-id={rel.id}
     >
       <Card className="transition-colors group-hover:border-foreground/30">
         <CardHeader>
