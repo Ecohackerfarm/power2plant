@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ArrowRight } from 'lucide-react'
@@ -83,6 +83,7 @@ function RelationshipCard({ rel, t }: { rel: Relationship; t: (k: string) => str
 
 export default function RelationshipsPage() {
   const t = useTranslations('Relationships')
+  const locale = useLocale()
   const [relationships, setRelationships] = useState<Relationship[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -94,6 +95,7 @@ export default function RelationshipsPage() {
     const params = new URLSearchParams()
     if (q) params.set('q', q)
     if (cursor) params.set('cursor', cursor)
+    params.set('locale', locale)
     params.set('limit', '20')
 
     const res = await fetch(`/api/relationships?${params}`)

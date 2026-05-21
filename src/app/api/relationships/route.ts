@@ -19,18 +19,19 @@ function getConfidenceLabel(confidence: number): string {
   return 'Anecdotal'
 }
 
-function makeCropFilter(term: string) {
+function makeCropFilter(term: string, locale = 'en') {
   return {
     OR: [
       { name: { contains: term, mode: 'insensitive' as const } },
       { botanicalName: { contains: term, mode: 'insensitive' as const } },
       { commonNames: { has: term } },
       { synonyms: { has: term } },
+      { translations: { some: { locale, commonNames: { has: term } } } },
     ],
   }
 }
 
-async function detectTwoCropIds(q: string): Promise<[string[], string[]] | null> {
+async function detectTwoCropIds(q: string, locale: string): Promise<[string[], string[]] | null> {
   const trimmed = q.trim()
   if (!trimmed.includes(' ') && !trimmed.includes(',')) return null
 
@@ -49,8 +50,8 @@ async function detectTwoCropIds(q: string): Promise<[string[], string[]] | null>
   for (const [a, b] of splits) {
     if (!a || !b) continue
     const [cropsA, cropsB] = await Promise.all([
-      prisma.crop.findMany({ where: makeCropFilter(a), select: { id: true }, take: 10 }),
-      prisma.crop.findMany({ where: makeCropFilter(b), select: { id: true }, take: 10 }),
+      prisma.crop.findMany({ where: makeCropFilter(a, locale), select: { id: true }, take: 10 }),
+      prisma.crop.findMany({ where: makeCropFilter(b, locale), select: { id: true }, take: 10 }),
     ])
     if (cropsA.length > 0 && cropsB.length > 0) {
       return [cropsA.map(c => c.id), cropsB.map(c => c.id)]
@@ -62,13 +63,14 @@ async function detectTwoCropIds(q: string): Promise<[string[], string[]] | null>
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const q = searchParams.get('q') ?? ''
+  const locale = searchParams.get('locale') ?? 'en'
   const cursor = searchParams.get('cursor') ?? undefined
   const limit = Math.min(parseInt(searchParams.get('limit') ?? '20', 10), 50)
 
   // Two-crop detection: if query matches two distinct crop names, filter their relationship
   let whereClause: Record<string, unknown> = {}
   if (q) {
-    const twoCropIds = await detectTwoCropIds(q)
+    const twoCropIds = await detectTwoCropIds(q, locale)
     if (twoCropIds) {
       const [idsA, idsB] = twoCropIds
       whereClause = {
@@ -78,10 +80,12 @@ export async function GET(request: Request) {
         ],
       }
     } else {
-      const cropFilter = makeCropFilter(q)
+      const cropFilter = makeCropFilter(q, locale)
       whereClause = { OR: [{ cropA: cropFilter }, { cropB: cropFilter }] }
     }
   }
+
+  const translationSelect = { where: { locale }, select: { commonNames: true } }
 
   const relationships = await prisma.cropRelationship.findMany({
     where: {
@@ -91,8 +95,8 @@ export async function GET(request: Request) {
     take: limit + 1,
     orderBy: { id: 'desc' },
     include: {
-      cropA: { select: { id: true, name: true, botanicalName: true, commonNames: true } },
-      cropB: { select: { id: true, name: true, botanicalName: true, commonNames: true } },
+      cropA: { select: { id: true, name: true, botanicalName: true, commonNames: true }, include: { translations: translationSelect } },
+      cropB: { select: { id: true, name: true, botanicalName: true, commonNames: true }, include: { translations: translationSelect } },
       _count: { select: { sources: true } },
     },
   })
@@ -101,6 +105,11 @@ export async function GET(request: Request) {
   const results = hasNext ? relationships.slice(0, -1) : relationships
   const nextCursor = hasNext ? results[results.length - 1].id : null
 
+  function localisedCrop(crop: { id: string; name: string; botanicalName: string; commonNames: string[]; translations: { commonNames: string[] }[] }) {
+    const { translations, ...rest } = crop
+    return { ...rest, commonNames: translations[0]?.commonNames ?? rest.commonNames }
+  }
+
   return NextResponse.json({
     relationships: results.map((r) => ({
       id: r.id,
@@ -108,8 +117,8 @@ export async function GET(request: Request) {
       reason: r.reason,
       confidence: getConfidenceLabel(r.confidence),
       notes: r.notes,
-      cropA: r.cropA,
-      cropB: r.cropB,
+      cropA: localisedCrop(r.cropA),
+      cropB: localisedCrop(r.cropB),
       sourceCount: r._count.sources,
     })),
     nextCursor,
