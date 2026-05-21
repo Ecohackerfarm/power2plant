@@ -186,7 +186,9 @@
     "seeAllSpecies": "See all {count} species →",
     "speciesExploreHint": "Individual species may have additional companion data.",
     "exploreSpecies": "Explore species →",
-    "inheritedFrom": "via {genus}"
+    "inheritedFrom": "via {genus}",
+    "wikiReadMore": "Wikipedia →",
+    "wikiAttribution": "Source: Wikipedia (CC BY-SA)"
   },
   "RelationshipPage": {
     "back": "← Back",
