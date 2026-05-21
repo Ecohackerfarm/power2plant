@@ -64,7 +64,8 @@
     "added": "Hinzugefügt",
     "wishlist": "Deine Wunschliste ({count} Pflanzen)",
     "clearAll": "Alle entfernen",
-    "addAtLeast2": "Mindestens 2 Pflanzen für eine Empfehlung hinzufügen."
+    "addAtLeast2": "Mindestens 2 Pflanzen für eine Empfehlung hinzufügen.",
+    "moreInfo": "mehr Info →"
   },
   "BedConfig": {
     "title": "Schritt 3 — Beete",

@@ -169,6 +169,15 @@ export function PlantSearch({ wishlistIds, onAdd, onRemove, onClearAll, initialQ
                   {added && (
                     <span className="text-xs text-muted-foreground ml-2 shrink-0">{t('added')}</span>
                   )}
+                  <a
+                    href={`/plants/${crop.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-muted-foreground hover:text-foreground ml-2 shrink-0 underline"
+                    onClick={e => e.stopPropagation()}
+                  >
+                    {t('moreInfo')}
+                  </a>
                 </li>
               )
             })}

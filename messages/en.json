@@ -64,7 +64,8 @@
     "added": "Added",
     "wishlist": "Your wishlist ({count} plants)",
     "clearAll": "Clear all",
-    "addAtLeast2": "Add at least 2 plants to get a recommendation."
+    "addAtLeast2": "Add at least 2 plants to get a recommendation.",
+    "moreInfo": "more info →"
   },
   "BedConfig": {
     "title": "Step 3 — Beds",
