@@ -15,6 +15,7 @@ model Crop {
   isNitrogenFixer Boolean            @default(false)
   isCommonCrop    Boolean            @default(false)
   commonNames     String[]           @default([])
+  synonyms        String[]           @default([])
   minTempC        Float?
   imageUrl        String?
   sources         CropSource[]

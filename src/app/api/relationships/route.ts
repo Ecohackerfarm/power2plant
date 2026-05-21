@@ -25,6 +25,7 @@ function makeCropFilter(term: string) {
       { name: { contains: term, mode: 'insensitive' as const } },
       { botanicalName: { contains: term, mode: 'insensitive' as const } },
       { commonNames: { has: term } },
+      { synonyms: { has: term } },
     ],
   }
 }
