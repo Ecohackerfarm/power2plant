@@ -121,7 +121,8 @@
     "ANECDOTAL": "anecdotal",
     "TRADITIONAL": "traditional",
     "OBSERVED": "observed",
-    "PEER_REVIEWED": "peer-reviewed"
+    "PEER_REVIEWED": "peer-reviewed",
+    "loadError": "Failed to load relationships. Please try again."
   },
   "Contribute": {
     "title": "Contribute an observation",

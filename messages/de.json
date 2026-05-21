@@ -121,7 +121,8 @@
     "ANECDOTAL": "anekdotisch",
     "TRADITIONAL": "traditionell",
     "OBSERVED": "beobachtet",
-    "PEER_REVIEWED": "peer-reviewed"
+    "PEER_REVIEWED": "peer-reviewed",
+    "loadError": "Laden fehlgeschlagen. Bitte erneut versuchen."
   },
   "Contribute": {
     "title": "Beobachtung beitragen",

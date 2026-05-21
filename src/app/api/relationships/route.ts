@@ -67,62 +67,67 @@ export async function GET(request: Request) {
   const cursor = searchParams.get('cursor') ?? undefined
   const limit = Math.min(parseInt(searchParams.get('limit') ?? '20', 10), 50)
 
-  // Two-crop detection: if query matches two distinct crop names, filter their relationship
-  let whereClause: Record<string, unknown> = {}
-  if (q) {
-    const twoCropIds = await detectTwoCropIds(q, locale)
-    if (twoCropIds) {
-      const [idsA, idsB] = twoCropIds
-      whereClause = {
-        OR: [
-          { cropAId: { in: idsA }, cropBId: { in: idsB } },
-          { cropAId: { in: idsB }, cropBId: { in: idsA } },
-        ],
+  try {
+    // Two-crop detection: if query matches two distinct crop names, filter their relationship
+    let whereClause: Record<string, unknown> = {}
+    if (q) {
+      const twoCropIds = await detectTwoCropIds(q, locale)
+      if (twoCropIds) {
+        const [idsA, idsB] = twoCropIds
+        whereClause = {
+          OR: [
+            { cropAId: { in: idsA }, cropBId: { in: idsB } },
+            { cropAId: { in: idsB }, cropBId: { in: idsA } },
+          ],
+        }
+      } else {
+        const cropFilter = makeCropFilter(q, locale)
+        whereClause = { OR: [{ cropA: cropFilter }, { cropB: cropFilter }] }
       }
-    } else {
-      const cropFilter = makeCropFilter(q, locale)
-      whereClause = { OR: [{ cropA: cropFilter }, { cropB: cropFilter }] }
     }
+
+    const translationSelect = { where: { locale }, select: { commonNames: true } }
+
+    const relationships = await prisma.cropRelationship.findMany({
+      where: {
+        ...whereClause,
+        ...(cursor ? { id: { lt: cursor } } : {}),
+      },
+      take: limit + 1,
+      orderBy: { id: 'desc' },
+      include: {
+        cropA: { select: { id: true, name: true, botanicalName: true, commonNames: true }, include: { translations: translationSelect } },
+        cropB: { select: { id: true, name: true, botanicalName: true, commonNames: true }, include: { translations: translationSelect } },
+        _count: { select: { sources: true } },
+      },
+    })
+
+    const hasNext = relationships.length > limit
+    const results = hasNext ? relationships.slice(0, -1) : relationships
+    const nextCursor = hasNext ? results[results.length - 1].id : null
+
+    function localisedCrop(crop: { id: string; name: string; botanicalName: string; commonNames: string[]; translations: { commonNames: string[] }[] }) {
+      const { translations, ...rest } = crop
+      return { ...rest, commonNames: translations[0]?.commonNames ?? rest.commonNames }
+    }
+
+    return NextResponse.json({
+      relationships: results.map((r) => ({
+        id: r.id,
+        type: r.type,
+        reason: r.reason,
+        confidence: getConfidenceLabel(r.confidence),
+        notes: r.notes,
+        cropA: localisedCrop(r.cropA),
+        cropB: localisedCrop(r.cropB),
+        sourceCount: r._count.sources,
+      })),
+      nextCursor,
+    })
+  } catch (err) {
+    console.error('[GET /api/relationships]', err)
+    return NextResponse.json({ error: 'internal error' }, { status: 500 })
   }
-
-  const translationSelect = { where: { locale }, select: { commonNames: true } }
-
-  const relationships = await prisma.cropRelationship.findMany({
-    where: {
-      ...whereClause,
-      ...(cursor ? { id: { lt: cursor } } : {}),
-    },
-    take: limit + 1,
-    orderBy: { id: 'desc' },
-    include: {
-      cropA: { select: { id: true, name: true, botanicalName: true, commonNames: true }, include: { translations: translationSelect } },
-      cropB: { select: { id: true, name: true, botanicalName: true, commonNames: true }, include: { translations: translationSelect } },
-      _count: { select: { sources: true } },
-    },
-  })
-
-  const hasNext = relationships.length > limit
-  const results = hasNext ? relationships.slice(0, -1) : relationships
-  const nextCursor = hasNext ? results[results.length - 1].id : null
-
-  function localisedCrop(crop: { id: string; name: string; botanicalName: string; commonNames: string[]; translations: { commonNames: string[] }[] }) {
-    const { translations, ...rest } = crop
-    return { ...rest, commonNames: translations[0]?.commonNames ?? rest.commonNames }
-  }
-
-  return NextResponse.json({
-    relationships: results.map((r) => ({
-      id: r.id,
-      type: r.type,
-      reason: r.reason,
-      confidence: getConfidenceLabel(r.confidence),
-      notes: r.notes,
-      cropA: localisedCrop(r.cropA),
-      cropB: localisedCrop(r.cropB),
-      sourceCount: r._count.sources,
-    })),
-    nextCursor,
-  })
 }
 
 async function getSession() {

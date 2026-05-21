@@ -39,6 +39,7 @@ function AnnotationCanvas({
   const dragging = useRef(false)
   const startPt = useRef({ x: 0, y: 0 })
   const [rect, setRect] = useState<{ x: number; y: number; w: number; h: number } | null>(null)
+  const [zoom, setZoom] = useState(1)
 
   useEffect(() => {
     const img = new window.Image()
@@ -104,23 +105,44 @@ function AnnotationCanvas({
   useEffect(() => { draw(rect) }, [rect]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="relative w-full">
-      <img src={screenshot} alt="Screenshot" className="w-full rounded" />
-      <canvas
-        ref={canvasRef}
-        className="absolute inset-0 w-full h-full cursor-crosshair"
-        width={800}
-        height={600}
-        onMouseDown={onDown}
-        onMouseMove={onMove}
-        onMouseUp={onUp}
-        onTouchStart={onDown}
-        onTouchMove={onMove}
-        onTouchEnd={onUp}
-      />
-      <div className="mt-2 flex gap-2 justify-end">
-        <Button size="sm" variant="outline" onClick={() => onConfirm(undefined)}>Skip</Button>
-        <Button size="sm" onClick={() => onConfirm(rect ?? undefined)}>Confirm area</Button>
+    <div className="space-y-2">
+      <div className="overflow-auto rounded border" style={{ maxHeight: '50vh' }}>
+        <div className="relative" style={{ width: `${zoom * 100}%`, minWidth: '100%' }}>
+          <img src={screenshot} alt="Screenshot" className="block w-full" />
+          <canvas
+            ref={canvasRef}
+            className="absolute inset-0 w-full h-full cursor-crosshair"
+            width={800}
+            height={600}
+            onMouseDown={onDown}
+            onMouseMove={onMove}
+            onMouseUp={onUp}
+            onTouchStart={onDown}
+            onTouchMove={onMove}
+            onTouchEnd={onUp}
+          />
+        </div>
+      </div>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setZoom(z => Math.max(1, +(z - 0.5).toFixed(1)))}
+            disabled={zoom <= 1}
+            className="text-xs px-2 py-1 border rounded disabled:opacity-40 hover:bg-muted"
+          >−</button>
+          <span className="text-xs w-8 text-center tabular-nums">{zoom}×</span>
+          <button
+            type="button"
+            onClick={() => setZoom(z => Math.min(4, +(z + 0.5).toFixed(1)))}
+            disabled={zoom >= 4}
+            className="text-xs px-2 py-1 border rounded disabled:opacity-40 hover:bg-muted"
+          >+</button>
+        </div>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={() => onConfirm(undefined)}>Skip</Button>
+          <Button size="sm" onClick={() => onConfirm(rect ?? undefined)}>Confirm area</Button>
+        </div>
       </div>
     </div>
   )
@@ -281,7 +303,7 @@ export function FeedbackButton() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" ref={overlayRef}>
-      <div className="bg-background rounded-lg shadow-xl max-w-md w-full mx-4 p-6 space-y-4">
+      <div className="bg-background rounded-lg shadow-xl max-w-md sm:max-w-2xl w-full mx-4 p-6 space-y-4">
 
         {mode === 'modal' && (
           <>

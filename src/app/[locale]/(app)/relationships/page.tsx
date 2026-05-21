@@ -90,6 +90,7 @@ export default function RelationshipsPage() {
   const [relationships, setRelationships] = useState<Relationship[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
+  const [error, setError] = useState(false)
   const [search, setSearch] = useState('')
   const [nextCursor, setNextCursor] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(false)
@@ -101,17 +102,22 @@ export default function RelationshipsPage() {
     params.set('locale', locale)
     params.set('limit', '20')
 
-    const res = await fetch(`/api/relationships?${params}`)
-    const data = await res.json()
-
-    if (append) {
-      setRelationships((prev) => [...prev, ...data.relationships])
-    } else {
-      setRelationships(data.relationships)
+    try {
+      const res = await fetch(`/api/relationships?${params}`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
+      if (append) {
+        setRelationships((prev) => [...prev, ...data.relationships])
+      } else {
+        setRelationships(data.relationships ?? [])
+      }
+      setNextCursor(data.nextCursor)
+      setHasMore(!!data.nextCursor)
+      setError(false)
+    } catch {
+      setError(true)
     }
-    setNextCursor(data.nextCursor)
-    setHasMore(!!data.nextCursor)
-  }, [])
+  }, [locale])
 
   useEffect(() => {
     setLoading(true)
@@ -152,7 +158,9 @@ export default function RelationshipsPage() {
         className="max-w-sm"
       />
 
-      {loading ? (
+      {error ? (
+        <p className="text-destructive text-sm">{t('loadError')}</p>
+      ) : loading ? (
         <div className="space-y-4">
           {Array.from({ length: 3 }).map((_, i) => (
             <Card key={i}>
