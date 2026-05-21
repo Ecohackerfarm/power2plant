@@ -109,7 +109,15 @@
     "sourceCount": "{count, plural, one {# source} other {# sources}}",
     "companions": "Companions",
     "antagonists": "Antagonists",
-    "contributeObservation": "Add an observation →"
+    "contributeObservation": "Add an observation →",
+    "COMPANION": "Companion",
+    "AVOID": "Avoid",
+    "PEST_CONTROL": "Pest Control",
+    "POLLINATION": "Pollination",
+    "NUTRIENT": "Nutrient Sharing",
+    "SHADE": "Shade Benefit",
+    "ALLELOPATHY": "Natural Repellent",
+    "OTHER": "Other"
   },
   "Contribute": {
     "title": "Contribute an observation",

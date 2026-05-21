@@ -109,7 +109,15 @@
     "sourceCount": "{count, plural, one {# Quelle} other {# Quellen}}",
     "companions": "Mischkulturpartner",
     "antagonists": "Schlechte Nachbarn",
-    "contributeObservation": "Beobachtung hinzufügen →"
+    "contributeObservation": "Beobachtung hinzufügen →",
+    "COMPANION": "Mischkultur",
+    "AVOID": "Schlechte Nachbarn",
+    "PEST_CONTROL": "Schädlingsbekämpfung",
+    "POLLINATION": "Bestäubung",
+    "NUTRIENT": "Nährstoffaustausch",
+    "SHADE": "Schattennutzung",
+    "ALLELOPATHY": "Natürliches Abwehrmittel",
+    "OTHER": "Sonstiges"
   },
   "Contribute": {
     "title": "Beobachtung beitragen",

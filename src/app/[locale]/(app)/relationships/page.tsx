@@ -30,7 +30,10 @@ function debounce<T extends (...args: string[]) => void>(fn: T, delay: number): 
   }) as T
 }
 
-function RelationshipCard({ rel, t }: { rel: Relationship; t: (k: string) => string }) {
+function RelationshipCard({ rel, t }: { rel: Relationship; t: (k: string, opts?: Record<string, unknown>) => string }) {
+  function tryT(key: string): string {
+    try { return t(key as Parameters<typeof t>[0]) } catch { return key }
+  }
   return (
     <Link
       key={rel.id}
@@ -66,7 +69,7 @@ function RelationshipCard({ rel, t }: { rel: Relationship; t: (k: string) => str
           {rel.reason && (
             <p className="text-sm">
               <span className="text-muted-foreground">{t('reason')}:</span>{' '}
-              {rel.reason}
+              {tryT(rel.reason)}
             </p>
           )}
           <p className="text-sm">
