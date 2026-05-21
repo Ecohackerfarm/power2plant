@@ -304,5 +304,26 @@
     "traditionalDesc": "Aus der Gartenbautradition überliefert. Weit verbreitet, aber nicht formal untersucht.",
     "anecdotalLabel": "Anekdotisch",
     "anecdotalDesc": "Basiert auf einzelnen Gärtnerberichten oder Volksweisheit. Als Ausgangspunkt betrachten."
+  },
+  "FeedbackButton": {
+    "label": "Problem melden",
+    "title": "Was stimmt nicht?",
+    "dataMode": "Daten — etwas ist falsch",
+    "otherMode": "Sonstiges — visuell / Übersetzung",
+    "cancel": "Abbrechen",
+    "selectTarget": "Klicke auf einen hervorgehobenen Bereich. Escape zum Abbrechen.",
+    "tapTarget": "Tippe auf einen hervorgehobenen Bereich.",
+    "tapConfirm": "Erneut tippen zum Bestätigen.",
+    "targetLabel": "Meldung: {key}",
+    "messagePlaceholder": "Beschreibe das Problem…",
+    "messageLabel": "Details (erforderlich)",
+    "otherMessageLabel": "Details (optional)",
+    "submit": "Absenden",
+    "submitting": "Wird gesendet…",
+    "success": "Danke! Dein Bericht wurde gesendet.",
+    "rateLimit": "Zu viele Meldungen — bitte später erneut versuchen.",
+    "error": "Etwas ist schiefgelaufen. Bitte erneut versuchen.",
+    "drawAnnotation": "Ziehe, um den Problembereich zu markieren.",
+    "screenshotCapturing": "Screenshot wird erstellt…"
   }
 }

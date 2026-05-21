@@ -304,5 +304,26 @@
     "traditionalDesc": "Passed down through gardening tradition. Widely practiced but not formally studied.",
     "anecdotalLabel": "Anecdotal",
     "anecdotalDesc": "Based on individual gardener reports or folk wisdom. Treat as a starting point."
+  },
+  "FeedbackButton": {
+    "label": "Report an issue",
+    "title": "What's wrong?",
+    "dataMode": "Data — something incorrect",
+    "otherMode": "Other — visual / translation",
+    "cancel": "Cancel",
+    "selectTarget": "Click a highlighted section to report an issue. Press Escape to cancel.",
+    "tapTarget": "Tap a highlighted section.",
+    "tapConfirm": "Tap again to confirm.",
+    "targetLabel": "Reporting: {key}",
+    "messagePlaceholder": "Describe the issue…",
+    "messageLabel": "Details (required)",
+    "otherMessageLabel": "Details (optional)",
+    "submit": "Submit",
+    "submitting": "Sending…",
+    "success": "Thanks! Your report has been sent.",
+    "rateLimit": "Too many reports — try again later.",
+    "error": "Something went wrong. Please try again.",
+    "drawAnnotation": "Drag to highlight the problem area.",
+    "screenshotCapturing": "Capturing screenshot…"
   }
 }

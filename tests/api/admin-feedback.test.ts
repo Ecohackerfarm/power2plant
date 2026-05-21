@@ -63,7 +63,7 @@ describe('GET /api/admin/feedback', () => {
     vi.mocked(prisma.feedback.findMany).mockResolvedValue([] as never)
     vi.mocked(prisma.feedback.count).mockResolvedValue(0)
     await GET(makeGetReq('?status=RESOLVED'))
-    expect(vi.mocked(prisma.feedback.findMany).mock.calls[0][0].where).toMatchObject({ status: 'RESOLVED' })
+    expect(vi.mocked(prisma.feedback.findMany).mock.calls[0]![0]!.where).toMatchObject({ status: 'RESOLVED' })
   })
 
   it('passes mode filter to query', async () => {
@@ -71,7 +71,7 @@ describe('GET /api/admin/feedback', () => {
     vi.mocked(prisma.feedback.findMany).mockResolvedValue([] as never)
     vi.mocked(prisma.feedback.count).mockResolvedValue(0)
     await GET(makeGetReq('?mode=OTHER'))
-    expect(vi.mocked(prisma.feedback.findMany).mock.calls[0][0].where).toMatchObject({ mode: 'OTHER' })
+    expect(vi.mocked(prisma.feedback.findMany).mock.calls[0]![0]!.where).toMatchObject({ mode: 'OTHER' })
   })
 })
 
