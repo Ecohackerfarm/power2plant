@@ -225,7 +225,9 @@
     "COMMUNITY": "Community",
     "MANUAL": "Manuell",
     "RESEARCH": "Forschung",
-    "link": "Link"
+    "link": "Link",
+    "genusLevelBanner": "Beziehung auf Gattungsebene definiert ({genusA} ↔ {genusB}) — gilt für alle Arten der Gattung {genus}.",
+    "appliesToAllSpecies": "Gilt für alle Arten der Gattung {genus}."
   },
   "GardenPage": {
     "backHome": "← power2plant",
