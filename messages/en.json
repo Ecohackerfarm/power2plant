@@ -268,7 +268,12 @@
     "planted": "planted",
     "growing": "growing",
     "harvested": "harvested",
-    "planned": "planned"
+    "planned": "planned",
+    "bedRelationships": "Relationships",
+    "companions": "{count} companion pair{count, plural, one {} other {s}}",
+    "antagonists": "{count} conflict{count, plural, one {} other {s}}",
+    "unknownPairs": "{count} unknown pair{count, plural, one {} other {s}}",
+    "addMoreForAnalysis": "Add more plants to see relationships."
   },
   "AddBedForm": {
     "title": "Add a bed",
