@@ -106,5 +106,27 @@ export async function GET(
     speciesCount = Number(countRows[0].count)
   }
 
-  return NextResponse.json({ crop: { ...crop, parentGenus, species, speciesCount }, companions })
+  // Wikipedia enrichment — fetch server-side, cache 24h
+  let wikipedia: { extract?: string; thumbnail?: string; articleUrl?: string } | undefined
+  try {
+    const wikiTitle = crop.botanicalName.trim().replace(/ /g, '_')
+    const wikiRes = await fetch(
+      `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(wikiTitle)}`,
+      { next: { revalidate: 86400 }, headers: { 'User-Agent': 'power2plant/1.0 (companion-planting-app)' } } as RequestInit,
+    )
+    if (wikiRes.ok) {
+      const wikiData = await wikiRes.json()
+      if (wikiData.type !== 'disambiguation') {
+        wikipedia = {
+          extract: wikiData.extract ?? undefined,
+          thumbnail: wikiData.thumbnail?.source ?? undefined,
+          articleUrl: wikiData.content_urls?.desktop?.page ?? undefined,
+        }
+      }
+    }
+  } catch {
+    // Wikipedia unavailable — page still renders
+  }
+
+  return NextResponse.json({ crop: { ...crop, parentGenus, species, speciesCount, wikipedia }, companions })
 }
