@@ -35,11 +35,14 @@ function AnnotationCanvas({
   onConfirm: (ann: { x: number; y: number; w: number; h: number } | undefined) => void
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
   const imgRef = useRef<HTMLImageElement | null>(null)
   const dragging = useRef(false)
   const startPt = useRef({ x: 0, y: 0 })
   const [rect, setRect] = useState<{ x: number; y: number; w: number; h: number } | null>(null)
   const [zoom, setZoom] = useState(1)
+  const [drawComplete, setDrawComplete] = useState(false)
+  const pendingScroll = useRef<{ x: number; y: number; w: number; h: number } | null>(null)
 
   useEffect(() => {
     const img = new window.Image()
@@ -82,6 +85,7 @@ function AnnotationCanvas({
     dragging.current = true
     startPt.current = getRelative(e)
     setRect(null)
+    setDrawComplete(false)
     draw(null)
   }
 
@@ -100,13 +104,59 @@ function AnnotationCanvas({
 
   function onUp() {
     dragging.current = false
+    setDrawComplete(true)
   }
 
   useEffect(() => { draw(rect) }, [rect]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Auto-zoom when draw completes and marked area < 50% of total
+  useEffect(() => {
+    if (!drawComplete || !rect) return
+    setDrawComplete(false)
+    const area = rect.w * rect.h
+    if (area > 0 && area < 0.5) {
+      const MARGIN = 0.15
+      const newZoom = Math.min(4, Math.max(1, Math.min(
+        (1 - 2 * MARGIN) / rect.w,
+        (1 - 2 * MARGIN) / rect.h,
+      )))
+      if (newZoom > zoom) {
+        pendingScroll.current = rect
+        setZoom(newZoom)
+      }
+    }
+  }, [drawComplete, rect]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Scroll to marked area after zoom re-render
+  useEffect(() => {
+    if (!pendingScroll.current || !containerRef.current) return
+    const r = pendingScroll.current
+    pendingScroll.current = null
+    const el = containerRef.current
+    requestAnimationFrame(() => {
+      const cx = (r.x + r.w / 2) * el.scrollWidth
+      const cy = (r.y + r.h / 2) * el.scrollHeight
+      el.scrollLeft = Math.max(0, cx - el.clientWidth / 2)
+      el.scrollTop = Math.max(0, cy - el.clientHeight / 2)
+    })
+  }, [zoom])
+
+  function resetZoom() {
+    setZoom(1)
+    if (containerRef.current) {
+      containerRef.current.scrollLeft = 0
+      containerRef.current.scrollTop = 0
+    }
+  }
+
   return (
     <div className="space-y-2">
-      <div className="overflow-auto rounded border" style={{ maxHeight: '50vh' }}>
+      {/* Fixed height prevents modal resize when horizontal scrollbar appears/disappears */}
+      <div
+        ref={containerRef}
+        className="overflow-auto rounded border"
+        style={{ height: '50vh' }}
+      >
         <div className="relative" style={{ width: `${zoom * 100}%`, minWidth: '100%' }}>
           <img src={screenshot} alt="Screenshot" className="block w-full" />
           <canvas
@@ -138,6 +188,13 @@ function AnnotationCanvas({
             disabled={zoom >= 4}
             className="text-xs px-2 py-1 border rounded disabled:opacity-40 hover:bg-muted"
           >+</button>
+          <button
+            type="button"
+            onClick={resetZoom}
+            disabled={zoom === 1}
+            className="text-xs px-2 py-1 border rounded disabled:opacity-40 hover:bg-muted ml-1"
+            title="Reset zoom"
+          >↺</button>
         </div>
         <div className="flex gap-2">
           <Button size="sm" variant="outline" onClick={() => onConfirm(undefined)}>Skip</Button>
@@ -208,19 +265,33 @@ export function FeedbackButton() {
     }
   }, [mode])
 
-  // OTHER mode: capture screenshot
-  const captureScreenshot = useCallback(async () => {
+  // OTHER mode: capture screenshot after modal is removed from DOM
+  useEffect(() => {
+    if (mode !== 'other-capturing') return
+    let cancelled = false
+    // Double rAF ensures React has flushed and browser has painted (no feedback UI in DOM)
+    const id = requestAnimationFrame(() => requestAnimationFrame(async () => {
+      if (cancelled) return
+      try {
+        const { toJpeg } = await import('html-to-image')
+        if (cancelled) return
+        const dataUrl = await toJpeg(document.body, { pixelRatio: 0.75, quality: 0.75 })
+        if (cancelled) return
+        setCtx({ mode: 'OTHER', screenshot: dataUrl })
+        setMode('other-form')
+      } catch {
+        if (!cancelled) {
+          toast.error(t('error'))
+          setMode('modal')
+        }
+      }
+    }))
+    return () => { cancelled = true; cancelAnimationFrame(id) }
+  }, [mode, t])
+
+  const captureScreenshot = useCallback(() => {
     setMode('other-capturing')
-    try {
-      const { toJpeg } = await import('html-to-image')
-      const dataUrl = await toJpeg(document.body, { pixelRatio: 0.75, quality: 0.75 })
-      setCtx({ mode: 'OTHER', screenshot: dataUrl })
-      setMode('other-form')
-    } catch {
-      toast.error(t('error'))
-      setMode('modal')
-    }
-  }, [t])
+  }, [])
 
   async function submit() {
     if (!ctx) return
@@ -293,12 +364,9 @@ export function FeedbackButton() {
     )
   }
 
+  // Render nothing during capture so the feedback UI is absent from the screenshot
   if (mode === 'other-capturing') {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80">
-        <p className="text-sm text-muted-foreground">{t('screenshotCapturing')}</p>
-      </div>
-    )
+    return null
   }
 
   return (
