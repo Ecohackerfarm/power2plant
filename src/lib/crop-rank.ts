@@ -15,6 +15,10 @@ export function detectRank(botanicalName: string): 'genus' | 'species' {
   return GENUS_RE.test(botanicalName.trim()) ? 'genus' : 'species'
 }
 
+export function extractGenusWord(botanicalName: string): string {
+  return botanicalName.trim().split(/\s+/)[0]
+}
+
 function score(crop: CropRow, ql: string): number {
   const nameLower = crop.name.toLowerCase()
   const cns = crop.commonNames.map(cn => cn.toLowerCase())

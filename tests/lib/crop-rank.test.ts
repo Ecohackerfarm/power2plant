@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { rankCrops, detectRank, type CropRow } from '@/lib/crop-rank'
+import { rankCrops, detectRank, extractGenusWord, type CropRow } from '@/lib/crop-rank'
 
 function makeCrop(overrides: Partial<CropRow> & Pick<CropRow, 'id' | 'name' | 'botanicalName'>): CropRow {
   return {
@@ -120,5 +120,25 @@ describe('detectRank', () => {
   it('cultivar / subspecies names', () => {
     expect(detectRank('Cucurbita pepo var. cylindrica')).toBe('species')
     expect(detectRank('Solanum lycopersicum')).toBe('species')
+  })
+})
+
+describe('extractGenusWord', () => {
+  it('species name returns first word', () => {
+    expect(extractGenusWord('Capsicum annuum')).toBe('Capsicum')
+    expect(extractGenusWord('Solanum lycopersicum')).toBe('Solanum')
+  })
+
+  it('genus with authority returns first word', () => {
+    expect(extractGenusWord('Capsicum L.')).toBe('Capsicum')
+    expect(extractGenusWord('Ocimum L.')).toBe('Ocimum')
+  })
+
+  it('single genus word', () => {
+    expect(extractGenusWord('Rosa')).toBe('Rosa')
+  })
+
+  it('trims leading whitespace', () => {
+    expect(extractGenusWord('  Helianthus annuus')).toBe('Helianthus')
   })
 })
