@@ -37,7 +37,8 @@
   "Nav": {
     "lookup": "Pflanze nachschlagen",
     "plan": "Beete planen",
-    "garden": "Mein Garten"
+    "garden": "Mein Garten",
+    "admin": "Admin"
   },
   "ZoneDetector": {
     "title": "Schritt 1 — Deine Klimazone",
