@@ -14,7 +14,7 @@ services:
         exec su node -s /bin/sh -c 'pnpm exec prisma generate && { pnpm exec prisma migrate deploy || echo \"[dev] migration failed — fix then run prisma migrate deploy manually\"; } && pnpm dev'
       "
     ports: !override
-      - "3000:3000"
+      - "3001:3000"
       - "5555:5555"
       - "2222:2222"
     environment:
@@ -22,8 +22,8 @@ services:
       CI: "true"
       DATABASE_URL: postgresql://power2plant:power2plant@db:5432/power2plant
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-dev-secret-change-in-production}
-      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
-      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3001}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3001}
     volumes:
       - .:/app
       - /app/node_modules
@@ -44,6 +44,8 @@ services:
         aliases:
           - app-dev
   db:
+    ports: !override
+      - "5433:5432"
     networks:
       default: {}
       power2plant-dev:
