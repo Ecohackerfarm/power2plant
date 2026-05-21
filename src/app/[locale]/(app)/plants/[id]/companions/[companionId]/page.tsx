@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { ConfidenceBadge } from '@/components/confidence-badge'
 import { getDisplayName, confidenceLabel } from '@/lib/recommend'
+import { detectRank } from '@/lib/crop-rank'
 
 type RelationshipRow = {
   relId: string; type: string; reason: string | null; reasons: string[]; confidence: number
@@ -15,6 +16,9 @@ type RelationshipRow = {
   cropANitrogen: boolean
   cropBId: string; cropBName: string; cropBBotanical: string; cropBCommonNames: string[]
   cropBNitrogen: boolean
+  resolvedToGenus?: boolean
+  genusA?: { id: string; botanicalName: string }
+  genusB?: { id: string; botanicalName: string }
 }
 
 type Source = {
@@ -55,6 +59,7 @@ export default function RelationshipPage() {
   if (!rel) return <main className="max-w-3xl mx-auto px-4 py-8"><p className="text-red-600">{t('notFound')}</p></main>
 
   const clevel = confidenceLabel(rel.confidence)
+  const isDirectGenus = !rel.resolvedToGenus && detectRank(rel.cropABotanical) === 'genus'
 
   function translateKey(key: string, fallback?: string): string {
     try {
@@ -74,6 +79,22 @@ export default function RelationshipPage() {
           {t('back')}
         </button>
       </div>
+
+      {rel.resolvedToGenus && rel.genusA && rel.genusB && (
+        <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-2 text-sm text-amber-800">
+          {t('genusLevelBanner', {
+            genusA: rel.genusA.botanicalName,
+            genusB: rel.genusB.botanicalName,
+            genus: rel.genusA.botanicalName,
+          })}
+        </div>
+      )}
+
+      {isDirectGenus && (
+        <div className="rounded-md border border-blue-200 bg-blue-50 px-4 py-2 text-sm text-blue-800">
+          {t('appliesToAllSpecies', { genus: rel.cropABotanical })}
+        </div>
+      )}
 
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
         <CropCard

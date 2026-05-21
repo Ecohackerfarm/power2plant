@@ -232,7 +232,9 @@
     "COMMUNITY": "Community",
     "MANUAL": "Manual",
     "RESEARCH": "Research",
-    "link": "link"
+    "link": "link",
+    "genusLevelBanner": "Relationship defined at genus level ({genusA} ↔ {genusB}) — applies to all {genus} species.",
+    "appliesToAllSpecies": "Applies to all {genus} species."
   },
   "GardenPage": {
     "backHome": "← power2plant",
