@@ -29,6 +29,21 @@ function ModeBadge({ mode }: { mode: FeedbackItem['mode'] }) {
   return <Badge variant="outline">{mode === 'DATA' ? 'Data' : 'Other'}</Badge>
 }
 
+function formatTargetKey(key: string | null): string {
+  if (!key) return '—'
+  const parts = key.split(':')
+  const entity = parts[0]
+  const field = parts[1]
+  const sub = parts[2]
+  if (!field) return key
+  const label = field.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+  if (field === 'source' && sub !== undefined) {
+    const idx = parseInt(sub)
+    return `${entity} · Source ${isNaN(idx) ? sub : idx + 1}`
+  }
+  return `${entity} · ${label}`
+}
+
 function ScreenshotThumb({ src }: { src: string }) {
   const [expanded, setExpanded] = useState(false)
   return (
@@ -155,8 +170,8 @@ export default function AdminFeedbackPage() {
                   <td className="py-2 pr-3 max-w-[140px]">
                     <span className="truncate block text-xs font-mono" title={item.pageUrl}>{item.pageUrl}</span>
                   </td>
-                  <td className="py-2 pr-3 max-w-[120px]">
-                    <span className="truncate block text-xs text-muted-foreground" title={item.targetKey ?? ''}>{item.targetKey ?? '—'}</span>
+                  <td className="py-2 pr-3 max-w-[140px]">
+                    <span className="truncate block text-xs text-muted-foreground" title={item.targetKey ?? ''}>{formatTargetKey(item.targetKey)}</span>
                   </td>
                   <td className="py-2 pr-3 max-w-[200px]">
                     <p className="line-clamp-2 text-xs">{item.message}</p>
