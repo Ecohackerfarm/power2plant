@@ -156,14 +156,14 @@ export default function RelationshipPage() {
         <>
           <Separator />
           <div>
-            <h2 className="font-semibold mb-3 text-sm" data-feedback-target="relationship:sources">{t('sources')}</h2>
+            <h2 className="font-semibold mb-3 text-sm">{t('sources')}</h2>
             <ul className="space-y-3">
               {sources.map((s, i) => {
                 const sourceLabel = translateKey(s.source, s.source)
                 const sourceConf = translateKey(s.confidence, s.confidence)
                 if (s.source === 'COMMUNITY' && s.urls) {
                   return (
-                    <li key={i} className="text-sm space-y-1">
+                    <li key={i} className="text-sm space-y-1" data-feedback-target={`relationship:source:${i}`}>
                       <div className="flex items-start gap-2">
                         <span className="font-medium shrink-0">{sourceLabel}</span>
                         <span className="text-muted-foreground">
@@ -195,7 +195,7 @@ export default function RelationshipPage() {
                 }
                 const positionDiffers = s.position && s.position !== rel.type
                 return (
-                  <li key={i} className="text-sm flex items-start gap-2">
+                  <li key={i} className="text-sm flex items-start gap-2" data-feedback-target={`relationship:source:${i}`}>
                     <span className="font-medium shrink-0">{sourceLabel}</span>
                     <span className="text-muted-foreground">
                       — <ConfidenceBadge level={sourceConf} />
