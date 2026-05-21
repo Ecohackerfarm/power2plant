@@ -46,6 +46,7 @@
     "detecting": "Wird ermittelt…",
     "detected": "{zone}",
     "coldestNight": "kälteste Winternacht: {temp}°C",
+    "averageColdestNight": "Die durchschnittliche kälteste Winternacht der letzten 10 Jahre lag bei {temp}°C.",
     "hint": "Wir benötigen deinen Standort, um Pflanzen auszufiltern, die deinen Winter nicht überleben.",
     "pickOnMap": "Auf der Karte auswählen",
     "hideMap": "Karte ausblenden",
