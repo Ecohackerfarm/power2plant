@@ -53,3 +53,4 @@ services:
 networks:
   power2plant-dev:
     external: true
+    name: ${COMPOSE_PROJECT_NAME}-dev
