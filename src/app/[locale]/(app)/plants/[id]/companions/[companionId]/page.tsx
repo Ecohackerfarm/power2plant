@@ -24,6 +24,7 @@ type RelationshipRow = {
 type Source = {
   source: string; confidence: string; url: string | null; notes: string | null; fetchedAt: string
   sourceType?: string | null
+  position?: string | null
   urls?: Array<{ url: string; sourceType: string | null; confidence: string }>
 }
 
@@ -188,11 +189,21 @@ export default function RelationshipPage() {
                     </li>
                   )
                 }
+                const positionDiffers = s.position && s.position !== rel.type
                 return (
                   <li key={i} className="text-sm flex items-start gap-2">
                     <span className="font-medium shrink-0">{sourceLabel}</span>
                     <span className="text-muted-foreground">
                       — <ConfidenceBadge level={sourceConf} />
+                      {s.position && (
+                        <span className={`ml-1 text-xs rounded px-1.5 py-0.5 font-medium ${
+                          positionDiffers
+                            ? 'bg-destructive/15 text-destructive'
+                            : 'bg-muted text-muted-foreground'
+                        }`}>
+                          {translateKey(s.position, s.position)}
+                        </span>
+                      )}
                       {s.url && (
                         <> · <a href={s.url} target="_blank" rel="noopener noreferrer" className="underline">{t('link')}</a></>
                       )}

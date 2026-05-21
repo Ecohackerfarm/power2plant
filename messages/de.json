@@ -158,7 +158,9 @@
     "ACADEMIC_RESOURCE": "Wissenschaftliche Ressource",
     "GARDENING_GUIDE": "Gartenratgeber",
     "BLOG_FORUM": "Blog / Forum",
-    "PERSONAL_OBSERVATION": "Persönliche Beobachtung"
+    "PERSONAL_OBSERVATION": "Persönliche Beobachtung",
+    "sourcePosition": "Was sagt deine Quelle?",
+    "sourcePositionHint": "Wähle, wenn deine Quelle zu einem anderen Schluss kommt als deine Beobachtung."
   },
   "PlantPage": {
     "backToPlan": "← Zurück zum Plan",

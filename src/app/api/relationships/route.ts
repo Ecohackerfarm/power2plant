@@ -4,7 +4,7 @@ import prisma from '@/lib/prisma'
 import { SOURCE_CONFIDENCE } from '@/lib/source-confidence'
 import { classifyUrl } from '@/lib/classify-url'
 import { computeAndSaveTrustScore } from '@/lib/trust-score'
-import type { SourceClassification, ConfidenceLevel } from '@prisma/client'
+import type { SourceClassification, ConfidenceLevel, RelationshipType } from '@prisma/client'
 import { auth } from '@/lib/auth'
 
 const VALID_TYPES = ['COMPANION', 'AVOID'] as const
@@ -124,7 +124,7 @@ export async function POST(request: Request) {
   const session = await getSession()
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  let body: { cropAId?: unknown; cropBId?: unknown; type?: unknown; reason?: unknown; notes?: unknown; sourceType?: unknown; sources?: unknown; evidenceLevel?: unknown; sourceTypeOverrides?: unknown }
+  let body: { cropAId?: unknown; cropBId?: unknown; type?: unknown; reason?: unknown; notes?: unknown; sourceType?: unknown; sources?: unknown; evidenceLevel?: unknown; sourceTypeOverrides?: unknown; position?: unknown }
   try {
     body = await request.json()
   } catch {
@@ -168,6 +168,14 @@ export async function POST(request: Request) {
   if (evidenceLevel !== undefined && !VALID_EVIDENCE_LEVELS.includes(evidenceLevel as (typeof VALID_EVIDENCE_LEVELS)[number])) {
     return NextResponse.json({ error: 'invalid evidenceLevel' }, { status: 400 })
   }
+
+  // position: what this observation says about the pair (defaults to type, so "pro" submissions need not specify)
+  const { position: positionRaw } = body
+  const position: RelationshipType = (
+    positionRaw !== undefined && VALID_TYPES.includes(positionRaw as (typeof VALID_TYPES)[number])
+      ? positionRaw
+      : type
+  ) as RelationshipType
 
   const { sourceTypeOverrides } = body
   if (sourceTypeOverrides !== undefined) {
@@ -238,6 +246,7 @@ export async function POST(request: Request) {
             source: 'MANUAL',
             sourceType: st,
             confidence: SOURCE_CONFIDENCE[st],
+            position,
             url,
             notes: notes as string | undefined ?? null,
             userId: session.user.id,
@@ -252,6 +261,7 @@ export async function POST(request: Request) {
           source: 'COMMUNITY',
           sourceType: 'PERSONAL_OBSERVATION',
           confidence: testimonyConfidence,
+          position,
           notes: notes as string | undefined ?? null,
           userId: session.user.id,
         },
@@ -265,6 +275,7 @@ export async function POST(request: Request) {
           source: 'COMMUNITY',
           sourceType: sourceType as (typeof VALID_SOURCE_TYPES)[number] | undefined ?? undefined,
           confidence: testimonyConfidence,
+          position,
           notes: notes as string | undefined ?? null,
           userId: session.user.id,
         },
