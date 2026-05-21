@@ -24,10 +24,12 @@ type GenusRow = { id: string; botanicalName: string; name: string }
 type SpeciesRow = { id: string; botanicalName: string; name: string }
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params
+  const locale = new URL(req.url).searchParams.get('locale') ?? 'en'
+  const wikiLang = locale.split('-')[0]
 
   const crops = await prisma.$queryRaw<CropRow[]>`
     SELECT id, name, "botanicalName", "commonNames", "minTempC", "isNitrogenFixer"
@@ -110,19 +112,22 @@ export async function GET(
   let wikipedia: { extract?: string; thumbnail?: string; articleUrl?: string } | undefined
   try {
     const wikiTitle = crop.botanicalName.trim().replace(/ /g, '_')
-    const wikiRes = await fetch(
-      `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(wikiTitle)}`,
-      { next: { revalidate: 86400 }, headers: { 'User-Agent': 'power2plant/1.0 (companion-planting-app)' } } as RequestInit,
-    )
-    if (wikiRes.ok) {
+    const fetchOpts = { next: { revalidate: 86400 }, headers: { 'User-Agent': 'power2plant/1.0 (companion-planting-app)' } } as RequestInit
+    const langs = wikiLang !== 'en' ? [wikiLang, 'en'] : ['en']
+    for (const lang of langs) {
+      const wikiRes = await fetch(
+        `https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(wikiTitle)}`,
+        fetchOpts,
+      )
+      if (!wikiRes.ok) continue
       const wikiData = await wikiRes.json()
-      if (wikiData.type !== 'disambiguation') {
-        wikipedia = {
-          extract: wikiData.extract ?? undefined,
-          thumbnail: wikiData.thumbnail?.source ?? undefined,
-          articleUrl: wikiData.content_urls?.desktop?.page ?? undefined,
-        }
+      if (wikiData.type === 'disambiguation') break
+      wikipedia = {
+        extract: wikiData.extract ?? undefined,
+        thumbnail: wikiData.thumbnail?.source ?? undefined,
+        articleUrl: wikiData.content_urls?.desktop?.page ?? undefined,
       }
+      break
     }
   } catch {
     // Wikipedia unavailable — page still renders

@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { Link, useRouter } from '@/i18n/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -28,6 +28,7 @@ type CompanionRow = CropRow & {
 
 export default function PlantPage() {
   const t = useTranslations('PlantPage')
+  const locale = useLocale()
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
   const [crop, setCrop] = useState<CropRow | null>(null)
@@ -37,7 +38,7 @@ export default function PlantPage() {
 
   useEffect(() => {
     setWishlist(loadState().wishlist)
-    fetch(`/api/plants/${id}`)
+    fetch(`/api/plants/${id}?locale=${locale}`)
       .then(r => r.ok ? r.json() : Promise.reject(r.status))
       .then(({ crop, companions }) => { setCrop(crop); setCompanions(companions) })
       .finally(() => setLoading(false))
