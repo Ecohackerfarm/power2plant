@@ -19,23 +19,72 @@ function getConfidenceLabel(confidence: number): string {
   return 'Anecdotal'
 }
 
+function makeCropFilter(term: string) {
+  return {
+    OR: [
+      { name: { contains: term, mode: 'insensitive' as const } },
+      { botanicalName: { contains: term, mode: 'insensitive' as const } },
+      { commonNames: { has: term } },
+    ],
+  }
+}
+
+async function detectTwoCropIds(q: string): Promise<[string[], string[]] | null> {
+  const trimmed = q.trim()
+  if (!trimmed.includes(' ') && !trimmed.includes(',')) return null
+
+  // Generate candidate splits: comma/semicolon splits first, then space splits
+  const splits: [string, string][] = []
+  for (const sep of [',', ';', '&']) {
+    const parts = trimmed.split(sep).map(s => s.trim()).filter(Boolean)
+    if (parts.length === 2) splits.push([parts[0], parts[1]])
+  }
+  // Space splits: try all positions
+  const words = trimmed.split(/\s+/)
+  for (let i = 1; i < words.length; i++) {
+    splits.push([words.slice(0, i).join(' '), words.slice(i).join(' ')])
+  }
+
+  for (const [a, b] of splits) {
+    if (!a || !b) continue
+    const [cropsA, cropsB] = await Promise.all([
+      prisma.crop.findMany({ where: makeCropFilter(a), select: { id: true }, take: 10 }),
+      prisma.crop.findMany({ where: makeCropFilter(b), select: { id: true }, take: 10 }),
+    ])
+    if (cropsA.length > 0 && cropsB.length > 0) {
+      return [cropsA.map(c => c.id), cropsB.map(c => c.id)]
+    }
+  }
+  return null
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const q = searchParams.get('q') ?? ''
   const cursor = searchParams.get('cursor') ?? undefined
   const limit = Math.min(parseInt(searchParams.get('limit') ?? '20', 10), 50)
 
-  const cropFilter = q ? {
-    OR: [
-      { name: { contains: q, mode: 'insensitive' as const } },
-      { botanicalName: { contains: q, mode: 'insensitive' as const } },
-      { commonNames: { has: q } },
-    ],
-  } : undefined
+  // Two-crop detection: if query matches two distinct crop names, filter their relationship
+  let whereClause: Record<string, unknown> = {}
+  if (q) {
+    const twoCropIds = await detectTwoCropIds(q)
+    if (twoCropIds) {
+      const [idsA, idsB] = twoCropIds
+      whereClause = {
+        OR: [
+          { cropAId: { in: idsA }, cropBId: { in: idsB } },
+          { cropAId: { in: idsB }, cropBId: { in: idsA } },
+        ],
+      }
+    } else {
+      const cropFilter = makeCropFilter(q)
+      whereClause = { OR: [{ cropA: cropFilter }, { cropB: cropFilter }] }
+    }
+  }
 
   const relationships = await prisma.cropRelationship.findMany({
     where: {
-      ...(cropFilter ? { OR: [{ cropA: cropFilter }, { cropB: cropFilter }] } : {}),
+      ...whereClause,
       ...(cursor ? { id: { lt: cursor } } : {}),
     },
     take: limit + 1,
