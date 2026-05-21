@@ -23,7 +23,7 @@ interface AggregatedPair {
   type: 'COMPANION' | 'AVOID'
   reason: string | null
   notes: string
-  papers: Array<{ doi: string | null; title: string; year: number }>
+  papers: Array<{ doi: string | null; title: string; year: number; position: 'COMPANION' | 'AVOID' }>
 }
 
 // Prefer botanicalName exact match, then name/commonNames with deterministic ordering
@@ -79,7 +79,7 @@ function aggregateByPair(relationships: ExtractedRelationship[]): AggregatedPair
       type: winningType,
       reason: best.reason,
       notes: best.notes,
-      papers: agg.entries.map(e => ({ doi: e.doi, title: e.title, year: e.year })),
+      papers: agg.entries.map(e => ({ doi: e.doi, title: e.title, year: e.year, position: e.type })),
     })
   }
   return results
@@ -140,6 +140,7 @@ async function main(): Promise<void> {
             relationshipId: relationship.id,
             source: 'RESEARCH',
             confidence: 'PEER_REVIEWED',
+            position: paper.position,
             url: paperUrl,
             notes: `${paper.title} (${paper.year})`,
           },

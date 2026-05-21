@@ -32,7 +32,7 @@ export async function GET(
 
   const rawSources = await prisma.relationshipSource.findMany({
     where: { relationshipId: rel.relId },
-    select: { source: true, sourceType: true, confidence: true, url: true, notes: true, fetchedAt: true, userId: true },
+    select: { source: true, sourceType: true, confidence: true, position: true, url: true, notes: true, fetchedAt: true, userId: true },
     orderBy: { confidence: 'desc' },
   })
 
@@ -79,6 +79,7 @@ export async function GET(
     ...other.map(s => ({
       source: s.source,
       confidence: s.confidence,
+      position: s.position,
       url: s.url,
       notes: s.notes,
       fetchedAt: s.fetchedAt.toISOString(),
