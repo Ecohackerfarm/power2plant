@@ -86,7 +86,13 @@ export async function GET(request: Request) {
       }
     }
 
-    const translationSelect = { where: { locale }, select: { commonNames: true } }
+    const cropSelect = {
+      id: true,
+      name: true,
+      botanicalName: true,
+      commonNames: true,
+      translations: { where: { locale }, select: { commonNames: true } },
+    }
 
     const relationships = await prisma.cropRelationship.findMany({
       where: {
@@ -96,8 +102,8 @@ export async function GET(request: Request) {
       take: limit + 1,
       orderBy: { id: 'desc' },
       include: {
-        cropA: { select: { id: true, name: true, botanicalName: true, commonNames: true }, include: { translations: translationSelect } },
-        cropB: { select: { id: true, name: true, botanicalName: true, commonNames: true }, include: { translations: translationSelect } },
+        cropA: { select: cropSelect },
+        cropB: { select: cropSelect },
         _count: { select: { sources: true } },
       },
     })
