@@ -11,10 +11,11 @@ type Paper = {
   cropBBotanical?: string
   paperId: string
   title: string
-  abstract: string
+  abstract: string | null
   doi: string
   year: number
   source: string
+  noAbstract?: boolean
 }
 
 type VerificationResult = {
@@ -31,6 +32,8 @@ type VerificationResult = {
   cropBFound: boolean
   suspicious: boolean
   reason: string
+  unverified?: boolean
+  unverifiedReason?: string
 }
 
 const BASE_URL = process.env.LLM_BASE_URL ?? 'https://openrouter.ai/api/v1'
@@ -69,6 +72,26 @@ Respond ONLY with valid JSON:
 }
 
 async function verifyPaper(paper: Paper): Promise<VerificationResult> {
+  if (!paper.abstract) {
+    return {
+      paperId: paper.paperId,
+      cropA: paper.cropA,
+      cropB: paper.cropB,
+      cropABotanical: paper.cropABotanical,
+      cropBBotanical: paper.cropBBotanical,
+      doi: paper.doi || null,
+      title: paper.title,
+      year: paper.year,
+      botanicalNamesFound: [],
+      cropAFound: false,
+      cropBFound: false,
+      suspicious: true,
+      reason: 'No abstract available — cannot verify',
+      unverified: true,
+      unverifiedReason: 'no_abstract',
+    }
+  }
+
   const fallback: VerificationResult = {
     paperId: paper.paperId,
     cropA: paper.cropA,
@@ -174,15 +197,29 @@ async function main(): Promise<void> {
 
   const results = await runPool(tasks, CONCURRENCY)
 
-  const suspicious = results.filter(r => r.suspicious)
-  const missingA = results.filter(r => !r.cropAFound)
-  const missingB = results.filter(r => !r.cropBFound)
+  const unverified = results.filter(r => r.unverified)
+  const suspicious = results.filter(r => r.suspicious && !r.unverified)
+  const missingA = results.filter(r => !r.cropAFound && !r.unverified)
+  const missingB = results.filter(r => !r.cropBFound && !r.unverified)
 
   console.log(`\nSummary:`)
-  console.log(`  Total:     ${results.length}`)
+  console.log(`  Total:      ${results.length}`)
+  console.log(`  Verified:   ${results.length - unverified.length}`)
+  console.log(`  Unverified: ${unverified.length}  ← NO ABSTRACT — manual review required`)
   console.log(`  Suspicious: ${suspicious.length}`)
   console.log(`  Missing cropA: ${missingA.length}`)
   console.log(`  Missing cropB: ${missingB.length}`)
+
+  if (unverified.length > 0) {
+    console.warn(`\n⚠  UNVERIFIED SOURCES (no abstract — still in DB, must review manually):`)
+    for (const r of unverified) {
+      const url = r.doi ? `https://doi.org/${r.doi}` : 'no-doi'
+      console.warn(`  ${r.cropA} + ${r.cropB}`)
+      console.warn(`    ${url}`)
+    }
+    console.warn(`\n  Action required: look up each paper above and add its DOI to`)
+    console.warn(`  cleanup-wrong-pairs.sql if the pair is not confirmed in the paper.`)
+  }
 
   if (suspicious.length > 0) {
     console.log(`\nSuspicious papers:`)

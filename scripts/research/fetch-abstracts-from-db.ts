@@ -37,10 +37,11 @@ type Paper = {
   cropBBotanical: string
   paperId: string
   title: string
-  abstract: string
+  abstract: string | null
   doi: string
   year: number
   source: string
+  noAbstract?: true
 }
 
 const USER_AGENT = 'power2plant-research-bot/1.0'
@@ -120,7 +121,22 @@ async function main() {
     }
 
     if (!info) {
-      console.log('no abstract — skip')
+      console.warn(`⚠  NO ABSTRACT — ${doi} (${srcs.map(s => `${s.cropAName}+${s.cropBName}`).join(', ')})`)
+      for (const src of srcs) {
+        papers.push({
+          cropA: src.cropAName,
+          cropB: src.cropBName,
+          cropABotanical: src.cropABotanical,
+          cropBBotanical: src.cropBBotanical,
+          paperId: doi,
+          title: '',
+          abstract: null,
+          doi,
+          year: 0,
+          source: 'unknown',
+          noAbstract: true,
+        })
+      }
       await sleep(RATE_MS)
       continue
     }
@@ -144,9 +160,17 @@ async function main() {
     await sleep(RATE_MS)
   }
 
+  const noAbstract = papers.filter(p => p.noAbstract)
   const out = join(ROOT, 'data/research/papers.json')
   writeFileSync(out, JSON.stringify(papers, null, 2))
   console.log(`\nWrote ${papers.length} entries to ${out}`)
+  if (noAbstract.length > 0) {
+    console.warn(`\n⚠  ${noAbstract.length} pairs could NOT be verified (no abstract found):`)
+    for (const p of noAbstract) {
+      console.warn(`   https://doi.org/${p.doi}  →  ${p.cropA} + ${p.cropB}`)
+    }
+    console.warn(`\n   These sources remain in the DB unverified. Review manually.`)
+  }
 }
 
 main().catch(e => {
