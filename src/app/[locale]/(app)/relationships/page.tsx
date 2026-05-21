@@ -73,7 +73,7 @@ function RelationshipCard({ rel, t }: { rel: Relationship; t: (k: string, opts?:
             </p>
           )}
           <p className="text-sm">
-            <span className="text-muted-foreground">{t('confidence')}:</span> {rel.confidence}
+            <span className="text-muted-foreground">{t('confidence')}:</span> {tryT(rel.confidence)}
           </p>
           <p className="text-sm text-muted-foreground">
             {(t as (k: string, v: Record<string, unknown>) => string)('sourceCount', { count: rel.sourceCount })}

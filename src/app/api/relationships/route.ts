@@ -13,10 +13,10 @@ const VALID_SOURCE_TYPES = ['SCIENTIFIC_PAPER', 'ACADEMIC_RESOURCE', 'GARDENING_
 const VALID_EVIDENCE_LEVELS = ['ANECDOTAL', 'TRADITIONAL', 'OBSERVED', 'PEER_REVIEWED'] as const
 
 function getConfidenceLabel(confidence: number): string {
-  if (confidence >= 1.0) return 'Peer-reviewed'
-  if (confidence >= 0.75) return 'Observed'
-  if (confidence >= 0.5) return 'Traditional'
-  return 'Anecdotal'
+  if (confidence >= 1.0) return 'PEER_REVIEWED'
+  if (confidence >= 0.75) return 'OBSERVED'
+  if (confidence >= 0.5) return 'TRADITIONAL'
+  return 'ANECDOTAL'
 }
 
 function makeCropFilter(term: string, locale = 'en') {

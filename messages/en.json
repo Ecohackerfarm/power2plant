@@ -117,7 +117,11 @@
     "NUTRIENT": "Nutrient Sharing",
     "SHADE": "Shade Benefit",
     "ALLELOPATHY": "Natural Repellent",
-    "OTHER": "Other"
+    "OTHER": "Other",
+    "ANECDOTAL": "anecdotal",
+    "TRADITIONAL": "traditional",
+    "OBSERVED": "observed",
+    "PEER_REVIEWED": "peer-reviewed"
   },
   "Contribute": {
     "title": "Contribute an observation",

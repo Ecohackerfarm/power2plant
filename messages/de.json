@@ -117,7 +117,11 @@
     "NUTRIENT": "Nährstoffaustausch",
     "SHADE": "Schattennutzung",
     "ALLELOPATHY": "Natürliches Abwehrmittel",
-    "OTHER": "Sonstiges"
+    "OTHER": "Sonstiges",
+    "ANECDOTAL": "anekdotisch",
+    "TRADITIONAL": "traditionell",
+    "OBSERVED": "beobachtet",
+    "PEER_REVIEWED": "peer-reviewed"
   },
   "Contribute": {
     "title": "Beobachtung beitragen",
