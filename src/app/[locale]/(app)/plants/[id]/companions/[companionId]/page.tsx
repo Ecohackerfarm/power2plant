@@ -163,7 +163,7 @@ export default function RelationshipPage() {
                 const sourceConf = translateKey(s.confidence, s.confidence)
                 if (s.source === 'COMMUNITY' && s.urls) {
                   return (
-                    <li key={i} className="text-sm space-y-1" data-feedback-target={`relationship:source:${i}`}>
+                    <li key={i} className="text-sm space-y-1" data-feedback-target={`relationship:source:${s.source}`}>
                       <div className="flex items-start gap-2">
                         <span className="font-medium shrink-0">{sourceLabel}</span>
                         <span className="text-muted-foreground">
@@ -195,7 +195,7 @@ export default function RelationshipPage() {
                 }
                 const positionDiffers = s.position && s.position !== rel.type
                 return (
-                  <li key={i} className="text-sm flex items-start gap-2" data-feedback-target={`relationship:source:${i}`}>
+                  <li key={i} className="text-sm flex items-start gap-2" data-feedback-target={`relationship:source:${s.source}`}>
                     <span className="font-medium shrink-0">{sourceLabel}</span>
                     <span className="text-muted-foreground">
                       — <ConfidenceBadge level={sourceConf} />
