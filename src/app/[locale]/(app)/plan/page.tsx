@@ -21,9 +21,16 @@ export default function PlanPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [lockedBeds, setLockedBeds] = useState<string[][] | null>(null)
+  const [searchQuery, setSearchQuery] = useState<string | undefined>(undefined)
   const autoTriggered = useRef(false)
 
   const canRecommend = state.minTempC !== null && state.wishlist.length >= 2
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const q = params.get('q')
+    if (q) setSearchQuery(q)
+  }, [])
 
   useEffect(() => {
     if (!hydrated || autoTriggered.current) return
@@ -92,6 +99,7 @@ export default function PlanPage() {
         onAdd={addToWishlist}
         onRemove={removeFromWishlist}
         onClearAll={clearWishlist}
+        initialQuery={searchQuery}
       />
 
       <BedConfig
