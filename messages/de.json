@@ -185,7 +185,9 @@
     "seeAllSpecies": "Alle {count} Arten anzeigen →",
     "speciesExploreHint": "Einzelne Arten können zusätzliche Mischkulturdaten haben.",
     "exploreSpecies": "Arten erkunden →",
-    "inheritedFrom": "über {genus}"
+    "inheritedFrom": "über {genus}",
+    "wikiReadMore": "Wikipedia →",
+    "wikiAttribution": "Quelle: Wikipedia (CC BY-SA)"
   },
   "RelationshipPage": {
     "back": "← Zurück",

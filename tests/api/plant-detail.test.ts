@@ -7,6 +7,18 @@ vi.mock('@/lib/prisma', () => ({
 
 import prisma from '@/lib/prisma'
 
+const mockWikiOk = {
+  ok: true,
+  json: async () => ({
+    type: 'standard',
+    extract: 'Capsicum annuum is a species of the plant genus Capsicum.',
+    thumbnail: { source: 'https://upload.wikimedia.org/thumb/capsicum.jpg' },
+    content_urls: { desktop: { page: 'https://en.wikipedia.org/wiki/Capsicum_annuum' } },
+  }),
+}
+const mockWikiDisambig = { ok: true, json: async () => ({ type: 'disambiguation' }) }
+const mockWikiFail = { ok: false }
+
 function makeReq(id: string) {
   return new Request(`http://localhost/api/plants/${id}`)
 }
@@ -114,11 +126,65 @@ describe('GET /api/plants/[id] — genus crop', () => {
       .mockResolvedValueOnce([directCompanion])   // genus companions (direct)
       .mockResolvedValueOnce(speciesList)         // species list
       .mockResolvedValueOnce([{ count: BigInt(2) }]) // count
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(mockWikiFail))
     const res = await GET(makeReq('crop-capsicum'), { params: Promise.resolve({ id: 'crop-capsicum' }) })
     expect(res.status).toBe(200)
     const body = await res.json()
     expect(body.crop.species).toHaveLength(2)
     expect(body.crop.speciesCount).toBe(2)
     expect(body.crop.parentGenus).toBeUndefined()
+  })
+})
+
+describe('GET /api/plants/[id] — Wikipedia enrichment', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('includes wikipedia data when fetch succeeds', async () => {
+    vi.mocked(prisma.$queryRaw)
+      .mockResolvedValueOnce([speciescrop])
+      .mockResolvedValueOnce([directCompanion])
+      .mockResolvedValueOnce([])                  // no genus
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(mockWikiOk))
+    const res = await GET(makeReq('crop-annuum'), { params: Promise.resolve({ id: 'crop-annuum' }) })
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.crop.wikipedia).toBeDefined()
+    expect(body.crop.wikipedia.extract).toContain('Capsicum annuum')
+    expect(body.crop.wikipedia.thumbnail).toBe('https://upload.wikimedia.org/thumb/capsicum.jpg')
+    expect(body.crop.wikipedia.articleUrl).toBe('https://en.wikipedia.org/wiki/Capsicum_annuum')
+  })
+
+  it('omits wikipedia when fetch returns non-ok', async () => {
+    vi.mocked(prisma.$queryRaw)
+      .mockResolvedValueOnce([speciescrop])
+      .mockResolvedValueOnce([directCompanion])
+      .mockResolvedValueOnce([])
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(mockWikiFail))
+    const res = await GET(makeReq('crop-annuum'), { params: Promise.resolve({ id: 'crop-annuum' }) })
+    const body = await res.json()
+    expect(body.crop.wikipedia).toBeUndefined()
+  })
+
+  it('omits wikipedia for disambiguation pages', async () => {
+    vi.mocked(prisma.$queryRaw)
+      .mockResolvedValueOnce([speciescrop])
+      .mockResolvedValueOnce([directCompanion])
+      .mockResolvedValueOnce([])
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(mockWikiDisambig))
+    const res = await GET(makeReq('crop-annuum'), { params: Promise.resolve({ id: 'crop-annuum' }) })
+    const body = await res.json()
+    expect(body.crop.wikipedia).toBeUndefined()
+  })
+
+  it('omits wikipedia when fetch throws', async () => {
+    vi.mocked(prisma.$queryRaw)
+      .mockResolvedValueOnce([speciescrop])
+      .mockResolvedValueOnce([directCompanion])
+      .mockResolvedValueOnce([])
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network error')))
+    const res = await GET(makeReq('crop-annuum'), { params: Promise.resolve({ id: 'crop-annuum' }) })
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.crop.wikipedia).toBeUndefined()
   })
 })

@@ -17,6 +17,7 @@ type CropRow = {
   parentGenus?: { id: string; botanicalName: string; name: string }
   species?: Array<{ id: string; botanicalName: string; name: string }>
   speciesCount?: number
+  wikipedia?: { extract?: string; thumbnail?: string; articleUrl?: string }
 }
 
 type CompanionRow = CropRow & {
@@ -86,6 +87,31 @@ export default function PlantPage() {
           </p>
         )}
       </div>
+
+      {crop.wikipedia && (crop.wikipedia.extract || crop.wikipedia.thumbnail) && (
+        <div className="flex gap-4">
+          {crop.wikipedia.thumbnail && (
+            <img
+              src={crop.wikipedia.thumbnail}
+              alt={displayName}
+              className="w-24 h-24 object-cover rounded shrink-0"
+            />
+          )}
+          <div className="space-y-1 min-w-0">
+            {crop.wikipedia.extract && (
+              <p className="text-sm text-muted-foreground line-clamp-4">{crop.wikipedia.extract}</p>
+            )}
+            <div className="flex gap-3 text-xs text-muted-foreground flex-wrap">
+              {crop.wikipedia.articleUrl && (
+                <a href={crop.wikipedia.articleUrl} target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">
+                  {t('wikiReadMore')}
+                </a>
+              )}
+              <span>{t('wikiAttribution')}</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Separator />
 
