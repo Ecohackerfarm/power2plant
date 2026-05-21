@@ -22,6 +22,8 @@
     "research:search": "tsx scripts/research/search-papers.ts",
     "research:extract": "tsx scripts/research/extract.ts",
     "research:import": "tsx scripts/research/import.ts",
+    "research:fetch-abstracts": "tsx scripts/research/fetch-abstracts-from-db.ts",
+    "research:verify-botanical": "tsx scripts/research/verify-botanical.ts",
     "enrich:wikipedia": "tsx scripts/enrich/wikipedia-names.ts",
     "enrich:translate-names": "tsx scripts/enrich/translate-names.ts",
     "orchestrate:status": "NODE_PATH=/home/agent/.local/share/pnpm/global/5/node_modules tsx autodev/scripts/index.ts status",
