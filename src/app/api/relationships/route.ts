@@ -114,7 +114,7 @@ export async function GET(request: Request) {
 
     function localisedCrop(crop: { id: string; name: string; botanicalName: string; commonNames: string[]; translations: { commonNames: string[] }[] }) {
       const { translations, ...rest } = crop
-      return { ...rest, commonNames: translations[0]?.commonNames ?? rest.commonNames }
+      return { ...rest, commonNames: translations?.[0]?.commonNames ?? rest.commonNames }
     }
 
     return NextResponse.json({

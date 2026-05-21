@@ -292,9 +292,9 @@ function makeGetReq(params: string) {
 describe('GET /api/relationships', () => {
   function mockRelationships(overrides: Partial<any>[] = []) {
     const defaults = [
-      { id: 'rel-3', type: 'COMPANION', reason: 'PEST_CONTROL', confidence: 0.75, notes: null, cropA: { id: 'crop-a', name: 'Tomato', botanicalName: 'Solanum lycopersicum' }, cropB: { id: 'crop-b', name: 'Basil', botanicalName: 'Ocimum basilicum' }, _count: { sources: 2 } },
-      { id: 'rel-2', type: 'AVOID', reason: 'ALLELOPATHY', confidence: 0.5, notes: null, cropA: { id: 'crop-c', name: 'Fennel', botanicalName: 'Foeniculum vulgare' }, cropB: { id: 'crop-d', name: 'Dill', botanicalName: 'Anethum graveolens' }, _count: { sources: 1 } },
-      { id: 'rel-1', type: 'COMPANION', reason: 'NUTRIENT', confidence: 0.25, notes: 'Three sisters', cropA: { id: 'crop-e', name: 'Corn', botanicalName: 'Zea mays' }, cropB: { id: 'crop-f', name: 'Bean', botanicalName: 'Phaseolus vulgaris' }, _count: { sources: 3 } },
+      { id: 'rel-3', type: 'COMPANION', reason: 'PEST_CONTROL', confidence: 0.75, notes: null, cropA: { id: 'crop-a', name: 'Tomato', botanicalName: 'Solanum lycopersicum', commonNames: [], translations: [] }, cropB: { id: 'crop-b', name: 'Basil', botanicalName: 'Ocimum basilicum', commonNames: [], translations: [] }, _count: { sources: 2 } },
+      { id: 'rel-2', type: 'AVOID', reason: 'ALLELOPATHY', confidence: 0.5, notes: null, cropA: { id: 'crop-c', name: 'Fennel', botanicalName: 'Foeniculum vulgare', commonNames: [], translations: [] }, cropB: { id: 'crop-d', name: 'Dill', botanicalName: 'Anethum graveolens', commonNames: [], translations: [] }, _count: { sources: 1 } },
+      { id: 'rel-1', type: 'COMPANION', reason: 'NUTRIENT', confidence: 0.25, notes: 'Three sisters', cropA: { id: 'crop-e', name: 'Corn', botanicalName: 'Zea mays', commonNames: [], translations: [] }, cropB: { id: 'crop-f', name: 'Bean', botanicalName: 'Phaseolus vulgaris', commonNames: [], translations: [] }, _count: { sources: 3 } },
     ]
     return overrides.length > 0 ? overrides : defaults
   }
@@ -320,8 +320,8 @@ describe('GET /api/relationships', () => {
       reason: null,
       confidence: 0.25,
       notes: null,
-      cropA: { id: `crop-${i}-a`, name: `CropA-${i}`, botanicalName: null },
-      cropB: { id: `crop-${i}-b`, name: `CropB-${i}`, botanicalName: null },
+      cropA: { id: `crop-${i}-a`, name: `CropA-${i}`, botanicalName: null, commonNames: [], translations: [] },
+      cropB: { id: `crop-${i}-b`, name: `CropB-${i}`, botanicalName: null, commonNames: [], translations: [] },
       _count: { sources: 0 },
     }))
     vi.mocked(prisma.cropRelationship.findMany).mockResolvedValue(rows as any)
@@ -365,7 +365,7 @@ describe('GET /api/relationships', () => {
       .mockResolvedValueOnce([{ id: 'crop-c' }] as any)  // crops matching "Fennel"
       .mockResolvedValueOnce([{ id: 'crop-d' }] as any)  // crops matching "Strawberry"
     const rows = mockRelationships([
-      { id: 'rel-2', type: 'AVOID', reason: 'ALLELOPATHY', confidence: 0.5, notes: null, cropA: { id: 'crop-c', name: 'Fennel', botanicalName: 'Foeniculum vulgare' }, cropB: { id: 'crop-d', name: 'Strawberry', botanicalName: 'Fragaria x ananassa' }, _count: { sources: 1 } },
+      { id: 'rel-2', type: 'AVOID', reason: 'ALLELOPATHY', confidence: 0.5, notes: null, cropA: { id: 'crop-c', name: 'Fennel', botanicalName: 'Foeniculum vulgare', commonNames: [], translations: [] }, cropB: { id: 'crop-d', name: 'Strawberry', botanicalName: 'Fragaria x ananassa', commonNames: [], translations: [] }, _count: { sources: 1 } },
     ])
     vi.mocked(prisma.cropRelationship.findMany).mockResolvedValue(rows as any)
 
