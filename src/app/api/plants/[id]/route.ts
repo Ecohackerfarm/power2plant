@@ -35,7 +35,7 @@ export async function GET(
     SELECT id, name, "botanicalName", "commonNames", "minTempC", "isNitrogenFixer"
     FROM "Crop" WHERE id = ${id}
   `
-  const crop = crops[0]
+  let crop = crops[0]
   if (!crop) return NextResponse.json({ error: 'not found' }, { status: 404 })
 
   const rank = detectRank(crop.botanicalName)
@@ -106,6 +106,22 @@ export async function GET(
     `
     species = speciesRows
     speciesCount = Number(countRows[0].count)
+  }
+
+  // Apply locale translations to crop and companion names
+  if (locale !== 'en') {
+    const cropIds = [crop.id, ...companions.map(c => c.id)]
+    const translations = await prisma.cropTranslation.findMany({
+      where: { cropId: { in: cropIds }, locale },
+      select: { cropId: true, commonNames: true },
+    })
+    const tMap = new Map(
+      translations.filter(t => t.commonNames.length > 0).map(t => [t.cropId, t.commonNames])
+    )
+    const applyT = <T extends { id: string; commonNames: string[] }>(row: T): T =>
+      tMap.has(row.id) ? { ...row, commonNames: tMap.get(row.id)! } : row
+    crop = applyT(crop)
+    companions = companions.map(applyT)
   }
 
   // Wikipedia enrichment — fetch server-side, cache 24h
