@@ -9,31 +9,35 @@ RUN apk add --no-cache \
     freetype \
     harfbuzz \
     ca-certificates \
-    ttf-freefont \
-    openssh
+    ttf-freefont
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser
-# Agent SSH access:
-#   node@ (uid 1000 = agent uid) — for worker agents, avoids EACCES on shared volume
-#   root@ — for direct orchestrator/manual use
-RUN mkdir -p /home/node/.ssh && chmod 700 /home/node/.ssh && chown node:node /home/node/.ssh && \
-    mkdir -p /root/.ssh && chmod 700 /root/.ssh
-COPY deploy_keys/agent.pub /tmp/agent.pub
-COPY deploy_keys/ssh_wrapper.sh /usr/local/bin/ssh_wrapper.sh
-# Force node@ SSH sessions to start in /app — wrapper handles cd + original command
-RUN chmod +x /usr/local/bin/ssh_wrapper.sh && \
-    printf 'command="/usr/local/bin/ssh_wrapper.sh" ' > /home/node/.ssh/authorized_keys && \
-    cat /tmp/agent.pub >> /home/node/.ssh/authorized_keys && \
-    cp /tmp/agent.pub /root/.ssh/authorized_keys
-RUN chmod 600 /home/node/.ssh/authorized_keys /root/.ssh/authorized_keys && \
-    chown node:node /home/node/.ssh/authorized_keys && \
-    passwd -d node && \
-    printf '\nPort 2222\nPasswordAuthentication no\nPermitRootLogin prohibit-password\nStrictModes no\n' >> /etc/ssh/sshd_config
 RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
 ARG FROZEN_LOCKFILE=true
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN if [ "$FROZEN_LOCKFILE" = "true" ]; then pnpm install --frozen-lockfile; else pnpm install; fi
+
+# ---- dev ----
+# Extends deps with sshd for agent access. Never used in production.
+# Pass the agent's public key via AGENT_PUBKEY build arg (store in .env.dev, gitignored).
+FROM deps AS dev
+RUN apk add --no-cache openssh
+ARG AGENT_PUBKEY=""
+RUN mkdir -p /home/node/.ssh && chmod 700 /home/node/.ssh && chown node:node /home/node/.ssh && \
+    mkdir -p /root/.ssh && chmod 700 /root/.ssh
+# Inline wrapper: forces SSH sessions to start in /app
+RUN printf '#!/bin/sh\ncd /app\nif [ -n "$SSH_ORIGINAL_COMMAND" ]; then\n  exec /bin/sh -c "$SSH_ORIGINAL_COMMAND"\nelse\n  exec "$SHELL"\nfi\n' \
+    > /usr/local/bin/ssh_wrapper.sh && chmod +x /usr/local/bin/ssh_wrapper.sh
+# Write authorized_keys only when AGENT_PUBKEY is provided
+RUN if [ -n "$AGENT_PUBKEY" ]; then \
+      printf 'command="/usr/local/bin/ssh_wrapper.sh" %s\n' "$AGENT_PUBKEY" > /home/node/.ssh/authorized_keys && \
+      printf '%s\n' "$AGENT_PUBKEY" > /root/.ssh/authorized_keys && \
+      chmod 600 /home/node/.ssh/authorized_keys /root/.ssh/authorized_keys && \
+      chown node:node /home/node/.ssh/authorized_keys; \
+    fi
+RUN passwd -d node && \
+    printf '\nPort 2222\nPasswordAuthentication no\nPermitRootLogin prohibit-password\nStrictModes no\n' >> /etc/ssh/sshd_config
 
 # ---- prod-deps ----
 # Flat (hoisted) layout so .bin shims have no absolute paths baked in —

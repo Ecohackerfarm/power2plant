@@ -2,9 +2,10 @@ services:
   app:
     build:
       context: .
-      target: deps
+      target: dev
       args:
         FROZEN_LOCKFILE: "false"
+        AGENT_PUBKEY: ${AGENT_PUBKEY:-}
     command: >
       sh -c "
         mkdir -p /run/ssh-persist &&
