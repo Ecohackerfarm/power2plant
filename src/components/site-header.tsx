@@ -4,6 +4,7 @@ import { Link, usePathname } from '@/i18n/navigation'
 import { useTranslations } from 'next-intl'
 import { LocaleSwitcher } from '@/components/locale-switcher'
 import { AuthPanel } from '@/components/auth-panel'
+import { FeedbackButton } from '@/components/feedback-button'
 
 const NAV_ITEMS = [
   { key: 'lookup' as const, href: '/relationships' },
@@ -45,6 +46,7 @@ export function SiteHeader() {
           ))}
         </nav>
         <div className="flex items-center gap-3 shrink-0">
+          <FeedbackButton />
           <LocaleSwitcher />
           <AuthPanel />
         </div>
