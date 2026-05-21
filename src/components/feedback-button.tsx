@@ -87,6 +87,7 @@ function AnnotationCanvas({
     setRect(null)
     setDrawComplete(false)
     draw(null)
+    onConfirm(undefined)
   }
 
   function onMove(e: React.MouseEvent | React.TouchEvent) {
@@ -113,6 +114,7 @@ function AnnotationCanvas({
   useEffect(() => {
     if (!drawComplete || !rect) return
     setDrawComplete(false)
+    onConfirm(rect)
     const area = rect.w * rect.h
     if (area > 0 && area < 0.5) {
       const MARGIN = 0.15
@@ -174,33 +176,27 @@ function AnnotationCanvas({
           />
         </div>
       </div>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => setZoom(z => Math.max(1, +(z - 0.5).toFixed(1)))}
-            disabled={zoom <= 1}
-            className="text-xs px-2 py-1 border rounded disabled:opacity-40 hover:bg-muted"
-          >−</button>
-          <span className="text-xs w-8 text-center tabular-nums">{zoom}×</span>
-          <button
-            type="button"
-            onClick={() => setZoom(z => Math.min(4, +(z + 0.5).toFixed(1)))}
-            disabled={zoom >= 4}
-            className="text-xs px-2 py-1 border rounded disabled:opacity-40 hover:bg-muted"
-          >+</button>
-          <button
-            type="button"
-            onClick={resetZoom}
-            disabled={zoom === 1}
-            className="text-xs px-2 py-1 border rounded disabled:opacity-40 hover:bg-muted ml-1"
-            title="Reset zoom"
-          >↺</button>
-        </div>
-        <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={() => onConfirm(undefined)}>Skip</Button>
-          <Button size="sm" onClick={() => onConfirm(rect ?? undefined)}>Confirm area</Button>
-        </div>
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          onClick={() => setZoom(z => Math.max(1, +(z - 0.5).toFixed(1)))}
+          disabled={zoom <= 1}
+          className="text-xs px-2 py-1 border rounded disabled:opacity-40 hover:bg-muted"
+        >−</button>
+        <span className="text-xs w-8 text-center tabular-nums">{zoom}×</span>
+        <button
+          type="button"
+          onClick={() => setZoom(z => Math.min(4, +(z + 0.5).toFixed(1)))}
+          disabled={zoom >= 4}
+          className="text-xs px-2 py-1 border rounded disabled:opacity-40 hover:bg-muted"
+        >+</button>
+        <button
+          type="button"
+          onClick={resetZoom}
+          disabled={zoom === 1}
+          className="text-xs px-2 py-1 border rounded disabled:opacity-40 hover:bg-muted ml-1"
+          title="Reset zoom"
+        >↺</button>
       </div>
     </div>
   )
