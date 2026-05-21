@@ -37,7 +37,8 @@
   "Nav": {
     "lookup": "Look up a crop",
     "plan": "Plan beds",
-    "garden": "My garden"
+    "garden": "My garden",
+    "admin": "Admin"
   },
   "ZoneDetector": {
     "title": "Step 1 — Your Growing Zone",
