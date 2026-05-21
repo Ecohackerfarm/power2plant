@@ -20,12 +20,62 @@ type Relationship = {
   sourceCount: number
 }
 
+const COMPANION_TYPES = new Set(['COMPANION', 'ATTRACTS', 'NURSE', 'TRAP_CROP'])
+
 function debounce<T extends (...args: string[]) => void>(fn: T, delay: number): T {
   let timeout: NodeJS.Timeout
   return ((...args: string[]) => {
     clearTimeout(timeout)
     timeout = setTimeout(() => fn(...args), delay)
   }) as T
+}
+
+function RelationshipCard({ rel, t }: { rel: Relationship; t: (k: string) => string }) {
+  return (
+    <Link
+      key={rel.id}
+      href={`/plants/${rel.cropA.id}/companions/${rel.cropB.id}`}
+      className="block group"
+    >
+      <Card className="transition-colors group-hover:border-foreground/30">
+        <CardHeader>
+          <div className="flex items-start justify-between gap-4">
+            <CardTitle className="text-base">
+              <span className="font-bold">{getDisplayName(rel.cropA)}</span>
+              {getDisplayName(rel.cropA) !== rel.cropA.botanicalName && (
+                <span className="font-normal italic text-muted-foreground text-xs ml-1">{rel.cropA.botanicalName}</span>
+              )}
+              {' + '}
+              <span className="font-bold">{getDisplayName(rel.cropB)}</span>
+              {getDisplayName(rel.cropB) !== rel.cropB.botanicalName && (
+                <span className="font-normal italic text-muted-foreground text-xs ml-1">{rel.cropB.botanicalName}</span>
+              )}
+            </CardTitle>
+            <div className="flex items-center gap-2 shrink-0">
+              <Badge variant={COMPANION_TYPES.has(rel.type) ? 'default' : 'destructive'}>
+                {COMPANION_TYPES.has(rel.type) ? t('companion') : t('avoid')}
+              </Badge>
+              <ArrowRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {rel.reason && (
+            <p className="text-sm">
+              <span className="text-muted-foreground">{t('reason')}:</span>{' '}
+              {rel.reason}
+            </p>
+          )}
+          <p className="text-sm">
+            <span className="text-muted-foreground">{t('confidence')}:</span> {rel.confidence}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {(t as (k: string, v: Record<string, unknown>) => string)('sourceCount', { count: rel.sourceCount })}
+          </p>
+        </CardContent>
+      </Card>
+    </Link>
+  )
 }
 
 export default function RelationshipsPage() {
@@ -71,10 +121,19 @@ export default function RelationshipsPage() {
     setLoadingMore(false)
   }
 
+  const companions = relationships.filter(r => COMPANION_TYPES.has(r.type))
+  const antagonists = relationships.filter(r => r.type === 'AVOID')
+
   return (
     <main className="max-w-3xl mx-auto px-4 py-8 space-y-6">
-      <div>
+      <div className="flex items-start justify-between gap-4">
         <h1 className="text-3xl font-bold mt-2">{t('title')}</h1>
+        <Link
+          href="/contribute"
+          className="text-sm text-primary hover:underline shrink-0 mt-3"
+        >
+          {t('contributeObservation')}
+        </Link>
       </div>
 
       <Input
@@ -102,53 +161,25 @@ export default function RelationshipsPage() {
         <p className="text-muted-foreground">{t('noObservations')}</p>
       ) : (
         <>
-          <div className="space-y-4">
-            {relationships.map((rel) => (
-              <Link
-                key={rel.id}
-                href={`/plants/${rel.cropA.id}/companions/${rel.cropB.id}`}
-                className="block group"
-              >
-                <Card className="transition-colors group-hover:border-foreground/30">
-                  <CardHeader>
-                    <div className="flex items-start justify-between gap-4">
-                      <CardTitle className="text-base">
-                        <span className="font-bold">{getDisplayName(rel.cropA)}</span>
-                        {getDisplayName(rel.cropA) !== rel.cropA.botanicalName && (
-                          <span className="font-normal italic text-muted-foreground text-xs ml-1">{rel.cropA.botanicalName}</span>
-                        )}
-                        {' + '}
-                        <span className="font-bold">{getDisplayName(rel.cropB)}</span>
-                        {getDisplayName(rel.cropB) !== rel.cropB.botanicalName && (
-                          <span className="font-normal italic text-muted-foreground text-xs ml-1">{rel.cropB.botanicalName}</span>
-                        )}
-                      </CardTitle>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <Badge variant={rel.type === 'COMPANION' ? 'default' : 'destructive'}>
-                          {rel.type === 'COMPANION' ? t('companion') : t('avoid')}
-                        </Badge>
-                        <ArrowRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    {rel.reason && (
-                      <p className="text-sm">
-                        <span className="text-muted-foreground">{t('reason')}:</span>{' '}
-                        {rel.reason}
-                      </p>
-                    )}
-                    <p className="text-sm">
-                      <span className="text-muted-foreground">{t('confidence')}:</span> {rel.confidence}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {t('sourceCount', { count: rel.sourceCount })}
-                    </p>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
+          {companions.length > 0 && (
+            <section className="space-y-4">
+              <h2 className="font-semibold text-lg">
+                {t('companions')}
+                <span className="text-muted-foreground font-normal text-sm ml-2">({companions.length})</span>
+              </h2>
+              {companions.map(rel => <RelationshipCard key={rel.id} rel={rel} t={t as (k: string) => string} />)}
+            </section>
+          )}
+
+          {antagonists.length > 0 && (
+            <section className="space-y-4">
+              <h2 className="font-semibold text-lg">
+                {t('antagonists')}
+                <span className="text-muted-foreground font-normal text-sm ml-2">({antagonists.length})</span>
+              </h2>
+              {antagonists.map(rel => <RelationshipCard key={rel.id} rel={rel} t={t as (k: string) => string} />)}
+            </section>
+          )}
 
           {hasMore && (
             <div className="flex justify-center">

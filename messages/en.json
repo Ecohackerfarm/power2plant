@@ -105,7 +105,10 @@
     "avoid": "Avoid",
     "reason": "Reason",
     "confidence": "Confidence",
-    "sourceCount": "{count, plural, one {# source} other {# sources}}"
+    "sourceCount": "{count, plural, one {# source} other {# sources}}",
+    "companions": "Companions",
+    "antagonists": "Antagonists",
+    "contributeObservation": "Add an observation →"
   },
   "Contribute": {
     "title": "Contribute an observation",
@@ -188,7 +191,8 @@
     "exploreSpecies": "Explore species →",
     "inheritedFrom": "via {genus}",
     "wikiReadMore": "Wikipedia →",
-    "wikiAttribution": "Source: Wikipedia (CC BY-SA)"
+    "wikiAttribution": "Source: Wikipedia (CC BY-SA)",
+    "contributeObservation": "Add an observation →"
   },
   "RelationshipPage": {
     "back": "← Back",

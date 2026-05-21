@@ -105,7 +105,10 @@
     "avoid": "Schlechte Nachbarn",
     "reason": "Grund",
     "confidence": "Zuverlässigkeit",
-    "sourceCount": "{count, plural, one {# Quelle} other {# Quellen}}"
+    "sourceCount": "{count, plural, one {# Quelle} other {# Quellen}}",
+    "companions": "Mischkulturpartner",
+    "antagonists": "Schlechte Nachbarn",
+    "contributeObservation": "Beobachtung hinzufügen →"
   },
   "Contribute": {
     "title": "Beobachtung beitragen",
@@ -188,7 +191,8 @@
     "exploreSpecies": "Arten erkunden →",
     "inheritedFrom": "über {genus}",
     "wikiReadMore": "Wikipedia →",
-    "wikiAttribution": "Quelle: Wikipedia (CC BY-SA)"
+    "wikiAttribution": "Quelle: Wikipedia (CC BY-SA)",
+    "contributeObservation": "Beobachtung hinzufügen →"
   },
   "RelationshipPage": {
     "back": "← Zurück",

@@ -235,6 +235,12 @@ export default function PlantPage() {
             )
           })}
         </ul>
+
+        <div className="mt-4">
+          <Link href="/contribute" className="text-sm text-primary hover:underline">
+            {t('contributeObservation')}
+          </Link>
+        </div>
       </div>
     </main>
   )
