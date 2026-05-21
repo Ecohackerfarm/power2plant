@@ -120,9 +120,10 @@ function AnnotationCanvas({
         (1 - 2 * MARGIN) / rect.w,
         (1 - 2 * MARGIN) / rect.h,
       )))
-      if (newZoom > zoom) {
+      const roundedZoom = +(newZoom.toFixed(1))
+      if (roundedZoom > zoom) {
         pendingScroll.current = rect
-        setZoom(newZoom)
+        setZoom(roundedZoom)
       }
     }
   }, [drawComplete, rect]) // eslint-disable-line react-hooks/exhaustive-deps
