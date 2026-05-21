@@ -61,9 +61,10 @@ export function ZoneDetector({ minTempC, onZoneDetected }: ZoneDetectorProps) {
       </CardHeader>
       <CardContent className="space-y-4">
         {minTempC !== null ? (
-          <p className="text-green-700 font-medium">
-            ✓ {t('detected', { zone: minTempCToZoneName(minTempC) })} ({t('coldestNight', { temp: minTempC })})
-          </p>
+          <div className="text-green-700">
+            <p className="font-medium">✓ {t('detected', { zone: minTempCToZoneName(minTempC) })}</p>
+            <p className="text-sm">{t('averageColdestNight', { temp: minTempC })}</p>
+          </div>
         ) : (
           <p className="text-muted-foreground text-sm">{t('hint')}</p>
         )}

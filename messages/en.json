@@ -46,6 +46,7 @@
     "detecting": "Detecting…",
     "detected": "{zone}",
     "coldestNight": "coldest winter night: {temp}°C",
+    "averageColdestNight": "The average coldest winter night over the last 10 years was {temp}°C.",
     "hint": "We need your location to filter out plants that won't survive your winters.",
     "pickOnMap": "Pick on map instead",
     "hideMap": "Hide map",
