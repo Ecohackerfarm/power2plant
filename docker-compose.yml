@@ -43,4 +43,17 @@ services:
     networks:
       - default
 
+  cron:
+    image: alpine:3.19
+    restart: unless-stopped
+    command: >
+      sh -c "echo '0 7 * * * wget -qO /dev/null --header=\"Authorization: Bearer $$CRON_SECRET\" --post-data= http://app:3000/api/admin/feedback/digest' | crontab - && crond -f -l 8"
+    environment:
+      CRON_SECRET: ${CRON_SECRET}
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - default
+
 volumes: {}
