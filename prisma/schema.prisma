@@ -246,3 +246,41 @@ model verification {
   createdAt  DateTime? @default(now())
   updatedAt  DateTime? @updatedAt
 }
+
+enum FeedbackMode {
+  DATA
+  OTHER
+}
+
+enum FeedbackStatus {
+  OPEN
+  RESOLVED
+  DISMISSED
+}
+
+model Feedback {
+  id           String         @id @default(cuid())
+  mode         FeedbackMode
+  pageUrl      String
+  entityType   String?
+  entityId     String?
+  targetKey    String?
+  screenshot   String?
+  annotation   Json?
+  message      String
+  ipHash       String
+  status       FeedbackStatus @default(OPEN)
+  createdAt    DateTime       @default(now())
+  resolvedAt   DateTime?
+  resolvedNote String?
+
+  @@index([status, createdAt])
+  @@index([ipHash, createdAt])
+}
+
+model AppConfig {
+  id                     String   @id @default("singleton")
+  feedbackDigestEnabled  Boolean  @default(false)
+  feedbackDigestFreq     String   @default("daily")
+  feedbackDigestEmails   String[] @default([])
+}
