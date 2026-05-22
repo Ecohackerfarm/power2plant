@@ -16,6 +16,13 @@ interface Planting {
   status: PlantingStatus
 }
 
+interface BedAnalysis {
+  bedId: string
+  companions: { id: string; cropAName: string; cropBName: string; confidence: number }[]
+  antagonists: { id: string; cropAName: string; cropBName: string }[]
+  unknownCount: number
+}
+
 interface Bed {
   id: string
   name: string
@@ -52,6 +59,7 @@ export const MyGarden = forwardRef<MyGardenRef, MyGardenProps>(function MyGarden
   const t = useTranslations('MyGarden')
   const { data: session } = useSession()
   const [beds, setBeds] = useState<Bed[]>([])
+  const [bedAnalysis, setBedAnalysis] = useState<BedAnalysis[]>([])
   const [loading, setLoading] = useState(false)
   const [shareUrl, setShareUrl] = useState<string | null>(null)
   const [sharing, setSharing] = useState(false)
@@ -60,10 +68,17 @@ export const MyGarden = forwardRef<MyGardenRef, MyGardenProps>(function MyGarden
     if (!session) return
     setLoading(true)
     try {
-      const res = await fetch('/api/garden/plantings')
-      if (res.ok) {
-        const data = await res.json()
+      const [plantingsRes, analysisRes] = await Promise.all([
+        fetch('/api/garden/plantings'),
+        fetch('/api/garden/bed-analysis'),
+      ])
+      if (plantingsRes.ok) {
+        const data = await plantingsRes.json()
         setBeds(data.beds)
+      }
+      if (analysisRes.ok) {
+        const data = await analysisRes.json()
+        setBedAnalysis(data.beds)
       }
     } finally {
       setLoading(false)
@@ -119,28 +134,61 @@ export const MyGarden = forwardRef<MyGardenRef, MyGardenProps>(function MyGarden
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {beds.map((bed) => (
-              <Card key={bed.id}>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base">{bed.name}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-1">
-                    {bed.plantings.map((p) => (
-                      <li key={p.plantingId} className="text-sm flex items-center justify-between gap-2">
-                        <span>{p.cropName}</span>
-                        <button
-                          className={`text-xs font-medium hover:underline ${STATUS_COLOR[p.status]}`}
-                          onClick={() => void cycleStatus(p.plantingId, p.status)}
-                        >
-                          {t(STATUS_KEY[p.status])}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
-            ))}
+            {beds.map((bed) => {
+              const analysis = bedAnalysis.find(a => a.bedId === bed.id)
+              return (
+                <Card key={bed.id}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base">{bed.name}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <ul className="space-y-1">
+                      {bed.plantings.map((p) => (
+                        <li key={p.plantingId} className="text-sm flex items-center justify-between gap-2">
+                          <span>{p.cropName}</span>
+                          <button
+                            className={`text-xs font-medium hover:underline ${STATUS_COLOR[p.status]}`}
+                            onClick={() => void cycleStatus(p.plantingId, p.status)}
+                          >
+                            {t(STATUS_KEY[p.status])}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+
+                    {bed.plantings.length < 2 ? (
+                      <p className="text-xs text-muted-foreground">{t('addMoreForAnalysis')}</p>
+                    ) : analysis ? (
+                      <div className="border-t pt-2 space-y-1">
+                        <p className="text-xs font-medium text-muted-foreground">{t('bedRelationships')}</p>
+                        {analysis.companions.length > 0 && (
+                          <p className="text-xs text-green-600">
+                            ✓ {(t as (k: string, v: Record<string, unknown>) => string)('companions', { count: analysis.companions.length })}
+                          </p>
+                        )}
+                        {analysis.antagonists.length > 0 && (
+                          <details className="text-xs">
+                            <summary className="text-red-600 cursor-pointer">
+                              ✗ {(t as (k: string, v: Record<string, unknown>) => string)('antagonists', { count: analysis.antagonists.length })}
+                            </summary>
+                            <ul className="mt-1 ml-3 space-y-0.5 text-muted-foreground">
+                              {analysis.antagonists.map(a => (
+                                <li key={a.id}>{a.cropAName} × {a.cropBName}</li>
+                              ))}
+                            </ul>
+                          </details>
+                        )}
+                        {analysis.unknownCount > 0 && (
+                          <p className="text-xs text-muted-foreground">
+                            ? {(t as (k: string, v: Record<string, unknown>) => string)('unknownPairs', { count: analysis.unknownCount })}
+                          </p>
+                        )}
+                      </div>
+                    ) : null}
+                  </CardContent>
+                </Card>
+              )
+            })}
           </div>
           <div className="flex flex-wrap items-center gap-3">
             {onAddMore && (

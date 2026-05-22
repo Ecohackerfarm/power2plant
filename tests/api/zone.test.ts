@@ -51,4 +51,24 @@ describe('GET /api/zone', () => {
     const res = await GET(req)
     expect(res.status).toBe(502)
   })
+
+  it('uses dynamic date range — endYear is last complete calendar year, startYear = endYear - 9', async () => {
+    let capturedUrl = ''
+    vi.mocked(fetch).mockImplementation(async (url: RequestInfo | URL) => {
+      capturedUrl = url.toString()
+      return {
+        ok: true,
+        json: async () => makeMeteoResponse(-5, -10),
+      } as Response
+    })
+
+    const req = new Request('http://localhost/api/zone?lat=51.5&lng=-0.1')
+    await GET(req)
+
+    const parsed = new URL(capturedUrl)
+    const endYear = new Date().getUTCFullYear() - 1
+    const startYear = endYear - 9
+    expect(parsed.searchParams.get('end_date')).toBe(`${endYear}-12-31`)
+    expect(parsed.searchParams.get('start_date')).toBe(`${startYear}-01-01`)
+  })
 })

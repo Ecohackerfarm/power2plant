@@ -17,17 +17,23 @@ interface PlantSearchProps {
   onAdd: (cropId: string) => void
   onRemove: (cropId: string) => void
   onClearAll: () => void
+  initialQuery?: string
 }
 
-export function PlantSearch({ wishlistIds, onAdd, onRemove, onClearAll }: PlantSearchProps) {
+export function PlantSearch({ wishlistIds, onAdd, onRemove, onClearAll, initialQuery }: PlantSearchProps) {
   const t = useTranslations('PlantSearch')
   const locale = useLocale()
-  const [query, setQuery] = useState('')
+  const [query, setQuery] = useState(initialQuery ?? '')
   const [results, setResults] = useState<Crop[]>([])
   const [wishlistCrops, setWishlistCrops] = useState<Crop[]>([])
   const [searching, setSearching] = useState(false)
   const [activeIndex, setActiveIndex] = useState(-1)
   const listRef = useRef<HTMLUListElement>(null)
+
+  useEffect(() => {
+    if (initialQuery !== undefined) setQuery(initialQuery)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialQuery])
 
   useEffect(() => {
     const missing = wishlistIds.filter(id => !wishlistCrops.find(c => c.id === id))
@@ -163,6 +169,15 @@ export function PlantSearch({ wishlistIds, onAdd, onRemove, onClearAll }: PlantS
                   {added && (
                     <span className="text-xs text-muted-foreground ml-2 shrink-0">{t('added')}</span>
                   )}
+                  <a
+                    href={`/plants/${crop.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-muted-foreground hover:text-foreground ml-2 shrink-0 underline"
+                    onClick={e => e.stopPropagation()}
+                  >
+                    {t('moreInfo')}
+                  </a>
                 </li>
               )
             })}

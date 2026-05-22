@@ -24,11 +24,14 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'lat must be -90..90 and lng must be -180..180' }, { status: 400 })
   }
 
+  const endYear = new Date().getUTCFullYear() - 1
+  const startYear = endYear - 9
+
   const url = new URL('https://archive-api.open-meteo.com/v1/archive')
   url.searchParams.set('latitude', String(lat))
   url.searchParams.set('longitude', String(lng))
-  url.searchParams.set('start_date', '2019-01-01')
-  url.searchParams.set('end_date', '2023-12-31')
+  url.searchParams.set('start_date', `${startYear}-01-01`)
+  url.searchParams.set('end_date', `${endYear}-12-31`)
   url.searchParams.set('daily', 'temperature_2m_min')
   url.searchParams.set('timezone', 'UTC')
 

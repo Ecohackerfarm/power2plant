@@ -15,6 +15,7 @@ model Crop {
   isNitrogenFixer Boolean            @default(false)
   isCommonCrop    Boolean            @default(false)
   commonNames     String[]           @default([])
+  synonyms        String[]           @default([])
   minTempC        Float?
   imageUrl        String?
   sources         CropSource[]
@@ -246,4 +247,42 @@ model verification {
   expiresAt  DateTime
   createdAt  DateTime? @default(now())
   updatedAt  DateTime? @updatedAt
+}
+
+enum FeedbackMode {
+  DATA
+  OTHER
+}
+
+enum FeedbackStatus {
+  OPEN
+  RESOLVED
+  DISMISSED
+}
+
+model Feedback {
+  id           String         @id @default(cuid())
+  mode         FeedbackMode
+  pageUrl      String
+  entityType   String?
+  entityId     String?
+  targetKey    String?
+  screenshot   String?
+  annotation   Json?
+  message      String
+  ipHash       String
+  status       FeedbackStatus @default(OPEN)
+  createdAt    DateTime       @default(now())
+  resolvedAt   DateTime?
+  resolvedNote String?
+
+  @@index([status, createdAt])
+  @@index([ipHash, createdAt])
+}
+
+model AppConfig {
+  id                     String   @id @default("singleton")
+  feedbackDigestEnabled  Boolean  @default(false)
+  feedbackDigestFreq     String   @default("daily")
+  feedbackDigestEmails   String[] @default([])
 }

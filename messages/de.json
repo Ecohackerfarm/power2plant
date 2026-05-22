@@ -37,7 +37,8 @@
   "Nav": {
     "lookup": "Pflanze nachschlagen",
     "plan": "Beete planen",
-    "garden": "Mein Garten"
+    "garden": "Mein Garten",
+    "admin": "Admin"
   },
   "ZoneDetector": {
     "title": "Schritt 1 — Deine Klimazone",
@@ -46,6 +47,7 @@
     "detecting": "Wird ermittelt…",
     "detected": "{zone}",
     "coldestNight": "kälteste Winternacht: {temp}°C",
+    "averageColdestNight": "Die durchschnittliche kälteste Winternacht der letzten 10 Jahre lag bei {temp}°C.",
     "hint": "Wir benötigen deinen Standort, um Pflanzen auszufiltern, die deinen Winter nicht überleben.",
     "pickOnMap": "Auf der Karte auswählen",
     "hideMap": "Karte ausblenden",
@@ -63,7 +65,8 @@
     "added": "Hinzugefügt",
     "wishlist": "Deine Wunschliste ({count} Pflanzen)",
     "clearAll": "Alle entfernen",
-    "addAtLeast2": "Mindestens 2 Pflanzen für eine Empfehlung hinzufügen."
+    "addAtLeast2": "Mindestens 2 Pflanzen für eine Empfehlung hinzufügen.",
+    "moreInfo": "mehr Info →"
   },
   "BedConfig": {
     "title": "Schritt 3 — Beete",
@@ -103,7 +106,23 @@
     "avoid": "Schlechte Nachbarn",
     "reason": "Grund",
     "confidence": "Zuverlässigkeit",
-    "sourceCount": "{count, plural, one {# Quelle} other {# Quellen}}"
+    "sourceCount": "{count, plural, one {# Quelle} other {# Quellen}}",
+    "companions": "Mischkulturpartner",
+    "antagonists": "Schlechte Nachbarn",
+    "contributeObservation": "Beobachtung hinzufügen →",
+    "COMPANION": "Mischkultur",
+    "AVOID": "Schlechte Nachbarn",
+    "PEST_CONTROL": "Schädlingsbekämpfung",
+    "POLLINATION": "Bestäubung",
+    "NUTRIENT": "Nährstoffaustausch",
+    "SHADE": "Schattennutzung",
+    "ALLELOPATHY": "Natürliches Abwehrmittel",
+    "OTHER": "Sonstiges",
+    "ANECDOTAL": "anekdotisch",
+    "TRADITIONAL": "traditionell",
+    "OBSERVED": "beobachtet",
+    "PEER_REVIEWED": "peer-reviewed",
+    "loadError": "Laden fehlgeschlagen. Bitte erneut versuchen."
   },
   "Contribute": {
     "title": "Beobachtung beitragen",
@@ -179,7 +198,17 @@
     "REPELS": "Schädlinge abwehren",
     "NURSE": "Amme",
     "TRAP_CROP": "Fangpflanze",
-    "OTHER": "Sonstiges"
+    "OTHER": "Sonstiges",
+    "partOfGenus": "Gehört zur Gattung {genus}",
+    "viewGenusPage": "Gattungsseite anzeigen",
+    "speciesSection": "Arten",
+    "seeAllSpecies": "Alle {count} Arten anzeigen →",
+    "speciesExploreHint": "Einzelne Arten können zusätzliche Mischkulturdaten haben.",
+    "exploreSpecies": "Arten erkunden →",
+    "inheritedFrom": "über {genus}",
+    "wikiReadMore": "Wikipedia →",
+    "wikiAttribution": "Quelle: Wikipedia (CC BY-SA)",
+    "contributeObservation": "Beobachtung hinzufügen →"
   },
   "RelationshipPage": {
     "back": "← Zurück",
@@ -227,7 +256,9 @@
     "COMMUNITY": "Community",
     "MANUAL": "Manuell",
     "RESEARCH": "Forschung",
-    "link": "Link"
+    "link": "Link",
+    "genusLevelBanner": "Beziehung auf Gattungsebene definiert ({genusA} ↔ {genusB}) — gilt für alle Arten der Gattung {genus}.",
+    "appliesToAllSpecies": "Gilt für alle Arten der Gattung {genus}."
   },
   "GardenPage": {
     "backHome": "← power2plant",
@@ -257,7 +288,12 @@
     "planted": "gepflanzt",
     "growing": "wächst",
     "harvested": "geerntet",
-    "planned": "geplant"
+    "planned": "geplant",
+    "bedRelationships": "Beziehungen",
+    "companions": "{count} Mischkulturpaar{count, plural, one {} other {e}}",
+    "antagonists": "{count} Konflikt{count, plural, one {} other {e}}",
+    "unknownPairs": "{count} unbekanntes Paar{count, plural, one {} other {e}}",
+    "addMoreForAnalysis": "Füge weitere Pflanzen hinzu, um Beziehungen zu sehen."
   },
   "AddBedForm": {
     "title": "Beet hinzufügen",
@@ -284,5 +320,26 @@
     "traditionalDesc": "Aus der Gartenbautradition überliefert. Weit verbreitet, aber nicht formal untersucht.",
     "anecdotalLabel": "Anekdotisch",
     "anecdotalDesc": "Basiert auf einzelnen Gärtnerberichten oder Volksweisheit. Als Ausgangspunkt betrachten."
+  },
+  "FeedbackButton": {
+    "label": "Problem melden",
+    "title": "Was stimmt nicht?",
+    "dataMode": "Daten — etwas ist falsch",
+    "otherMode": "Sonstiges — visuell / Übersetzung",
+    "cancel": "Abbrechen",
+    "selectTarget": "Klicke auf einen hervorgehobenen Bereich. Escape zum Abbrechen.",
+    "tapTarget": "Tippe auf einen hervorgehobenen Bereich.",
+    "tapConfirm": "Erneut tippen zum Bestätigen.",
+    "targetLabel": "Meldung: {key}",
+    "messagePlaceholder": "Beschreibe das Problem…",
+    "messageLabel": "Details (erforderlich)",
+    "otherMessageLabel": "Details (optional)",
+    "submit": "Absenden",
+    "submitting": "Wird gesendet…",
+    "success": "Danke! Dein Bericht wurde gesendet.",
+    "rateLimit": "Zu viele Meldungen — bitte später erneut versuchen.",
+    "error": "Etwas ist schiefgelaufen. Bitte erneut versuchen.",
+    "drawAnnotation": "Ziehe, um den Problembereich zu markieren.",
+    "screenshotCapturing": "Screenshot wird erstellt…"
   }
 }

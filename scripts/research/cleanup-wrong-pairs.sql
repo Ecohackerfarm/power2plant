@@ -185,6 +185,12 @@ WHERE url = 'https://doi.org/10.54119/discovery.kwgb1918';
 DELETE FROM "RelationshipSource"
 WHERE url = 'https://doi.org/10.63072/aab.23002';
 
+-- ── 10.1080/17429145.2017.1392624 ───────────────────────────────────────────
+-- Paper: Root interactions and tomato/potato onion companion cropping (2017)
+-- "Potato onion" = Allium cepa — asparagus absent → DELETE
+DELETE FROM "RelationshipSource"
+WHERE url = 'https://doi.org/10.1080/17429145.2017.1392624';
+
 -- ── Orphan cleanup ───────────────────────────────────────────────────────────
 -- Remove CropRelationship rows that now have zero RESEARCH sources
 -- and were created solely by the research importer (no PLANTBUDDIES/PFAF sources).

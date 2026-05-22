@@ -1,21 +1,21 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
+import { detectRank, extractGenusWord } from '@/lib/crop-rank'
 
-export async function GET(
-  _req: Request,
-  { params }: { params: Promise<{ id: string; companionId: string }> },
-) {
-  const { id, companionId } = await params
-  const [cropAId, cropBId] = id < companionId ? [id, companionId] : [companionId, id]
+type RelRow = {
+  relId: string; type: string; reason: string | null; reasons: string[]; confidence: number
+  notes: string | null; direction: string
+  cropAId: string; cropAName: string; cropABotanical: string; cropACommonNames: string[]
+  cropANitrogen: boolean
+  cropBId: string; cropBName: string; cropBBotanical: string; cropBCommonNames: string[]
+  cropBNitrogen: boolean
+}
 
-  const rows = await prisma.$queryRaw<Array<{
-    relId: string; type: string; reason: string | null; reasons: string[]; confidence: number
-    notes: string | null; direction: string
-    cropAId: string; cropAName: string; cropABotanical: string; cropACommonNames: string[]
-    cropANitrogen: boolean
-    cropBId: string; cropBName: string; cropBBotanical: string; cropBCommonNames: string[]
-    cropBNitrogen: boolean
-  }>>`
+type GenusRow = { id: string; botanicalName: string }
+
+async function findRelationship(cropAId: string, cropBId: string): Promise<RelRow | null> {
+  const [a, b] = cropAId < cropBId ? [cropAId, cropBId] : [cropBId, cropAId]
+  const rows = await prisma.$queryRaw<RelRow[]>`
     SELECT
       cr.id AS "relId", cr.type, cr.reason, cr.reasons, cr.confidence, cr.notes, cr.direction,
       ca.id AS "cropAId", ca.name AS "cropAName", ca."botanicalName" AS "cropABotanical",
@@ -25,9 +25,65 @@ export async function GET(
     FROM "CropRelationship" cr
     JOIN "Crop" ca ON cr."cropAId" = ca.id
     JOIN "Crop" cb ON cr."cropBId" = cb.id
-    WHERE cr."cropAId" = ${cropAId} AND cr."cropBId" = ${cropBId}
+    WHERE cr."cropAId" = ${a} AND cr."cropBId" = ${b}
   `
-  const rel = rows[0]
+  return rows[0] ?? null
+}
+
+async function findGenusCrop(botanicalName: string): Promise<GenusRow | null> {
+  const genusWord = extractGenusWord(botanicalName)
+  const rows = await prisma.$queryRaw<GenusRow[]>`
+    SELECT id, "botanicalName" FROM "Crop"
+    WHERE "botanicalName" ~ ${`^${genusWord} [A-Z]`}
+    LIMIT 1
+  `
+  return rows[0] ?? null
+}
+
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ id: string; companionId: string }> },
+) {
+  const { id, companionId } = await params
+
+  // Try direct relationship
+  const directRel = await findRelationship(id, companionId)
+
+  let rel: RelRow | null = directRel
+  let genusA: GenusRow | undefined
+  let genusB: GenusRow | undefined
+  let resolvedToGenus = false
+
+  if (!rel) {
+    // Genus fallback: only when both are species
+    const cropRows = await prisma.$queryRaw<Array<{ id: string; botanicalName: string }>>`
+      SELECT id, "botanicalName" FROM "Crop" WHERE id IN (${id}, ${companionId})
+    `
+    const cropA = cropRows.find(r => r.id === id)
+    const cropB = cropRows.find(r => r.id === companionId)
+
+    if (
+      cropA && cropB &&
+      detectRank(cropA.botanicalName) === 'species' &&
+      detectRank(cropB.botanicalName) === 'species'
+    ) {
+      const [genusForA, genusForB] = await Promise.all([
+        findGenusCrop(cropA.botanicalName),
+        findGenusCrop(cropB.botanicalName),
+      ])
+
+      if (genusForA && genusForB) {
+        const genusRel = await findRelationship(genusForA.id, genusForB.id)
+        if (genusRel) {
+          rel = genusRel
+          genusA = genusForA
+          genusB = genusForB
+          resolvedToGenus = true
+        }
+      }
+    }
+  }
+
   if (!rel) return NextResponse.json({ error: 'relationship not found' }, { status: 404 })
 
   const rawSources = await prisma.relationshipSource.findMany({
@@ -88,5 +144,11 @@ export async function GET(
     ...groupedCommunity,
   ]
 
-  return NextResponse.json({ relationship: rel, sources })
+  return NextResponse.json({
+    relationship: {
+      ...rel,
+      ...(resolvedToGenus ? { resolvedToGenus: true, genusA, genusB } : {}),
+    },
+    sources,
+  })
 }

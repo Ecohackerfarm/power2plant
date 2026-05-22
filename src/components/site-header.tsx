@@ -4,6 +4,7 @@ import { Link, usePathname } from '@/i18n/navigation'
 import { useTranslations } from 'next-intl'
 import { LocaleSwitcher } from '@/components/locale-switcher'
 import { AuthPanel } from '@/components/auth-panel'
+import { FeedbackButton } from '@/components/feedback-button'
 
 const NAV_ITEMS = [
   { key: 'lookup' as const, href: '/relationships' },
@@ -18,7 +19,7 @@ function isActive(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(href + '/')
 }
 
-export function SiteHeader() {
+export function SiteHeader({ isAdmin = false }: { isAdmin?: boolean }) {
   const t = useTranslations('Nav')
   const pathname = usePathname()
 
@@ -43,8 +44,21 @@ export function SiteHeader() {
               {t(key)}
             </Link>
           ))}
+          {isAdmin && (
+            <Link
+              href="/admin/feedback"
+              className={`px-3 py-1.5 rounded text-sm transition-colors ${
+                isActive(pathname, '/admin')
+                  ? 'font-semibold text-foreground underline decoration-primary decoration-2 underline-offset-4'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {t('admin')}
+            </Link>
+          )}
         </nav>
         <div className="flex items-center gap-3 shrink-0">
+          <FeedbackButton />
           <LocaleSwitcher />
           <AuthPanel />
         </div>

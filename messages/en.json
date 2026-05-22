@@ -37,7 +37,8 @@
   "Nav": {
     "lookup": "Look up a crop",
     "plan": "Plan beds",
-    "garden": "My garden"
+    "garden": "My garden",
+    "admin": "Admin"
   },
   "ZoneDetector": {
     "title": "Step 1 — Your Growing Zone",
@@ -46,6 +47,7 @@
     "detecting": "Detecting…",
     "detected": "{zone}",
     "coldestNight": "coldest winter night: {temp}°C",
+    "averageColdestNight": "The average coldest winter night over the last 10 years was {temp}°C.",
     "hint": "We need your location to filter out plants that won't survive your winters.",
     "pickOnMap": "Pick on map instead",
     "hideMap": "Hide map",
@@ -63,7 +65,8 @@
     "added": "Added",
     "wishlist": "Your wishlist ({count} plants)",
     "clearAll": "Clear all",
-    "addAtLeast2": "Add at least 2 plants to get a recommendation."
+    "addAtLeast2": "Add at least 2 plants to get a recommendation.",
+    "moreInfo": "more info →"
   },
   "BedConfig": {
     "title": "Step 3 — Beds",
@@ -103,7 +106,23 @@
     "avoid": "Avoid",
     "reason": "Reason",
     "confidence": "Confidence",
-    "sourceCount": "{count, plural, one {# source} other {# sources}}"
+    "sourceCount": "{count, plural, one {# source} other {# sources}}",
+    "companions": "Companions",
+    "antagonists": "Antagonists",
+    "contributeObservation": "Add an observation →",
+    "COMPANION": "Companion",
+    "AVOID": "Avoid",
+    "PEST_CONTROL": "Pest Control",
+    "POLLINATION": "Pollination",
+    "NUTRIENT": "Nutrient Sharing",
+    "SHADE": "Shade Benefit",
+    "ALLELOPATHY": "Natural Repellent",
+    "OTHER": "Other",
+    "ANECDOTAL": "anecdotal",
+    "TRADITIONAL": "traditional",
+    "OBSERVED": "observed",
+    "PEER_REVIEWED": "peer-reviewed",
+    "loadError": "Failed to load relationships. Please try again."
   },
   "Contribute": {
     "title": "Contribute an observation",
@@ -179,7 +198,17 @@
     "REPELS": "Repels Pests",
     "NURSE": "Nurse Plant",
     "TRAP_CROP": "Trap Crop",
-    "OTHER": "Other"
+    "OTHER": "Other",
+    "partOfGenus": "Part of the {genus} genus",
+    "viewGenusPage": "View genus page",
+    "speciesSection": "Species",
+    "seeAllSpecies": "See all {count} species →",
+    "speciesExploreHint": "Individual species may have additional companion data.",
+    "exploreSpecies": "Explore species →",
+    "inheritedFrom": "via {genus}",
+    "wikiReadMore": "Wikipedia →",
+    "wikiAttribution": "Source: Wikipedia (CC BY-SA)",
+    "contributeObservation": "Add an observation →"
   },
   "RelationshipPage": {
     "back": "← Back",
@@ -227,7 +256,9 @@
     "COMMUNITY": "Community",
     "MANUAL": "Manual",
     "RESEARCH": "Research",
-    "link": "link"
+    "link": "link",
+    "genusLevelBanner": "Relationship defined at genus level ({genusA} ↔ {genusB}) — applies to all {genus} species.",
+    "appliesToAllSpecies": "Applies to all {genus} species."
   },
   "GardenPage": {
     "backHome": "← power2plant",
@@ -257,7 +288,12 @@
     "planted": "planted",
     "growing": "growing",
     "harvested": "harvested",
-    "planned": "planned"
+    "planned": "planned",
+    "bedRelationships": "Relationships",
+    "companions": "{count} companion pair{count, plural, one {} other {s}}",
+    "antagonists": "{count} conflict{count, plural, one {} other {s}}",
+    "unknownPairs": "{count} unknown pair{count, plural, one {} other {s}}",
+    "addMoreForAnalysis": "Add more plants to see relationships."
   },
   "AddBedForm": {
     "title": "Add a bed",
@@ -284,5 +320,26 @@
     "traditionalDesc": "Passed down through gardening tradition. Widely practiced but not formally studied.",
     "anecdotalLabel": "Anecdotal",
     "anecdotalDesc": "Based on individual gardener reports or folk wisdom. Treat as a starting point."
+  },
+  "FeedbackButton": {
+    "label": "Report an issue",
+    "title": "What's wrong?",
+    "dataMode": "Data — something incorrect",
+    "otherMode": "Other — visual / translation",
+    "cancel": "Cancel",
+    "selectTarget": "Click a highlighted section to report an issue. Press Escape to cancel.",
+    "tapTarget": "Tap a highlighted section.",
+    "tapConfirm": "Tap again to confirm.",
+    "targetLabel": "Reporting: {key}",
+    "messagePlaceholder": "Describe the issue…",
+    "messageLabel": "Details (required)",
+    "otherMessageLabel": "Details (optional)",
+    "submit": "Submit",
+    "submitting": "Sending…",
+    "success": "Thanks! Your report has been sent.",
+    "rateLimit": "Too many reports — try again later.",
+    "error": "Something went wrong. Please try again.",
+    "drawAnnotation": "Drag to highlight the problem area.",
+    "screenshotCapturing": "Capturing screenshot…"
   }
 }

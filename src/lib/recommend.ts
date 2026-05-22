@@ -7,7 +7,7 @@ export type CropInput = {
 }
 
 function toTitleCase(str: string): string {
-  return str.replace(/\b\w/g, c => c.toUpperCase())
+  return str.replace(/(^|[\s-])(\S)/g, (_, sep, c) => sep + c.toUpperCase())
 }
 
 export function getDisplayName(crop: Pick<CropInput, 'name' | 'botanicalName' | 'commonNames'>): string {

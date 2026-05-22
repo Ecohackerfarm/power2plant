@@ -165,3 +165,15 @@
     @apply font-sans;
     }
 }
+
+/* Feedback element selection mode */
+[data-feedback-selecting] [data-feedback-target] {
+  cursor: crosshair !important;
+  outline: 2px dashed #93c5fd;
+  outline-offset: 2px;
+}
+
+[data-feedback-selecting] [data-feedback-target].feedback-highlight {
+  outline: 2px solid #3b82f6;
+  background-color: rgba(59, 130, 246, 0.06);
+}

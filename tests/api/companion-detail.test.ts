@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { GET } from '@/app/api/plants/[id]/companions/[companionId]/route'
 
 vi.mock('@/lib/prisma', () => ({
@@ -115,5 +115,79 @@ describe('GET /api/plants/[id]/companions/[companionId]', () => {
     })
     const body = await res.json()
     expect(body.sources[0].sourceType).toBe('SCIENTIFIC_PAPER')
+  })
+})
+
+describe('GET /api/plants/[id]/companions/[companionId] — genus fallback', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  const annuum = { id: 'crop-annuum', botanicalName: 'Capsicum annuum' }
+  const basilicum = { id: 'crop-basil', botanicalName: 'Ocimum basilicum' }
+  const capsicumGenus = { id: 'crop-capsicum', botanicalName: 'Capsicum L.' }
+  const ocimumGenus = { id: 'crop-ocimum', botanicalName: 'Ocimum L.' }
+
+  const genusRel = {
+    relId: 'rel-genus', type: 'COMPANION', reason: null, reasons: [], confidence: 3,
+    notes: null, direction: 'MUTUAL',
+    cropAId: 'crop-capsicum', cropAName: 'Capsicum', cropABotanical: 'Capsicum L.',
+    cropACommonNames: [], cropANitrogen: false,
+    cropBId: 'crop-ocimum', cropBName: 'Ocimum', cropBBotanical: 'Ocimum L.',
+    cropBCommonNames: [], cropBNitrogen: false,
+  }
+
+  it('resolves to genus relationship when no direct relationship found', async () => {
+    vi.mocked(prisma.$queryRaw)
+      .mockResolvedValueOnce([])                           // direct lookup → none
+      .mockResolvedValueOnce([annuum, basilicum])          // fetch both crops
+      .mockResolvedValueOnce([capsicumGenus])              // genus for annuum
+      .mockResolvedValueOnce([ocimumGenus])                // genus for basilicum
+      .mockResolvedValueOnce([genusRel])                   // genus relationship
+    vi.mocked(prisma.relationshipSource.findMany).mockResolvedValue([])
+
+    const res = await GET(makeReq('crop-annuum', 'crop-basil'), {
+      params: Promise.resolve({ id: 'crop-annuum', companionId: 'crop-basil' }),
+    })
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.relationship.resolvedToGenus).toBe(true)
+    expect(body.relationship.genusA).toEqual({ id: 'crop-capsicum', botanicalName: 'Capsicum L.' })
+    expect(body.relationship.genusB).toEqual({ id: 'crop-ocimum', botanicalName: 'Ocimum L.' })
+    expect(body.relationship.relId).toBe('rel-genus')
+  })
+
+  it('returns 404 when no direct and no genus relationship found', async () => {
+    vi.mocked(prisma.$queryRaw)
+      .mockResolvedValueOnce([])                           // direct → none
+      .mockResolvedValueOnce([annuum, basilicum])          // crops
+      .mockResolvedValueOnce([capsicumGenus])              // genus A
+      .mockResolvedValueOnce([ocimumGenus])                // genus B
+      .mockResolvedValueOnce([])                           // genus rel → none
+    const res = await GET(makeReq('crop-annuum', 'crop-basil'), {
+      params: Promise.resolve({ id: 'crop-annuum', companionId: 'crop-basil' }),
+    })
+    expect(res.status).toBe(404)
+  })
+
+  it('returns 404 when one species has no genus crop', async () => {
+    vi.mocked(prisma.$queryRaw)
+      .mockResolvedValueOnce([])                           // direct → none
+      .mockResolvedValueOnce([annuum, basilicum])          // crops
+      .mockResolvedValueOnce([capsicumGenus])              // genus A
+      .mockResolvedValueOnce([])                           // genus B → none
+    const res = await GET(makeReq('crop-annuum', 'crop-basil'), {
+      params: Promise.resolve({ id: 'crop-annuum', companionId: 'crop-basil' }),
+    })
+    expect(res.status).toBe(404)
+  })
+
+  it('direct relationships are unaffected — resolvedToGenus absent', async () => {
+    vi.mocked(prisma.$queryRaw).mockResolvedValueOnce([fakeRel])
+    vi.mocked(prisma.relationshipSource.findMany).mockResolvedValue([])
+    const res = await GET(makeReq('crop-a', 'crop-b'), {
+      params: Promise.resolve({ id: 'crop-a', companionId: 'crop-b' }),
+    })
+    const body = await res.json()
+    expect(body.relationship.resolvedToGenus).toBeUndefined()
+    expect(body.relationship.genusA).toBeUndefined()
   })
 })
