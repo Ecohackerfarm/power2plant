@@ -93,7 +93,9 @@
     "overflowHint": "Add more beds or increase capacity to fit these plants.",
     "conflicts": "Conflicts — incompatible plants in same bed",
     "conflictItem": "{a} and {b} should not share a bed",
-    "conflictsHint": "Add more beds to separate these plants."
+    "conflictsHint": "Add more beds to separate these plants.",
+    "noDataTitle": "We don't have data for these pairs yet",
+    "requestResearch": "Request research →"
   },
   "Relationships": {
     "title": "Community observations",

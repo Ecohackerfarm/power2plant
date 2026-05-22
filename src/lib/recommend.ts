@@ -32,10 +32,20 @@ export type BedHint = {
   confidenceLevel: string // "traditional"
 }
 
+// Intra-bed crop pair with no companion-planting data at all (not even a weak
+// relationship row in the DB). Surfaced to invite users to fund/request
+// research for the combination.
+export type NoDataPair = {
+  cropAId: string
+  cropBId: string
+  pairLabel: string       // "Tomato & Pepper"
+}
+
 export type BedResult = {
   index: number
   crops: CropInput[]
   hints: BedHint[]
+  noDataPairs: NoDataPair[]
 }
 
 export type RecommendResult = {
@@ -211,15 +221,26 @@ function runPlacement(
     }
   }
 
-  // Generate per-bed hints from positive companion pairs
+  // Generate per-bed hints from positive companion pairs and surface pairs
+  // that have no relationship records at all so users can request research.
   const bedResults: BedResult[] = beds.map((bedCrops, index) => {
     const hints: BedHint[] = []
+    const noDataPairs: NoDataPair[] = []
     for (let i = 0; i < bedCrops.length; i++) {
       for (let j = i + 1; j < bedCrops.length; j++) {
         const a = bedCrops[i]
         const b = bedCrops[j]
+        const key = pairKey(a.id, b.id)
+        if (!weights.has(key)) {
+          noDataPairs.push({
+            cropAId: a.id < b.id ? a.id : b.id,
+            cropBId: a.id < b.id ? b.id : a.id,
+            pairLabel: `${getDisplayName(a)} & ${getDisplayName(b)}`,
+          })
+          continue
+        }
         if (getWeight(weights, a.id, b.id) > 0) {
-          const rel = relMap.get(pairKey(a.id, b.id))
+          const rel = relMap.get(key)
           if (rel) {
             const { details, confidenceLevel } = buildHint(rel)
             hints.push({
@@ -233,7 +254,7 @@ function runPlacement(
         }
       }
     }
-    return { index, crops: bedCrops, hints }
+    return { index, crops: bedCrops, hints, noDataPairs }
   })
 
   return { beds: bedResults, overflow, conflicts, duplicatedCropIds: [...duplicatedIds] }
