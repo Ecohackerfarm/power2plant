@@ -15,6 +15,8 @@ interface ExtractedRelationship {
   doi: string | null
   title: string
   year: number
+  cropAFound?: boolean
+  cropBFound?: boolean
 }
 
 interface AggregatedPair {
@@ -90,7 +92,11 @@ async function main(): Promise<void> {
   const raw: ExtractedRelationship[] = JSON.parse(readFileSync(extractedPath, 'utf-8'))
 
   console.log(`Loaded ${raw.length} extracted relationships`)
-  const pairs = aggregateByPair(raw)
+  const verified = raw.filter(r => (r.cropAFound ?? true) && (r.cropBFound ?? true))
+  if (verified.length < raw.length) {
+    console.log(`Filtered out ${raw.length - verified.length} entries where abstract did not confirm both crops`)
+  }
+  const pairs = aggregateByPair(verified)
   console.log(`Aggregated into ${pairs.length} unique crop pairs`)
 
   let imported = 0

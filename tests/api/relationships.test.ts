@@ -300,6 +300,27 @@ describe('GET /api/relationships', () => {
     return overrides.length > 0 ? overrides : defaults
   }
 
+  describe('confidence label thresholds (bug #133: route used >= 1.0, recommend.ts uses >= 0.875)', () => {
+    const cases: Array<[number, string]> = [
+      [1.0,   'PEER_REVIEWED'],
+      [0.9,   'PEER_REVIEWED'],
+      [0.875, 'PEER_REVIEWED'],
+      [0.874, 'OBSERVED'],
+      [0.625, 'OBSERVED'],
+      [0.624, 'TRADITIONAL'],
+      [0.375, 'TRADITIONAL'],
+      [0.374, 'ANECDOTAL'],
+      [0.0,   'ANECDOTAL'],
+    ]
+    it.each(cases)('confidence %f → %s', async (confidence, expected) => {
+      const row = { id: 'rel-1', type: 'COMPANION', reason: null, confidence, notes: null, cropA: { id: 'a', name: 'A', botanicalName: 'A', commonNames: [], translations: [] }, cropB: { id: 'b', name: 'B', botanicalName: 'B', commonNames: [], translations: [] }, _count: { sources: 1 } }
+      vi.mocked(prisma.cropRelationship.findMany).mockResolvedValue([row] as any)
+      const res = await GET(makeGetReq(''))
+      const body = await res.json()
+      expect(body.relationships[0].confidence).toBe(expected)
+    })
+  })
+
   it('returns 200 with array of relationships and no nextCursor when results fit in one page', async () => {
     const rows = mockRelationships()
     vi.mocked(prisma.cropRelationship.findMany).mockResolvedValue(rows as any)

@@ -17,6 +17,8 @@ type Extraction = {
   reason: 'PEST_CONTROL' | 'POLLINATION' | 'NUTRIENT' | 'SHADE' | 'ALLELOPATHY' | 'OTHER' | null
   confidence: number
   notes: string
+  cropAFound: boolean
+  cropBFound: boolean
 }
 
 type Extracted = Paper & Extraction
@@ -36,8 +38,10 @@ Extract:
 2. reason: Primary mechanism if known (PEST_CONTROL, POLLINATION, NUTRIENT, SHADE, ALLELOPATHY, OTHER, or null)
 3. confidence: 0.0-1.0, how strongly does the abstract support this conclusion?
 4. notes: One sentence (max 200 chars) summarizing the finding.
+5. cropAFound: true if the abstract actually studies or mentions ${cropA} (any name variant), false if it only appears in the search query context.
+6. cropBFound: true if the abstract actually studies or mentions ${cropB} (any name variant), false if it only appears in the search query context.
 
-Respond ONLY with valid JSON: {"type": ..., "reason": ..., "confidence": ..., "notes": ...}`
+Respond ONLY with valid JSON: {"type": ..., "reason": ..., "confidence": ..., "notes": ..., "cropAFound": ..., "cropBFound": ...}`
 }
 
 function stripCodeFences(text: string): string {
@@ -81,6 +85,9 @@ async function extractFromPaper(paper: Paper): Promise<Extraction | null> {
       console.warn(`Invalid confidence for ${paper.paperId}: ${parsed.confidence}`)
       return null
     }
+    // Default to true for backwards-compatibility with older extracted.json entries
+    if (parsed.cropAFound === undefined) parsed.cropAFound = true
+    if (parsed.cropBFound === undefined) parsed.cropBFound = true
 
     return parsed
   } catch (err) {
@@ -106,8 +113,13 @@ async function main(): Promise<void> {
     const extraction = await extractFromPaper(paper)
 
     if (extraction && extraction.type !== 'UNKNOWN' && extraction.confidence >= 0.5) {
-      results.push({ ...paper, ...extraction })
-      console.log(`Paper ${i + 1}/${papers.length}: ${paper.cropA} + ${paper.cropB} → ${extraction.type} (${extraction.confidence})`)
+      if (!extraction.cropAFound || !extraction.cropBFound) {
+        const missing = [!extraction.cropAFound && paper.cropA, !extraction.cropBFound && paper.cropB].filter(Boolean).join(', ')
+        console.log(`Paper ${i + 1}/${papers.length}: ${paper.cropA} + ${paper.cropB} → skipped (abstract does not mention: ${missing})`)
+      } else {
+        results.push({ ...paper, ...extraction })
+        console.log(`Paper ${i + 1}/${papers.length}: ${paper.cropA} + ${paper.cropB} → ${extraction.type} (${extraction.confidence})`)
+      }
     } else if (extraction) {
       console.log(`Paper ${i + 1}/${papers.length}: ${paper.cropA} + ${paper.cropB} → skipped (${extraction.type}, confidence ${extraction.confidence})`)
     } else {
