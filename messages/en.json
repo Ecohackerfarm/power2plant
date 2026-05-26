@@ -27,7 +27,7 @@
   "Landing": {
     "title": "power2plant",
     "subtitle": "Companion planting garden planner",
-    "lookupTitle": "Look up a crop",
+    "lookupTitle": "Find companion plant",
     "lookupDesc": "Find companions and antagonists for any plant",
     "planTitle": "Plan beds",
     "planDesc": "Know what you want to grow — find what fits together",
@@ -35,7 +35,7 @@
     "gardenDesc": "See how the plants in your beds get along"
   },
   "Nav": {
-    "lookup": "Look up a crop",
+    "lookup": "Find companion plant",
     "plan": "Plan beds",
     "garden": "My garden",
     "admin": "Admin"

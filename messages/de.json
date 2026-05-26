@@ -27,7 +27,7 @@
   "Landing": {
     "title": "power2plant",
     "subtitle": "Begleitpflanzung — Gartenplaner",
-    "lookupTitle": "Pflanze nachschlagen",
+    "lookupTitle": "Begleitpflanze finden",
     "lookupDesc": "Begleiter und Antagonisten für jede Pflanze finden",
     "planTitle": "Beete planen",
     "planDesc": "Du weißt, was du anbauen willst — finde, was zusammenpasst",
@@ -35,7 +35,7 @@
     "gardenDesc": "Schau, wie die Pflanzen in deinen Beeten miteinander auskommen"
   },
   "Nav": {
-    "lookup": "Pflanze nachschlagen",
+    "lookup": "Begleitpflanze finden",
     "plan": "Beete planen",
     "garden": "Mein Garten",
     "admin": "Admin"
