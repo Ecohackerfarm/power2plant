@@ -323,6 +323,15 @@
     "anecdotalLabel": "Anekdotisch",
     "anecdotalDesc": "Basiert auf einzelnen Gärtnerberichten oder Volksweisheit. Als Ausgangspunkt betrachten."
   },
+  "ResearchRequests": {
+    "title": "Forschungsanfragen",
+    "description": "Pflanzenkombinationen ohne Begleitpflanzungsdaten. Stimme ab, um zu zeigen, was die Community am dringendsten braucht.",
+    "loading": "Lädt…",
+    "empty": "Noch keine Forschungsanfragen. Fehlende Daten für ein Pflanzenpaar erscheinen hier.",
+    "loginToVote": "Melde dich an, um für die gewünschten Paare abzustimmen.",
+    "vote": "Abstimmen",
+    "voted": "Abgestimmt"
+  },
   "FeedbackButton": {
     "label": "Problem melden",
     "title": "Was stimmt nicht?",

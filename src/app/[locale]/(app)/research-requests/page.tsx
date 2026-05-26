@@ -1,0 +1,179 @@
+'use client'
+import { useState, useEffect, useCallback } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { useTranslations } from 'next-intl'
+import { useSession } from '@/lib/auth-client'
+import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { getDisplayName } from '@/lib/recommend'
+import { ThumbsUp } from 'lucide-react'
+
+type Crop = { id: string; name: string; botanicalName: string; commonNames: string[] }
+
+type ResearchRequestItem = {
+  id: string
+  cropAId: string
+  cropBId: string
+  voteCount: number
+  createdAt: string
+  cropA: Crop
+  cropB: Crop
+  hasVoted: boolean
+}
+
+function PairCard({
+  item,
+  highlighted,
+  onVote,
+  canVote,
+  t,
+}: {
+  item: ResearchRequestItem
+  highlighted: boolean
+  onVote: (id: string, cropAId: string, cropBId: string) => void
+  canVote: boolean
+  t: ReturnType<typeof useTranslations>
+}) {
+  const [voting, setVoting] = useState(false)
+
+  async function handleVote() {
+    setVoting(true)
+    await onVote(item.id, item.cropAId, item.cropBId)
+    setVoting(false)
+  }
+
+  return (
+    <Card
+      id={`pair-${item.cropAId}-${item.cropBId}`}
+      className={highlighted ? 'border-primary ring-1 ring-primary' : ''}
+    >
+      <CardContent className="flex items-center justify-between gap-4 py-4">
+        <div className="min-w-0">
+          <p className="font-medium">
+            {getDisplayName(item.cropA)}
+            <span className="text-muted-foreground mx-2">&amp;</span>
+            {getDisplayName(item.cropB)}
+          </p>
+          <p className="text-xs text-muted-foreground italic">
+            {item.cropA.botanicalName} × {item.cropB.botanicalName}
+          </p>
+        </div>
+        <div className="flex items-center gap-3 shrink-0">
+          <Badge variant="secondary" className="tabular-nums">
+            <ThumbsUp className="w-3 h-3 mr-1" />
+            {item.voteCount}
+          </Badge>
+          <Button
+            size="sm"
+            variant={item.hasVoted ? 'secondary' : 'default'}
+            disabled={!canVote || item.hasVoted || voting}
+            onClick={handleVote}
+          >
+            {item.hasVoted ? t('voted') : t('vote')}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+export default function ResearchRequestsPage() {
+  const t = useTranslations('ResearchRequests')
+  const { data: session } = useSession()
+  const searchParams = useSearchParams()
+  const deepA = searchParams.get('a')
+  const deepB = searchParams.get('b')
+
+  const [items, setItems] = useState<ResearchRequestItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [deepVoted, setDeepVoted] = useState(false)
+
+  const fetchItems = useCallback(async () => {
+    const res = await fetch('/api/research-requests')
+    if (res.ok) {
+      const data = await res.json() as ResearchRequestItem[]
+      setItems(data)
+    }
+    setLoading(false)
+  }, [])
+
+  useEffect(() => { void fetchItems() }, [fetchItems])
+
+  // Auto-vote for the deep-linked pair once session is available
+  useEffect(() => {
+    if (!session || !deepA || !deepB || deepVoted) return
+    setDeepVoted(true)
+    void fetch('/api/research-requests', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cropAId: deepA, cropBId: deepB }),
+    }).then(() => fetchItems())
+  }, [session, deepA, deepB, deepVoted, fetchItems])
+
+  // Scroll to highlighted pair after load
+  useEffect(() => {
+    if (!deepA || !deepB || loading) return
+    const normalA = deepA < deepB ? deepA : deepB
+    const normalB = deepA < deepB ? deepB : deepA
+    const el = document.getElementById(`pair-${normalA}-${normalB}`)
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [deepA, deepB, loading])
+
+  async function handleVote(_id: string, cropAId: string, cropBId: string) {
+    if (!session) return
+    const res = await fetch('/api/research-requests', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cropAId, cropBId }),
+    })
+    if (res.ok) {
+      await fetchItems()
+    }
+  }
+
+  function isHighlighted(item: ResearchRequestItem): boolean {
+    if (!deepA || !deepB) return false
+    const normalA = deepA < deepB ? deepA : deepB
+    const normalB = deepA < deepB ? deepB : deepA
+    return item.cropAId === normalA && item.cropBId === normalB
+  }
+
+  return (
+    <div className="max-w-2xl mx-auto px-4 py-8">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold mb-1">{t('title')}</h1>
+        <p className="text-sm text-muted-foreground">{t('description')}</p>
+      </div>
+
+      {loading && (
+        <p className="text-muted-foreground text-sm">{t('loading')}</p>
+      )}
+
+      {!loading && items.length === 0 && (
+        <Card>
+          <CardContent className="py-8 text-center text-muted-foreground text-sm">
+            {t('empty')}
+          </CardContent>
+        </Card>
+      )}
+
+      {!loading && !session && items.length > 0 && (
+        <p className="text-sm text-muted-foreground mb-4">{t('loginToVote')}</p>
+      )}
+
+      <div className="space-y-2">
+        {items.map(item => (
+          <PairCard
+            key={item.id}
+            item={item}
+            highlighted={isHighlighted(item)}
+            onVote={handleVote}
+            canVote={!!session}
+            t={t}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}

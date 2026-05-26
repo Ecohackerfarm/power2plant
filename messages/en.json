@@ -323,6 +323,15 @@
     "anecdotalLabel": "Anecdotal",
     "anecdotalDesc": "Based on individual gardener reports or folk wisdom. Treat as a starting point."
   },
+  "ResearchRequests": {
+    "title": "Research requests",
+    "description": "Pairs with no companion-planting data yet. Vote to signal what the community most needs.",
+    "loading": "Loading…",
+    "empty": "No research requests yet. When our data is missing for a plant pair, it will appear here.",
+    "loginToVote": "Sign in to vote for the pairs you'd like researched.",
+    "vote": "Vote",
+    "voted": "Voted"
+  },
   "FeedbackButton": {
     "label": "Report an issue",
     "title": "What's wrong?",
