@@ -128,6 +128,43 @@ describe('recommend()', () => {
     expect(basilBeds.length).toBeGreaterThanOrEqual(2)
   })
 
+  describe('noDataPairs', () => {
+    it('lists in-bed pairs that have no relationship records at all', () => {
+      // Two crops forced into one bed with zero relationships between them
+      const crops = [makeCrop('tomato'), makeCrop('pepper')]
+      const result = recommend(crops, [], 1, 2, 0)
+      const filled = result.beds.filter(b => b.crops.length > 0)
+      expect(filled).toHaveLength(1)
+      expect(filled[0].noDataPairs).toHaveLength(1)
+      const pair = filled[0].noDataPairs[0]
+      expect([pair.cropAId, pair.cropBId].sort()).toEqual(['pepper', 'tomato'])
+      expect(pair.pairLabel).toContain('&')
+    })
+
+    it('omits pairs that have any relationship record from noDataPairs', () => {
+      const crops = [makeCrop('tomato'), makeCrop('basil')]
+      const rels = [companion('tomato', 'basil')]
+      const result = recommend(crops, rels, 1, 2, 0)
+      const filled = result.beds.filter(b => b.crops.length > 0)
+      expect(filled[0].noDataPairs).toHaveLength(0)
+    })
+
+    it('returns canonical pair ids (sorted) so deep-links are stable', () => {
+      const crops = [makeCrop('zebra'), makeCrop('apple')]
+      const result = recommend(crops, [], 1, 2, 0)
+      const pair = result.beds.find(b => b.crops.length > 0)!.noDataPairs[0]
+      expect(pair.cropAId).toBe('apple')
+      expect(pair.cropBId).toBe('zebra')
+    })
+
+    it('empty beds have no noDataPairs', () => {
+      const result = recommend([], [], 2, 3, 0)
+      for (const bed of result.beds) {
+        expect(bed.noDataPairs).toEqual([])
+      }
+    })
+  })
+
   describe('existingBeds parameter', () => {
     it('locks crops in place in correct beds', () => {
       const crops = [makeCrop('tomato'), makeCrop('basil'), makeCrop('carrot')]

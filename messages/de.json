@@ -93,7 +93,9 @@
     "overflowHint": "Mehr Beete hinzufügen oder Kapazität erhöhen.",
     "conflicts": "Konflikte — unverträgliche Pflanzen im selben Beet",
     "conflictItem": "{a} und {b} sollten nicht im selben Beet stehen",
-    "conflictsHint": "Mehr Beete hinzufügen, um diese Pflanzen zu trennen."
+    "conflictsHint": "Mehr Beete hinzufügen, um diese Pflanzen zu trennen.",
+    "noDataTitle": "Für diese Paare haben wir noch keine Daten",
+    "requestResearch": "Forschung anfragen →"
   },
   "Relationships": {
     "title": "Community-Beobachtungen",
