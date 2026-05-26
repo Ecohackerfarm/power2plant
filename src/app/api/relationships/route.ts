@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma'
 import { SOURCE_CONFIDENCE } from '@/lib/source-confidence'
 import { classifyUrl } from '@/lib/classify-url'
 import { computeAndSaveTrustScore } from '@/lib/trust-score'
+import { Prisma } from '@prisma/client'
 import type { SourceClassification, ConfidenceLevel, RelationshipType } from '@prisma/client'
 import { auth } from '@/lib/auth'
 
@@ -19,16 +20,20 @@ function getConfidenceLabel(confidence: number): string {
   return 'ANECDOTAL'
 }
 
-function makeCropFilter(term: string, locale = 'en') {
-  return {
-    OR: [
-      { name: { contains: term, mode: 'insensitive' as const } },
-      { botanicalName: { contains: term, mode: 'insensitive' as const } },
-      { commonNames: { has: term } },
-      { synonyms: { has: term } },
-      { translations: { some: { locale, commonNames: { has: term } } } },
-    ],
-  }
+async function findCropIds(term: string, locale: string): Promise<string[]> {
+  const like = `%${term.toLowerCase()}%`
+  const rows = await prisma.$queryRaw<{ id: string }[]>`
+    SELECT c.id FROM "Crop" c
+    LEFT JOIN "CropTranslation" t ON t."cropId" = c.id AND t.locale = ${locale}
+    WHERE
+      lower(c.name) LIKE ${like}
+      OR lower(c."botanicalName") LIKE ${like}
+      OR EXISTS (SELECT 1 FROM unnest(c."commonNames") cn WHERE lower(cn) LIKE ${like})
+      OR EXISTS (SELECT 1 FROM unnest(COALESCE(t."commonNames", ARRAY[]::TEXT[])) cn WHERE lower(cn) LIKE ${like})
+      OR EXISTS (SELECT 1 FROM unnest(c."synonyms") sn WHERE lower(sn) LIKE ${like})
+    LIMIT 50
+  `
+  return rows.map(r => r.id)
 }
 
 async function detectTwoCropIds(q: string, locale: string): Promise<[string[], string[]] | null> {
@@ -49,12 +54,9 @@ async function detectTwoCropIds(q: string, locale: string): Promise<[string[], s
 
   for (const [a, b] of splits) {
     if (!a || !b) continue
-    const [cropsA, cropsB] = await Promise.all([
-      prisma.crop.findMany({ where: makeCropFilter(a, locale), select: { id: true }, take: 10 }),
-      prisma.crop.findMany({ where: makeCropFilter(b, locale), select: { id: true }, take: 10 }),
-    ])
-    if (cropsA.length > 0 && cropsB.length > 0) {
-      return [cropsA.map(c => c.id), cropsB.map(c => c.id)]
+    const [idsA, idsB] = await Promise.all([findCropIds(a, locale), findCropIds(b, locale)])
+    if (idsA.length > 0 && idsB.length > 0) {
+      return [idsA, idsB]
     }
   }
   return null
@@ -81,8 +83,8 @@ export async function GET(request: Request) {
           ],
         }
       } else {
-        const cropFilter = makeCropFilter(q, locale)
-        whereClause = { OR: [{ cropA: cropFilter }, { cropB: cropFilter }] }
+        const ids = await findCropIds(q, locale)
+        whereClause = { OR: [{ cropAId: { in: ids } }, { cropBId: { in: ids } }] }
       }
     }
 
