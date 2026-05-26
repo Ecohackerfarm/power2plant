@@ -295,6 +295,7 @@ model ResearchRequest {
   cropAId   String
   cropBId   String
   voteCount Int                   @default(0)
+  funded    Boolean               @default(false)
   createdAt DateTime              @default(now())
   cropA     Crop                  @relation("ResearchRequestCropA", fields: [cropAId], references: [id], onDelete: Cascade)
   cropB     Crop                  @relation("ResearchRequestCropB", fields: [cropBId], references: [id], onDelete: Cascade)
@@ -302,6 +303,7 @@ model ResearchRequest {
 
   @@unique([cropAId, cropBId])
   @@index([voteCount])
+  @@index([funded])
 }
 
 model ResearchRequestVote {
