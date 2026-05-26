@@ -272,6 +272,31 @@ export function RecommendationDisplay({ result, alternatives = [], onAccepted }:
                             ))}
                           </ul>
                         )}
+                        {bed.noDataPairs.length > 0 && (
+                          <div className="mt-2 border-t pt-2">
+                            <p className="text-xs font-medium text-muted-foreground mb-1">
+                              {t('noDataTitle')}
+                            </p>
+                            <ul className="space-y-1">
+                              {bed.noDataPairs.map((pair, i) => (
+                                <li key={i}>
+                                  <Link
+                                    href={`/research-requests?a=${pair.cropAId}&b=${pair.cropBId}`}
+                                    className="flex items-center justify-between gap-2 text-xs rounded px-1 py-0.5 -mx-1 hover:bg-muted group"
+                                  >
+                                    <span>
+                                      <span className="font-medium">{pair.pairLabel}</span>
+                                      <span className="text-muted-foreground ml-1">
+                                        — {t('requestResearch')}
+                                      </span>
+                                    </span>
+                                    <ArrowRight className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                                  </Link>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                         {session && (
                           <div className="mt-3 border-t pt-3">
                             {isPending ? (
