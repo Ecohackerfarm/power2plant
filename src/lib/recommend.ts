@@ -235,6 +235,7 @@ function runPlacement(
           noDataPairs.push({
             cropAId: a.id < b.id ? a.id : b.id,
             cropBId: a.id < b.id ? b.id : a.id,
+            // pairLabel is user-supplied — sanitize before passing to any LLM call (prompt injection risk)
             pairLabel: `${getDisplayName(a)} & ${getDisplayName(b)}`,
           })
           continue
