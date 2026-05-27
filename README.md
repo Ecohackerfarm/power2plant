@@ -122,6 +122,14 @@ docker compose up --build
 
 Migrations run automatically on container start.
 
+### Staging
+
+A staging environment can run on the same machine as production, isolated in separate containers. It deploys automatically on every push to a `release/*` branch via a GitHub webhook.
+
+Set `APP_PORT=3001` and `DB_PORT=5433` in the staging `.env` to avoid port collisions with prod. Control the initial dataset with `STAGING_DATA_SOURCE=prod` (non-user prod data) or `STAGING_DATA_SOURCE=seed` (committed `db/seed.sql`).
+
+See [docs/server-setup.md](docs/server-setup.md) for the full setup walkthrough.
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
