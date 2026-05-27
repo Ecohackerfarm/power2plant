@@ -8,23 +8,25 @@ datasource db {
 }
 
 model Crop {
-  id              String             @id @default(cuid())
-  botanicalName   String             @unique
-  name            String
-  slug            String             @unique
-  isNitrogenFixer Boolean            @default(false)
-  isCommonCrop    Boolean            @default(false)
-  commonNames     String[]           @default([])
-  synonyms        String[]           @default([])
-  minTempC        Float?
-  imageUrl        String?
-  sources         CropSource[]
-  plantings       Planting[]
-  relationshipsA  CropRelationship[] @relation("CropA")
-  relationshipsB  CropRelationship[] @relation("CropB")
-  translations    CropTranslation[]
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
+  id                String              @id @default(cuid())
+  botanicalName     String              @unique
+  name              String
+  slug              String              @unique
+  isNitrogenFixer   Boolean             @default(false)
+  isCommonCrop      Boolean             @default(false)
+  commonNames       String[]            @default([])
+  synonyms          String[]            @default([])
+  minTempC          Float?
+  imageUrl          String?
+  sources           CropSource[]
+  plantings         Planting[]
+  relationshipsA    CropRelationship[]  @relation("CropA")
+  relationshipsB    CropRelationship[]  @relation("CropB")
+  translations      CropTranslation[]
+  researchRequestsA ResearchRequest[]   @relation("ResearchRequestCropA")
+  researchRequestsB ResearchRequest[]   @relation("ResearchRequestCropB")
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
 }
 
 model CropTranslation {
@@ -181,18 +183,19 @@ enum SourceClassification {
 }
 
 model user {
-  id            String        @id @default(cuid())
-  name          String
-  email         String        @unique
-  emailVerified Boolean       @default(false)
-  image         String?
-  trustScore    Float         @default(1.0)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  sessions      session[]
-  accounts      account[]
-  garden        UserGarden?
-  gardenShares  GardenShare[]
+  id                  String                @id @default(cuid())
+  name                String
+  email               String                @unique
+  emailVerified       Boolean               @default(false)
+  image               String?
+  trustScore          Float                 @default(1.0)
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  sessions            session[]
+  accounts            account[]
+  garden              UserGarden?
+  gardenShares        GardenShare[]
+  researchVotes       ResearchRequestVote[]
 }
 
 model GardenShare {
@@ -285,4 +288,29 @@ model AppConfig {
   feedbackDigestEnabled  Boolean  @default(false)
   feedbackDigestFreq     String   @default("daily")
   feedbackDigestEmails   String[] @default([])
+}
+
+model ResearchRequest {
+  id        String                @id @default(cuid())
+  cropAId   String
+  cropBId   String
+  voteCount Int                   @default(0)
+  createdAt DateTime              @default(now())
+  cropA     Crop                  @relation("ResearchRequestCropA", fields: [cropAId], references: [id], onDelete: Cascade)
+  cropB     Crop                  @relation("ResearchRequestCropB", fields: [cropBId], references: [id], onDelete: Cascade)
+  votes     ResearchRequestVote[]
+
+  @@unique([cropAId, cropBId])
+  @@index([voteCount])
+}
+
+model ResearchRequestVote {
+  id        String          @id @default(cuid())
+  requestId String
+  userId    String
+  createdAt DateTime        @default(now())
+  request   ResearchRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  user      user            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([requestId, userId])
 }
