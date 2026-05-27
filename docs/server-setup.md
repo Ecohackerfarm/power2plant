@@ -1,13 +1,13 @@
 # Server Setup — power2plant
 
-Ubuntu 24.04, IPv6-only, `power2plant.ecohackerfarm.org`.
+Ubuntu 24.04 on a VPS with a persistent data volume.
 
 ## Variables
 
 Export these before running any commands or scripts:
 
 ```sh
-export VOLUME_PATH=/mnt/HC_Volume_105677979
+export VOLUME_PATH=/mnt/data   # path where your persistent volume is mounted
 export DEPLOY_USERNAME=deploy
 export PROJECT=power2plant
 export DOMAIN=power2plant.ecohackerfarm.org
@@ -59,17 +59,16 @@ push → release/*    → webhook deploy-staging → /run/p2p/staging-deploy.bra
 
 ---
 
-## 1. Hetzner volume
+## 1. Persistent volume
 
-Verify the volume survives reboots:
+Mount a persistent data volume at `$VOLUME_PATH` and verify it survives reboots:
 ```sh
 grep "$VOLUME_PATH" /etc/fstab
 ```
-If missing: Hetzner Cloud Console → volume page has the exact fstab line.
 
 Create layout and symlinks:
 ```sh
-mkdir -p $PROJECT_PATH/{prod/data,dev/data}
+mkdir -p $PROJECT_PATH/{prod/data,staging/data,dev/data}
 mkdir -p $AI_PATH
 
 ln -s $PROJECT_PATH /opt/$PROJECT
@@ -80,8 +79,8 @@ Postgres data lands on the volume via `VOLUME_DATA_DIR` in each stack's `.env`.
 Docker images stay on root disk — disposable, re-pull on a new machine.
 
 **To migrate to a new machine:**
-1. `systemctl stop ${PROJECT}-prod ${PROJECT}-dev`
-2. Detach volume in Hetzner Cloud Console
+1. `systemctl stop ${PROJECT}-prod ${PROJECT}-staging ${PROJECT}-dev`
+2. Detach the volume from the old machine
 3. Attach to new machine, mount at `$VOLUME_PATH`
 4. Install Docker, recreate symlinks, restore systemd units — data already there
 
@@ -90,8 +89,8 @@ Docker images stay on root disk — disposable, re-pull on a new machine.
 ## 2. DNS
 
 ```
-power2plant    AAAA    2a01:4f9:c012:379d::1
-power2plant    A       <your-ipv4-address>
+<your-domain>    A       <your-ipv4-address>
+<your-domain>    AAAA    <your-ipv6-address>   # optional
 ```
 
 IPv4 is required for GitHub webhook delivery (GitHub doesn't support IPv6).
@@ -99,8 +98,8 @@ Certbot, nginx, and browser traffic work on either.
 
 Verify addresses:
 ```sh
-ip -6 addr show | grep 2a01:4f9:c012:379d   # confirm IPv6
-ip -4 addr show                              # confirm IPv4
+ip -4 addr show   # confirm IPv4
+ip -6 addr show   # confirm IPv6 (if applicable)
 ```
 
 Verify propagation before requesting certs:
@@ -178,7 +177,7 @@ POSTGRES_PASSWORD=<same-strong-db-password>
 BETTER_AUTH_SECRET=<min-32-char-random>
 BETTER_AUTH_URL=https://power2plant.ecohackerfarm.org
 NEXT_PUBLIC_APP_URL=https://power2plant.ecohackerfarm.org
-VOLUME_DATA_DIR=/mnt/HC_Volume_105677979/power2plant/prod/data
+VOLUME_DATA_DIR=$VOLUME_PATH/power2plant/prod/data
 ```
 
 ```sh
@@ -302,7 +301,7 @@ POSTGRES_PASSWORD=<staging-db-password>
 BETTER_AUTH_SECRET=<min-32-char-random>
 BETTER_AUTH_URL=https://staging.power2plant.ecohackerfarm.org
 NEXT_PUBLIC_APP_URL=https://staging.power2plant.ecohackerfarm.org
-VOLUME_DATA_DIR=/mnt/HC_Volume_105677979/power2plant/staging/data
+VOLUME_DATA_DIR=$VOLUME_PATH/power2plant/staging/data
 APP_PORT=3001
 DB_PORT=5433
 STAGING_DATA_SOURCE=prod
