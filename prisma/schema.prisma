@@ -73,18 +73,20 @@ model CropRelationship {
 }
 
 model RelationshipSource {
-  id             String               @id @default(cuid())
-  source         SourceType
-  sourceType     SourceClassification?
-  confidence     ConfidenceLevel      @default(ANECDOTAL)
-  position       RelationshipType?
-  url            String?
-  notes          String?
-  fetchedAt      DateTime             @default(now())
-  relationshipId String
-  relationship   CropRelationship     @relation(fields: [relationshipId], references: [id], onDelete: Cascade)
-  userId         String?
-  checks         SourceCheck[]
+  id              String                @id @default(cuid())
+  source          SourceType
+  sourceType      SourceClassification?
+  confidence      ConfidenceLevel       @default(ANECDOTAL)
+  position        RelationshipType?
+  reason          RelationshipReason?
+  sourceDirection Direction?
+  url             String?
+  notes           String?
+  fetchedAt       DateTime              @default(now())
+  relationshipId  String
+  relationship    CropRelationship      @relation(fields: [relationshipId], references: [id], onDelete: Cascade)
+  userId          String?
+  checks          SourceCheck[]
 
   @@index([relationshipId])
   @@index([userId])
