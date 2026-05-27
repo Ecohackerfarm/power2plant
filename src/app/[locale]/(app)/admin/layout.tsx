@@ -17,6 +17,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <div className="max-w-5xl mx-auto px-4 py-8">
       <nav className="mb-6 flex gap-4 text-sm">
         <a href="/admin/feedback" className="text-muted-foreground hover:text-foreground">Feedback</a>
+        <a href="/admin/research-requests" className="text-muted-foreground hover:text-foreground">Research</a>
         <a href="/admin/settings" className="text-muted-foreground hover:text-foreground">Settings</a>
       </nav>
       {children}
