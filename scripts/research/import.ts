@@ -5,11 +5,14 @@ import { computeRelationshipConfidence } from '../import/confidence'
 
 const prisma = new PrismaClient()
 
+type RawDirection = 'A_TO_B' | 'B_TO_A' | 'MUTUAL' | 'UNKNOWN'
+
 interface ExtractedRelationship {
   cropA: string
   cropB: string
   type: 'COMPANION' | 'AVOID'
   reason: string | null
+  direction?: RawDirection
   confidence: number
   notes: string
   doi: string | null
@@ -25,7 +28,28 @@ interface AggregatedPair {
   type: 'COMPANION' | 'AVOID'
   reason: string | null
   notes: string
-  papers: Array<{ doi: string | null; title: string; year: number; position: 'COMPANION' | 'AVOID' }>
+  papers: Array<{
+    doi: string | null
+    title: string
+    year: number
+    position: 'COMPANION' | 'AVOID'
+    reason: string | null
+    direction?: RawDirection
+  }>
+}
+
+// Maps raw A_TO_B/B_TO_A direction to the Direction enum, accounting for crop order.
+// If stored relationship has crops swapped vs. extraction order, flip A_TO_B ↔ B_TO_A.
+function mapDirection(
+  raw: RawDirection | undefined,
+  extractedCropAId: string,
+  storedCropAId: string,
+): 'MUTUAL' | 'ONE_WAY' | 'UNKNOWN' {
+  if (!raw || raw === 'UNKNOWN') return 'UNKNOWN'
+  if (raw === 'MUTUAL') return 'MUTUAL'
+  const flipped = extractedCropAId !== storedCropAId
+  const effectiveDir = flipped ? (raw === 'A_TO_B' ? 'B_TO_A' : 'A_TO_B') : raw
+  return effectiveDir === 'A_TO_B' || effectiveDir === 'B_TO_A' ? 'ONE_WAY' : 'UNKNOWN'
 }
 
 // Prefer botanicalName exact match, then name/commonNames with deterministic ordering
@@ -81,7 +105,7 @@ function aggregateByPair(relationships: ExtractedRelationship[]): AggregatedPair
       type: winningType,
       reason: best.reason,
       notes: best.notes,
-      papers: agg.entries.map(e => ({ doi: e.doi, title: e.title, year: e.year, position: e.type })),
+      papers: agg.entries.map(e => ({ doi: e.doi, title: e.title, year: e.year, position: e.type, reason: e.reason, direction: e.direction })),
     })
   }
   return results
@@ -147,6 +171,8 @@ async function main(): Promise<void> {
             source: 'RESEARCH',
             confidence: 'PEER_REVIEWED',
             position: paper.position,
+            reason: (paper.reason ?? null) as any,
+            sourceDirection: mapDirection(paper.direction, idA, cropAId) as any,
             url: paperUrl,
             notes: `${paper.title} (${paper.year})`,
           },
