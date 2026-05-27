@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test'
 test('landing page shows 3 use-case cards', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByRole('heading', { name: 'power2plant' })).toBeVisible()
-  await expect(page.getByRole('link', { name: /look up a crop/i })).toBeVisible()
+  await expect(page.getByRole('link', { name: /find companion plant/i })).toBeVisible()
   await expect(page.getByRole('link', { name: /plan beds/i })).toBeVisible()
   await expect(page.getByRole('link', { name: /my garden/i })).toBeVisible()
 })
@@ -11,7 +11,7 @@ test('landing page shows 3 use-case cards', async ({ page }) => {
 test('plan page has site header with nav', async ({ page }) => {
   await page.goto('/plan')
   await expect(page.getByRole('banner')).toBeVisible()
-  await expect(page.getByRole('link', { name: /look up a crop/i })).toBeVisible()
+  await expect(page.getByRole('link', { name: /find companion plant/i })).toBeVisible()
 })
 
 test('contribute page shows sign-in gate when unauthenticated', async ({ page }) => {
