@@ -84,9 +84,22 @@ model RelationshipSource {
   relationshipId String
   relationship   CropRelationship     @relation(fields: [relationshipId], references: [id], onDelete: Cascade)
   userId         String?
+  checks         SourceCheck[]
 
   @@index([relationshipId])
   @@index([userId])
+}
+
+model SourceCheck {
+  id        String             @id @default(cuid())
+  sourceId  String
+  source    RelationshipSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  checkedBy String
+  checkedAt DateTime           @default(now())
+  correct   Boolean
+  notes     String?
+
+  @@index([sourceId])
 }
 
 model UserGarden {
