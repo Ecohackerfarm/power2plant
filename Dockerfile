@@ -15,7 +15,7 @@ ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser
 RUN corepack enable && corepack prepare pnpm@11.4.0 --activate
 WORKDIR /app
 ARG FROZEN_LOCKFILE=true
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY .npmrc package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN if [ "$FROZEN_LOCKFILE" = "true" ]; then pnpm install --frozen-lockfile; else pnpm install; fi
 
 # ---- dev ----
