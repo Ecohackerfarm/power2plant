@@ -2,14 +2,17 @@
  * Enrich CropTranslation table with vernacular names from Wikidata (primary)
  * and GBIF (gap-fill).
  *
- * Usage:
- *   pnpm enrich:translate-names                         # de via wikidata+gbif, writes to DB
- *   pnpm enrich:translate-names --locale de
- *   pnpm enrich:translate-names --locale de --source wikidata
- *   pnpm enrich:translate-names --locale de --source gbif
- *   pnpm enrich:translate-names --locale de --fetch      # fetch + write translations-de.tsv, no DB writes
- *   pnpm enrich:translate-names --import data/intl/translations-de.tsv  # import reviewed TSV into DB
+ * Supported locales: de, es, fr, pt, zh-Hans, ar, hi, ru, ja
  *
+ * Usage:
+ *   pnpm enrich:translate-names                              # de via wikidata+gbif, writes to DB
+ *   pnpm enrich:translate-names --locale es
+ *   pnpm enrich:translate-names --locale zh-Hans --source wikidata
+ *   pnpm enrich:translate-names --locale ru --source gbif
+ *   pnpm enrich:translate-names --locale ja --fetch          # fetch + write translations-ja.tsv, no DB writes
+ *   pnpm enrich:translate-names --import data/intl/translations-ja.tsv
+ *
+ * Run locales sequentially (not concurrently) to stay within Wikidata/GBIF rate limits.
  * Idempotent: skips crops that already have a translation for the locale.
  * Use --force to re-fetch and overwrite existing translations.
  *
@@ -32,11 +35,18 @@ const WD_DELAY_MS    = 1500 // Wikidata polite crawl delay between batches
 const WD_RETRY_WAIT  = 10000 // wait after 429 before retry
 
 // BCP-47 locale → Wikidata lang code + GBIF ISO 639-2 response language code
+// GBIF vernacular names API returns language as ISO 639-2 3-letter codes.
+// Wikidata P1843 lang tags for CJK: 'zh' covers both simplified and traditional entries.
 const LOCALE_MAP: Record<string, { wikidata: string; gbif: string }> = {
-  de: { wikidata: 'de', gbif: 'deu' },
-  es: { wikidata: 'es', gbif: 'spa' },
-  fr: { wikidata: 'fr', gbif: 'fra' },
-  pt: { wikidata: 'pt', gbif: 'por' },
+  de:      { wikidata: 'de',     gbif: 'deu' },
+  es:      { wikidata: 'es',     gbif: 'spa' },
+  fr:      { wikidata: 'fr',     gbif: 'fra' },
+  pt:      { wikidata: 'pt',     gbif: 'por' },
+  'zh-Hans': { wikidata: 'zh',   gbif: 'zho' },
+  ar:      { wikidata: 'ar',     gbif: 'ara' },
+  hi:      { wikidata: 'hi',     gbif: 'hin' },
+  ru:      { wikidata: 'ru',     gbif: 'rus' },
+  ja:      { wikidata: 'ja',     gbif: 'jpn' },
 }
 
 function sleep(ms: number): Promise<void> {
