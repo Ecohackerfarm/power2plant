@@ -2,15 +2,17 @@
 import { Button } from '@/components/ui/button'
 import { ExternalLink } from 'lucide-react'
 
+const KOFI_BASE = process.env.NEXT_PUBLIC_KOFI_URL
+
 type Props = {
   cropAName: string
   cropBName: string
-  // TODO (#193): replace with real payment URL once provider is chosen (Stripe / Ko-fi)
-  paymentUrl?: string
+  cropAId: string
+  cropBId: string
 }
 
-export function ResearchFundButton({ cropAName, cropBName, paymentUrl }: Props) {
-  if (!paymentUrl) {
+export function ResearchFundButton({ cropAName, cropBName, cropAId, cropBId }: Props) {
+  if (!KOFI_BASE) {
     return (
       <Button variant="outline" size="sm" disabled title="Payment provider not yet configured">
         Fund research
@@ -18,9 +20,12 @@ export function ResearchFundButton({ cropAName, cropBName, paymentUrl }: Props) 
     )
   }
 
+  const pairKey = cropAId < cropBId ? `${cropAId}-${cropBId}` : `${cropBId}-${cropAId}`
+  const url = `${KOFI_BASE}?utm_campaign=research&utm_content=${pairKey}`
+
   return (
     <a
-      href={paymentUrl}
+      href={url}
       target="_blank"
       rel="noopener noreferrer"
       aria-label={`Fund research for ${cropAName} & ${cropBName}`}

@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { getDisplayName } from '@/lib/recommend'
+import { ResearchFundButton } from '@/components/research-fund-button'
 import { ThumbsUp } from 'lucide-react'
 
 type Crop = { id: string; name: string; botanicalName: string; commonNames: string[] }
@@ -64,6 +65,12 @@ function PairCard({
             <ThumbsUp className="w-3 h-3 mr-1" />
             {item.voteCount}
           </Badge>
+          <ResearchFundButton
+            cropAName={getDisplayName(item.cropA)}
+            cropBName={getDisplayName(item.cropB)}
+            cropAId={item.cropAId}
+            cropBId={item.cropBId}
+          />
           <Button
             size="sm"
             variant={item.hasVoted ? 'secondary' : 'default'}
