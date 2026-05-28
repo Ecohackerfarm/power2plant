@@ -66,10 +66,16 @@ export async function POST(req: Request) {
     return `[${date}] ${item.mode} — ${item.pageUrl}\n  ${snippet}`
   })
 
+  function escapeHtml(s: string): string {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+  }
+
   const htmlRows = items.map(item => {
-    const date = item.createdAt.toISOString().slice(0, 10)
-    const snippet = item.message.slice(0, 120).replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    return `<tr><td>${date}</td><td>${item.mode}</td><td>${item.pageUrl}</td><td>${snippet}</td></tr>`
+    const date = escapeHtml(item.createdAt.toISOString().slice(0, 10))
+    const mode = escapeHtml(item.mode)
+    const pageUrl = escapeHtml(item.pageUrl)
+    const snippet = escapeHtml(item.message.slice(0, 120))
+    return `<tr><td>${date}</td><td>${mode}</td><td>${pageUrl}</td><td>${snippet}</td></tr>`
   })
 
   const text = `${items.length} new open feedback report(s) in the last ${freq === 'weekly' ? '7 days' : '24 hours'}:\n\n${textLines.join('\n\n')}`

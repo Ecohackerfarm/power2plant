@@ -31,7 +31,7 @@ async function findRelationship(cropAId: string, cropBId: string): Promise<RelRo
 }
 
 async function findGenusCrop(botanicalName: string): Promise<GenusRow | null> {
-  const genusWord = extractGenusWord(botanicalName)
+  const genusWord = extractGenusWord(botanicalName).replace(/[$()*+.[\]?\\^{}|]/g, '\\$&')
   const rows = await prisma.$queryRaw<GenusRow[]>`
     SELECT id, "botanicalName" FROM "Crop"
     WHERE "botanicalName" ~ ${`^${genusWord} [A-Z]`}

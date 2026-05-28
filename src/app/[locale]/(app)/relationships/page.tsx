@@ -124,9 +124,10 @@ export default function RelationshipsPage() {
     fetchRelationships(undefined, search, false).finally(() => setLoading(false))
   }, [search, fetchRelationships])
 
-  const handleSearch = debounce((value: string) => {
-    setSearch(value)
-  }, 300)
+  const handleSearch = useCallback(
+    debounce((value: string) => setSearch(value), 300),
+    []
+  )
 
   const loadMore = async () => {
     if (!nextCursor || loadingMore) return

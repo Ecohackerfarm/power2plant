@@ -66,7 +66,6 @@ export default function AdminSettingsPage() {
     update({ feedbackDigestEmails: (config?.feedbackDigestEmails ?? []).filter(e => e !== email) })
   }
 
-  const smtpConfigured = typeof window !== 'undefined' // always show — status comes from server
   const smtpEnvVars = ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM']
 
   if (loading) return <p className="text-muted-foreground text-sm">Loading…</p>
@@ -168,7 +167,6 @@ export default function AdminSettingsPage() {
         </p>
       </section>
 
-      {smtpConfigured && <div />}
     </div>
   )
 }

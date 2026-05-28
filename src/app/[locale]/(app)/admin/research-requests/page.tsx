@@ -29,8 +29,8 @@ export default function AdminResearchRequestsPage() {
       .then(r => r.ok ? r.json() : [])
       .then((data: ResearchRequestItem[]) => {
         setItems(data)
-        setLoading(false)
       })
+      .finally(() => setLoading(false))
   }, [])
 
   async function toggleFunded(item: ResearchRequestItem) {

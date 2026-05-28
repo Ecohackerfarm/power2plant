@@ -48,12 +48,24 @@ export async function POST(req: Request) {
   if (typeof pageUrl !== 'string' || pageUrl.length === 0) {
     return NextResponse.json({ error: 'pageUrl required' }, { status: 400 })
   }
+  if (pageUrl.length > 2048) {
+    return NextResponse.json({ error: 'pageUrl must be at most 2048 chars' }, { status: 400 })
+  }
   if (typeof message !== 'string' || message.length < 3 || message.length > 2000) {
     return NextResponse.json({ error: 'message must be 3–2000 chars' }, { status: 400 })
   }
   if (screenshot !== undefined && screenshot !== null) {
     if (typeof screenshot !== 'string' || screenshot.length > MAX_SCREENSHOT_BYTES) {
       return NextResponse.json({ error: 'screenshot exceeds 300 KB' }, { status: 400 })
+    }
+  }
+
+  if (annotation !== undefined && annotation !== null) {
+    if (typeof annotation !== 'object' || Array.isArray(annotation)) {
+      return NextResponse.json({ error: 'annotation must be an object' }, { status: 400 })
+    }
+    if (Buffer.byteLength(JSON.stringify(annotation), 'utf8') > 50_000) {
+      return NextResponse.json({ error: 'annotation exceeds 50 KB' }, { status: 400 })
     }
   }
 

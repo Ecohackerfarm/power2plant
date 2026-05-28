@@ -73,6 +73,24 @@ describe('GET /api/admin/feedback', () => {
     await GET(makeGetReq('?mode=OTHER'))
     expect(vi.mocked(prisma.feedback.findMany).mock.calls[0]![0]!.where).toMatchObject({ mode: 'OTHER' })
   })
+
+  it('returns 400 for invalid status param', async () => {
+    vi.mocked(isAdmin).mockResolvedValue(true)
+    const res = await GET(makeGetReq('?status=INVALID'))
+    expect(res.status).toBe(400)
+    const body = await res.json()
+    expect(body.error).toBe('invalid status')
+    expect(prisma.feedback.findMany).not.toHaveBeenCalled()
+  })
+
+  it('returns 400 for invalid mode param', async () => {
+    vi.mocked(isAdmin).mockResolvedValue(true)
+    const res = await GET(makeGetReq('?mode=BADMODE'))
+    expect(res.status).toBe(400)
+    const body = await res.json()
+    expect(body.error).toBe('invalid mode')
+    expect(prisma.feedback.findMany).not.toHaveBeenCalled()
+  })
 })
 
 describe('PATCH /api/admin/feedback/[id]', () => {

@@ -58,6 +58,7 @@ export async function computeAndSaveTrustScore(
   })
 
   if (testimonies.length < MIN_SUBMISSIONS) {
+    await client.user.update({ where: { id: userId }, data: { trustScore: 1.0 } })
     return 1.0
   }
 

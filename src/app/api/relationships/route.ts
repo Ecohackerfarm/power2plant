@@ -206,7 +206,7 @@ export async function POST(request: Request) {
     }
     for (const [key, val] of Object.entries(sourceTypeOverrides)) {
       if (!VALID_SOURCE_TYPES.includes(val as (typeof VALID_SOURCE_TYPES)[number])) {
-        return NextResponse.json({ error: 'invalid sourceType for index ' + key }, { status: 400 })
+        return NextResponse.json({ error: 'invalid sourceTypeOverrides entry' }, { status: 400 })
       }
     }
   }

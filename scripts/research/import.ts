@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { PrismaClient, RelationshipType } from '@prisma/client'
+import { PrismaClient, RelationshipType, RelationshipReason } from '@prisma/client'
 import { computeRelationshipConfidence } from '../import/confidence'
 
 const prisma = new PrismaClient()
@@ -35,6 +35,7 @@ interface AggregatedPair {
     position: 'COMPANION' | 'AVOID'
     reason: string | null
     direction?: RawDirection
+    extractedCropA: string  // original cropA from extraction, for direction mapping
   }>
 }
 
@@ -105,10 +106,20 @@ function aggregateByPair(relationships: ExtractedRelationship[]): AggregatedPair
       type: winningType,
       reason: best.reason,
       notes: best.notes,
-      papers: agg.entries.map(e => ({ doi: e.doi, title: e.title, year: e.year, position: e.type, reason: e.reason, direction: e.direction })),
+      papers: agg.entries.map(e => ({ doi: e.doi, title: e.title, year: e.year, position: e.type, reason: e.reason, direction: e.direction, extractedCropA: e.cropA })),
     })
   }
   return results
+}
+
+// Valid RelationshipReason enum values from Prisma schema
+const VALID_REASONS = new Set<string>(Object.values(RelationshipReason))
+
+function validateReason(value: string | null | undefined): RelationshipReason | null {
+  if (value == null) return null
+  if (VALID_REASONS.has(value)) return value as RelationshipReason
+  console.warn(`INVALID reason "${value}" — storing null`)
+  return null
 }
 
 async function main(): Promise<void> {
@@ -126,87 +137,97 @@ async function main(): Promise<void> {
   let imported = 0
   let skippedUnresolved = 0
   let skippedExisting = 0
+  let skippedError = 0
 
   for (const pair of pairs) {
-    const idA = await resolveCropId(pair.cropA)
-    const idB = await resolveCropId(pair.cropB)
+    try {
+      const idA = await resolveCropId(pair.cropA)
+      const idB = await resolveCropId(pair.cropB)
 
-    if (!idA || !idB) {
-      console.log(`SKIP unresolved: ${pair.cropA} + ${pair.cropB}`)
-      skippedUnresolved++
-      continue
-    }
-
-    const [cropAId, cropBId] = idA < idB ? [idA, idB] : [idB, idA]
-
-    const relationship = await prisma.cropRelationship.upsert({
-      where: { cropAId_cropBId: { cropAId, cropBId } },
-      create: {
-        cropAId,
-        cropBId,
-        type: pair.type as RelationshipType,
-        direction: 'MUTUAL',
-        reason: pair.reason as any,
-        // confidence is set after sources are added via recompute below
-        confidence: 0.25,
-        notes: pair.notes,
-      },
-      // Don't overwrite type/confidence set by other importers — sources are the authority
-      update: {},
-      include: { sources: true },
-    })
-
-    // Create one source per paper (deduplicated by DOI or title)
-    let addedSources = 0
-    for (const paper of pair.papers) {
-      const paperUrl = paper.doi ? `https://doi.org/${paper.doi}` : null
-      const exists = relationship.sources.some(s =>
-        (paperUrl !== null && s.url === paperUrl) ||
-        (s.notes?.includes(paper.title) ?? false)
-      )
-      if (!exists) {
-        await prisma.relationshipSource.create({
-          data: {
-            relationshipId: relationship.id,
-            source: 'RESEARCH',
-            confidence: 'PEER_REVIEWED',
-            position: paper.position,
-            reason: (paper.reason ?? null) as any,
-            sourceDirection: mapDirection(paper.direction, idA, cropAId) as any,
-            url: paperUrl,
-            notes: `${paper.title} (${paper.year})`,
-          },
-        })
-        addedSources++
+      if (!idA || !idB) {
+        console.log(`SKIP unresolved: ${pair.cropA} + ${pair.cropB}`)
+        skippedUnresolved++
+        continue
       }
-    }
 
-    // Recompute confidence as max(source evidence levels) across all sources,
-    // including any pre-existing ones from other importers.
-    const allSources = await prisma.relationshipSource.findMany({
-      where: { relationshipId: relationship.id },
-      select: { confidence: true },
-    })
-    const recomputedConfidence = computeRelationshipConfidence(allSources.map(s => s.confidence))
-    await prisma.cropRelationship.update({
-      where: { id: relationship.id },
-      data: { confidence: recomputedConfidence },
-    })
+      const [cropAId, cropBId] = idA < idB ? [idA, idB] : [idB, idA]
 
-    if (addedSources > 0) {
-      imported++
-      console.log(
-        `IMPORT: ${pair.cropA} + ${pair.cropB} → ${pair.type}` +
-        ` (conf ${recomputedConfidence.toFixed(2)}, ${pair.papers.length} papers, ${addedSources} new sources)`
-      )
-    } else {
-      skippedExisting++
+      const relationship = await prisma.cropRelationship.upsert({
+        where: { cropAId_cropBId: { cropAId, cropBId } },
+        create: {
+          cropAId,
+          cropBId,
+          type: pair.type as RelationshipType,
+          direction: 'MUTUAL',
+          reason: validateReason(pair.reason),
+          // confidence is set after sources are added via recompute below
+          confidence: 0.25,
+          notes: pair.notes,
+        },
+        // Don't overwrite type/confidence set by other importers — sources are the authority
+        update: {},
+        include: { sources: true },
+      })
+
+      // Create one source per paper (deduplicated by DOI or title)
+      let addedSources = 0
+      for (const paper of pair.papers) {
+        const paperUrl = paper.doi ? `https://doi.org/${paper.doi}` : null
+        const exists = relationship.sources.some(s =>
+          (paperUrl !== null && s.url === paperUrl) ||
+          (s.notes?.includes(paper.title) ?? false)
+        )
+        if (!exists) {
+          // Resolve the per-paper extraction-order cropA to an ID so mapDirection
+          // can correctly flip A_TO_B ↔ B_TO_A when the stored pair order differs.
+          const paperCropAId = await resolveCropId(paper.extractedCropA)
+          await prisma.relationshipSource.create({
+            data: {
+              relationshipId: relationship.id,
+              source: 'RESEARCH',
+              confidence: 'PEER_REVIEWED',
+              position: paper.position,
+              reason: validateReason(paper.reason),
+              sourceDirection: mapDirection(paper.direction, paperCropAId ?? idA, cropAId) as any,
+              url: paperUrl,
+              notes: `${paper.title} (${paper.year})`,
+            },
+          })
+          addedSources++
+        }
+      }
+
+      // Recompute confidence as max(source evidence levels) across all sources,
+      // including any pre-existing ones from other importers.
+      const allSources = await prisma.relationshipSource.findMany({
+        where: { relationshipId: relationship.id },
+        select: { confidence: true },
+      })
+      const recomputedConfidence = computeRelationshipConfidence(allSources.map(s => s.confidence))
+      await prisma.cropRelationship.update({
+        where: { id: relationship.id },
+        data: { confidence: recomputedConfidence },
+      })
+
+      if (addedSources > 0) {
+        imported++
+        console.log(
+          `IMPORT: ${pair.cropA} + ${pair.cropB} → ${pair.type}` +
+          ` (conf ${recomputedConfidence.toFixed(2)}, ${pair.papers.length} papers, ${addedSources} new sources)`
+        )
+      } else {
+        skippedExisting++
+      }
+    } catch (err) {
+      console.error(`ERROR importing pair ${pair.cropA} + ${pair.cropB}:`, err)
+      skippedError++
     }
   }
 
   console.log(`\nImported/updated: ${imported} relationships`)
   console.log(`Skipped (unresolved crop): ${skippedUnresolved}`)
   console.log(`Skipped (existing): ${skippedExisting}`)
+  if (skippedError > 0) console.warn(`Skipped (error): ${skippedError}`)
 
   await prisma.$disconnect()
 }
