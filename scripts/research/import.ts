@@ -44,12 +44,12 @@ function mapDirection(
   raw: RawDirection | undefined,
   extractedCropAId: string,
   storedCropAId: string,
-): 'MUTUAL' | 'ONE_WAY' | 'UNKNOWN' {
-  if (!raw || raw === 'UNKNOWN') return 'UNKNOWN'
+): 'MUTUAL' | 'ONE_WAY' | null {
+  if (!raw || raw === 'UNKNOWN') return null
   if (raw === 'MUTUAL') return 'MUTUAL'
   const flipped = extractedCropAId !== storedCropAId
   const effectiveDir = flipped ? (raw === 'A_TO_B' ? 'B_TO_A' : 'A_TO_B') : raw
-  return effectiveDir === 'A_TO_B' || effectiveDir === 'B_TO_A' ? 'ONE_WAY' : 'UNKNOWN'
+  return effectiveDir === 'A_TO_B' || effectiveDir === 'B_TO_A' ? 'ONE_WAY' : null
 }
 
 // Prefer botanicalName exact match, then name/commonNames with deterministic ordering

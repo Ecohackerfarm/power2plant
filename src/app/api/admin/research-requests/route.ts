@@ -32,7 +32,11 @@ export async function PATCH(req: Request) {
   const updated = await prisma.researchRequest.update({
     where: { id: body.id as string },
     data: { funded: body.funded as boolean },
+  }).catch((e: unknown) => {
+    if ((e as { code?: string }).code === 'P2025') return null
+    throw e
   })
 
+  if (!updated) return NextResponse.json({ error: 'not found' }, { status: 404 })
   return NextResponse.json(updated)
 }
