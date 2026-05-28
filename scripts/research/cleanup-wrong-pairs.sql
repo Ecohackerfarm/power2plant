@@ -7,6 +7,8 @@
 -- Helper: resolve a DOI url to the source IDs for a given crop-name pair
 -- We delete by (url, cropA-name, cropB-name) — matching via the relationship's crops.
 
+BEGIN;
+
 -- ── 10.1007/s00299-024-03285-w ──────────────────────────────────────────────
 -- Paper: Companion basil plants prime the tomato wound response (2024)
 -- KEEP: basil + Tomato   DELETE: all other 13 pairs
@@ -199,3 +201,5 @@ DELETE FROM "CropRelationship" cr
 WHERE NOT EXISTS (
   SELECT 1 FROM "RelationshipSource" rs WHERE rs."relationshipId" = cr.id
 );
+
+COMMIT;
