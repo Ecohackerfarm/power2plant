@@ -68,7 +68,7 @@ export function PlantSearch({ wishlistIds, onAdd, onRemove, onClearAll, initialQ
       }
     }, 300)
     return () => clearTimeout(timer)
-  }, [query])
+  }, [query, locale])
 
   useEffect(() => {
     if (activeIndex < 0 || !listRef.current) return

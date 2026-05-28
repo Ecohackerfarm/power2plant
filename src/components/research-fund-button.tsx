@@ -2,7 +2,8 @@
 import { Button } from '@/components/ui/button'
 import { ExternalLink } from 'lucide-react'
 
-const KOFI_BASE = process.env.NEXT_PUBLIC_KOFI_URL
+const KOFI_BASE = process.env.NEXT_PUBLIC_KOFI_URL?.startsWith('https://')
+  ? process.env.NEXT_PUBLIC_KOFI_URL : undefined
 
 type Props = {
   cropAName: string

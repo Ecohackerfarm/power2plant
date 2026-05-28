@@ -97,12 +97,15 @@ export default function ResearchRequestsPage() {
   const [deepVoted, setDeepVoted] = useState(false)
 
   const fetchItems = useCallback(async () => {
-    const res = await fetch('/api/research-requests')
-    if (res.ok) {
-      const data = await res.json() as ResearchRequestItem[]
-      setItems(data)
+    try {
+      const res = await fetch('/api/research-requests')
+      if (res.ok) {
+        const data = await res.json() as ResearchRequestItem[]
+        setItems(data)
+      }
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }, [])
 
   useEffect(() => { void fetchItems() }, [fetchItems])

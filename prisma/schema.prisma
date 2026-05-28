@@ -125,6 +125,8 @@ model Bed {
   gardenId  String
   garden    UserGarden @relation(fields: [gardenId], references: [id], onDelete: Cascade)
   plantings Planting[]
+
+  @@index([gardenId])
 }
 
 enum PlantingStatus {
@@ -265,6 +267,8 @@ model verification {
   expiresAt  DateTime
   createdAt  DateTime? @default(now())
   updatedAt  DateTime? @updatedAt
+
+  @@index([identifier])
 }
 
 enum FeedbackMode {
@@ -330,4 +334,5 @@ model ResearchRequestVote {
   user      user            @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([requestId, userId])
+  @@index([userId])
 }
