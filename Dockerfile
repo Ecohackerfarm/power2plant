@@ -12,7 +12,7 @@ RUN apk add --no-cache \
     ttf-freefont
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser
-RUN corepack enable && corepack prepare pnpm@10.4.0 --activate
+RUN corepack enable && corepack prepare pnpm@11.4.0 --activate
 WORKDIR /app
 ARG FROZEN_LOCKFILE=true
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
@@ -43,14 +43,14 @@ RUN passwd -d node && \
 # Flat (hoisted) layout so .bin shims have no absolute paths baked in —
 # lets us copy node_modules to a different path in the runner.
 FROM node:22-alpine AS prod-deps
-RUN corepack enable && corepack prepare pnpm@10.4.0 --activate
+RUN corepack enable && corepack prepare pnpm@11.4.0 --activate
 WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --prod --frozen-lockfile --config.node-linker=hoisted
 
 # ---- builder ----
 FROM node:22-alpine AS builder
-RUN corepack enable && corepack prepare pnpm@10.4.0 --activate
+RUN corepack enable && corepack prepare pnpm@11.4.0 --activate
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
