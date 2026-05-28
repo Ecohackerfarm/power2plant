@@ -44,7 +44,7 @@ export function ConfidenceBadge({ level, className }: ConfidenceBadgeProps) {
             onClick={() => setOpen(false)}
             aria-hidden
           />
-          <div className="absolute bottom-full left-0 mb-2 w-72 bg-popover border rounded-lg shadow-lg p-3 z-10 text-left">
+          <div className="absolute bottom-full start-0 mb-2 w-72 bg-popover border rounded-lg shadow-lg p-3 z-10 text-start">
             <p className="text-xs font-semibold mb-2 text-foreground">{t('title')}</p>
             <ul className="space-y-1.5">
               {LEVEL_KEYS.map(key => (
