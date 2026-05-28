@@ -61,7 +61,7 @@ export async function GET(
   let speciesCount: number | undefined
 
   if (rank === 'species') {
-    const genusWord = extractGenusWord(crop.botanicalName)
+    const genusWord = extractGenusWord(crop.botanicalName).replace(/[$()*+.[\]?\\^{}|]/g, '\\$&')
     const genusRows = await prisma.$queryRaw<GenusRow[]>`
       SELECT id, "botanicalName", name FROM "Crop"
       WHERE "botanicalName" ~ ${`^${genusWord} [A-Z]`}
@@ -93,7 +93,7 @@ export async function GET(
       companions = [...directCompanions, ...inherited]
     }
   } else if (rank === 'genus') {
-    const genusWord = extractGenusWord(crop.botanicalName)
+    const genusWord = extractGenusWord(crop.botanicalName).replace(/[$()*+.[\]?\\^{}|]/g, '\\$&')
     const speciesRows = await prisma.$queryRaw<SpeciesRow[]>`
       SELECT id, "botanicalName", name FROM "Crop"
       WHERE "botanicalName" ~ ${`^${genusWord} [a-z]`}

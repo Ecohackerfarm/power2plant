@@ -195,7 +195,7 @@ describe('POST /api/relationships', () => {
     vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as any)
     const res = await POST(makeReq({ ...validBody, sources: ['https://example.com'], sourceTypeOverrides: { 0: 'INVALID_TYPE' } }))
     expect(res.status).toBe(400)
-    expect((await res.json()).error).toContain('invalid sourceType for index')
+    expect((await res.json()).error).toContain('invalid sourceTypeOverrides entry')
   })
 
   it('returns 400 when sourceTypeOverrides is an array', async () => {
