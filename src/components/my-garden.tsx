@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback, useImperativeHandle, forwardRef } from 'react'
 import { useTranslations } from 'next-intl'
+import { Link } from '@/i18n/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useSession } from '@/lib/auth-client'
@@ -145,7 +146,7 @@ export const MyGarden = forwardRef<MyGardenRef, MyGardenProps>(function MyGarden
                     <ul className="space-y-1">
                       {bed.plantings.map((p) => (
                         <li key={p.plantingId} className="text-sm flex items-center justify-between gap-2">
-                          <span>{p.cropName}</span>
+                          <Link href={`/plants/${p.cropId}`} className="hover:underline">{p.cropName}</Link>
                           <button
                             className={`text-xs font-medium hover:underline ${STATUS_COLOR[p.status]}`}
                             onClick={() => void cycleStatus(p.plantingId, p.status)}
