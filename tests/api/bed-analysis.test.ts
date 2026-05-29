@@ -44,10 +44,15 @@ describe('GET /api/garden/bed-analysis', () => {
     expect(body.beds).toEqual([])
   })
 
+  const makePlanting = (cropId: string, name: string) => ({
+    cropId,
+    crop: { id: cropId, name, commonNames: [name] },
+  })
+
   it('skips beds with fewer than 2 plants', async () => {
     vi.mocked(prisma.userGarden.findUnique).mockResolvedValue({
       id: 'g1',
-      beds: [{ id: 'bed-1', plantings: [{ cropId: 'crop-a' }] }],
+      beds: [{ id: 'bed-1', plantings: [makePlanting('crop-a', 'Basil')] }],
     } as never)
     const res = await GET()
     const body = await res.json()
@@ -60,7 +65,11 @@ describe('GET /api/garden/bed-analysis', () => {
       id: 'g1',
       beds: [{
         id: 'bed-1',
-        plantings: [{ cropId: 'crop-a' }, { cropId: 'crop-b' }, { cropId: 'crop-c' }],
+        plantings: [
+          makePlanting('crop-a', 'Basil'),
+          makePlanting('crop-b', 'Tomato'),
+          makePlanting('crop-c', 'Fennel'),
+        ],
       }],
     } as never)
     vi.mocked(prisma.$queryRaw).mockResolvedValue([
@@ -78,18 +87,23 @@ describe('GET /api/garden/bed-analysis', () => {
     expect(bed.antagonists).toHaveLength(1)
     expect(bed.antagonists[0].cropBName).toBe('Fennel')
     // crop-b and crop-c have no relationship → 1 unknown pair
-    expect(bed.unknownCount).toBe(1)
+    expect(bed.unknownPairs).toHaveLength(1)
+    expect(bed.unknownPairs[0].cropAName).toBe('Tomato')
+    expect(bed.unknownPairs[0].cropBName).toBe('Fennel')
   })
 
   it('counts unknown pairs correctly', async () => {
     vi.mocked(prisma.userGarden.findUnique).mockResolvedValue({
       id: 'g1',
-      beds: [{ id: 'bed-1', plantings: [{ cropId: 'a' }, { cropId: 'b' }, { cropId: 'c' }] }],
+      beds: [{
+        id: 'bed-1',
+        plantings: [makePlanting('a', 'Plant A'), makePlanting('b', 'Plant B'), makePlanting('c', 'Plant C')],
+      }],
     } as never)
     vi.mocked(prisma.$queryRaw).mockResolvedValue([] as never) // no relationships at all
     const res = await GET()
     const body = await res.json()
     // 3 plants → 3 pairs, all unknown
-    expect(body.beds[0].unknownCount).toBe(3)
+    expect(body.beds[0].unknownPairs).toHaveLength(3)
   })
 })
