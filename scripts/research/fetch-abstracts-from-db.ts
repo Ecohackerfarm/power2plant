@@ -101,7 +101,7 @@ async function main() {
   // Deduplicate by DOI — same paper can cover multiple crop pairs
   const byDoi = new Map<string, DbSource[]>()
   for (const src of sources) {
-    const doi = src.url.replace('https://doi.org/', '')
+    const doi = src.url.replace(/^https?:\/\/(?:dx\.)?doi\.org\//, '')
     if (!byDoi.has(doi)) byDoi.set(doi, [])
     byDoi.get(doi)!.push(src)
   }

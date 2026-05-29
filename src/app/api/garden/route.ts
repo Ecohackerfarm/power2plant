@@ -46,11 +46,11 @@ export async function PUT(request: Request) {
   if (minTempC !== undefined && typeof minTempC !== 'number') {
     return NextResponse.json({ error: 'minTempC must be a number' }, { status: 400 })
   }
-  if (bedCount !== undefined && (!Number.isInteger(bedCount) || bedCount < 1)) {
-    return NextResponse.json({ error: 'bedCount must be an integer >= 1' }, { status: 400 })
+  if (bedCount !== undefined && (!Number.isInteger(bedCount) || bedCount < 1 || bedCount > 1000)) {
+    return NextResponse.json({ error: 'bedCount must be an integer between 1 and 1000' }, { status: 400 })
   }
-  if (bedCapacity !== undefined && (!Number.isInteger(bedCapacity) || bedCapacity < 1)) {
-    return NextResponse.json({ error: 'bedCapacity must be an integer >= 1' }, { status: 400 })
+  if (bedCapacity !== undefined && (!Number.isInteger(bedCapacity) || bedCapacity < 1 || bedCapacity > 1000)) {
+    return NextResponse.json({ error: 'bedCapacity must be an integer between 1 and 1000' }, { status: 400 })
   }
 
   // Wishlist validation
@@ -74,6 +74,9 @@ export async function PUT(request: Request) {
   }
   if (lng !== undefined && (lng < -180 || lng > 180)) {
     return NextResponse.json({ error: 'lng must be between -180 and 180' }, { status: 400 })
+  }
+  if (minTempC !== undefined && (!Number.isFinite(minTempC) || minTempC < -100 || minTempC > 60)) {
+    return NextResponse.json({ error: 'minTempC must be between -100 and 60' }, { status: 400 })
   }
 
   const data = {

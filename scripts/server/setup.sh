@@ -18,9 +18,23 @@ fi
 
 PROJECT_PATH="${VOLUME_PATH}/${PROJECT}"
 PROD_PATH="${PROJECT_PATH}/prod"
+STAGING_PATH="${PROJECT_PATH}/staging"
+
+# Staging is opt-in: set STAGING_DOMAIN to enable.
+SETUP_STAGING=false
+if [[ -n "${STAGING_DOMAIN:-}" ]]; then
+  SETUP_STAGING=true
+  : "${STAGING_WEBHOOK_SECRET:?STAGING_WEBHOOK_SECRET required when STAGING_DOMAIN is set}"
+  STAGING_APP_PORT="${STAGING_APP_PORT:-3001}"
+fi
 
 if [[ ! -d "$PROD_PATH" ]]; then
   echo "Error: $PROD_PATH does not exist. Clone the repo first (step 5 in docs)." >&2
+  exit 1
+fi
+
+if $SETUP_STAGING && [[ ! -d "$STAGING_PATH" ]]; then
+  echo "Error: $STAGING_PATH does not exist. Clone the repo there first." >&2
   exit 1
 fi
 
@@ -79,6 +93,56 @@ TimeoutStartSec=300
 WantedBy=multi-user.target
 EOF
 echo "    wrote ${PROJECT}-dev.service"
+
+# ── Systemd: staging ─────────────────────────────────────────────────────────
+if $SETUP_STAGING; then
+cat > "/etc/systemd/system/${PROJECT}-staging.service" <<EOF
+[Unit]
+Description=${PROJECT} staging
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+User=${DEPLOY_USERNAME}
+Group=${DEPLOY_USERNAME}
+WorkingDirectory=${STAGING_PATH}
+ExecStart=docker compose up -d --build
+ExecStop=docker compose down
+TimeoutStartSec=300
+
+[Install]
+WantedBy=multi-user.target
+EOF
+echo "    wrote ${PROJECT}-staging.service"
+
+cat > "/etc/systemd/system/${PROJECT}-staging-deploy.path" <<EOF
+[Unit]
+Description=Watch for ${PROJECT} staging deploy trigger
+
+[Path]
+PathExists=/run/p2p/staging-deploy.trigger
+Unit=${PROJECT}-staging-deploy.service
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+cat > "/etc/systemd/system/${PROJECT}-staging-deploy.service" <<EOF
+[Unit]
+Description=${PROJECT} staging deploy
+
+[Service]
+Type=oneshot
+Environment=DEPLOY_USERNAME=${DEPLOY_USERNAME}
+Environment=PROJECT_PATH=${STAGING_PATH}
+Environment=PROD_PATH=${PROD_PATH}
+ExecStart=${STAGING_PATH}/scripts/server/staging-deploy.sh
+TimeoutStartSec=600
+EOF
+echo "    wrote ${PROJECT}-staging-deploy.path and ${PROJECT}-staging-deploy.service"
+fi
 
 # ── Systemd: deploy trigger ───────────────────────────────────────────────────
 cat > "/etc/systemd/system/${PROJECT}-deploy.path" <<EOF
@@ -214,6 +278,87 @@ rm -f /etc/nginx/sites-enabled/default
 
 echo "    wrote nginx config for ${DOMAIN} (${nginx_mode})"
 
+# ── Nginx site config: staging ────────────────────────────────────────────────
+if $SETUP_STAGING; then
+  staging_cert_path="/etc/letsencrypt/live/${STAGING_DOMAIN}/fullchain.pem"
+
+  if [[ -f "$staging_cert_path" ]]; then
+    staging_nginx_mode="https"
+    staging_nginx_template=$(cat <<'NGINX'
+server {
+    listen [::]:443 ssl;
+    listen 443 ssl;
+    server_name __DOMAIN__;
+
+    ssl_certificate     /etc/letsencrypt/live/__DOMAIN__/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/__DOMAIN__/privkey.pem;
+
+    location /share/ {
+        limit_req zone=p2p_share_rl burst=10 nodelay;
+        limit_req_status 429;
+
+        proxy_pass http://127.0.0.1:__APP_PORT__;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 60s;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:__APP_PORT__;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 60s;
+    }
+}
+
+server {
+    listen [::]:80;
+    listen 80;
+    server_name __DOMAIN__;
+    return 301 https://$host$request_uri;
+}
+NGINX
+)
+  else
+    staging_nginx_mode="http-bootstrap"
+    staging_nginx_template=$(cat <<'NGINX'
+# Bootstrap config — no cert yet. After certbot succeeds, re-run setup.sh
+# to install the full HTTPS config.
+server {
+    listen [::]:80;
+    listen 80;
+    server_name __DOMAIN__;
+
+    location / {
+        proxy_pass http://127.0.0.1:__APP_PORT__;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 60s;
+    }
+}
+NGINX
+)
+  fi
+
+  echo "$staging_nginx_template" \
+    | sed -e "s/__DOMAIN__/${STAGING_DOMAIN}/g" \
+          -e "s/__APP_PORT__/${STAGING_APP_PORT}/g" \
+    > "/etc/nginx/sites-available/${PROJECT}-staging"
+
+  if [[ ! -e "/etc/nginx/sites-enabled/${PROJECT}-staging" ]]; then
+    ln -s "/etc/nginx/sites-available/${PROJECT}-staging" \
+          "/etc/nginx/sites-enabled/${PROJECT}-staging"
+  fi
+
+  echo "    wrote nginx config for ${STAGING_DOMAIN} (${staging_nginx_mode}, port ${STAGING_APP_PORT})"
+fi
+
 # ── Git credential store ─────────────────────────────────────────────────────
 git_creds="${PROJECT_PATH}/.git-credentials"
 echo "https://${GITHUB_USER}:${GITHUB_PAT}@github.com" > "$git_creds"
@@ -233,7 +378,10 @@ if [[ ! -f "$hooks_template" ]]; then
 elif [[ -f "$hooks_out" ]]; then
   echo "    webhook/hooks.json exists, leaving in place (delete to regenerate)"
 else
-  sed "s/__WEBHOOK_SECRET__/${WEBHOOK_SECRET}/g" "$hooks_template" > "$hooks_out"
+  staging_secret="${STAGING_WEBHOOK_SECRET:-STAGING-NOT-CONFIGURED}"
+  sed -e "s/__WEBHOOK_SECRET__/${WEBHOOK_SECRET}/g" \
+      -e "s/__STAGING_WEBHOOK_SECRET__/${staging_secret}/g" \
+      "$hooks_template" > "$hooks_out"
   chmod 644 "$hooks_out"
   chown "${DEPLOY_USERNAME}:${DEPLOY_USERNAME}" "$hooks_out"
   echo "    wrote webhook/hooks.json"
@@ -248,6 +396,9 @@ echo "    wrote /etc/tmpfiles.d/p2p.conf and created /run/p2p"
 # ── Reload and enable ─────────────────────────────────────────────────────────
 systemctl daemon-reload
 systemctl enable "${PROJECT}-prod" "${PROJECT}-dev" "${PROJECT}-deploy.path"
+if $SETUP_STAGING; then
+  systemctl enable "${PROJECT}-staging" "${PROJECT}-staging-deploy.path"
+fi
 echo "    systemd units enabled"
 
 nginx -t && systemctl reload nginx
@@ -266,6 +417,26 @@ echo "  3. (TLS cert already installed — HTTPS config in place.)"
 fi
 echo "  4. Start webhook:"
 echo "       cd ${PROD_PATH}/webhook && sudo -u ${DEPLOY_USERNAME} docker compose up -d"
-echo "  5. Add GitHub webhook:"
+echo "  5. Add GitHub webhook (prod):"
 echo "       URL: https://${DOMAIN}/hooks/deploy-prod"
 echo "       Secret: (the WEBHOOK_SECRET you exported)"
+if $SETUP_STAGING; then
+echo ""
+echo "  Staging:"
+echo "  6. Create staging .env:      ${STAGING_PATH}/.env"
+echo "       Required: VOLUME_DATA_DIR, POSTGRES_PASSWORD, DATABASE_URL, APP_PORT=3001, DB_PORT=5433"
+echo "       BETTER_AUTH_SECRET, BETTER_AUTH_URL, NEXT_PUBLIC_APP_URL (pointing to ${STAGING_DOMAIN})"
+echo "       STAGING_DATA_SOURCE=prod  # or: seed"
+echo "  7. Start staging:            systemctl start ${PROJECT}-staging"
+if [[ "$staging_nginx_mode" == "http-bootstrap" ]]; then
+echo "  8. Get TLS cert for staging (nginx is in HTTP-only bootstrap mode):"
+echo "       certbot --nginx -d ${STAGING_DOMAIN} --non-interactive --agree-tos -m ${ADMIN_EMAIL}"
+echo "     Then re-run THIS script to install the full HTTPS config."
+else
+echo "  8. (TLS cert for staging already installed — HTTPS config in place.)"
+fi
+echo "  9. Add GitHub webhook (staging):"
+echo "       URL: https://${STAGING_DOMAIN}/hooks/deploy-staging"
+echo "       Secret: (the STAGING_WEBHOOK_SECRET you exported)"
+echo "       Trigger: push events only (release/* branches)"
+fi

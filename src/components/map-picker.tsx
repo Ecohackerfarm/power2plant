@@ -21,8 +21,10 @@ export function MapPicker({ onSelect, initialLat = 20, initialLng = 0 }: MapPick
   useEffect(() => {
     if (!divRef.current || mapRef.current) return
     let L: typeof import('leaflet')
+    let cancelled = false
 
     import('leaflet').then((mod) => {
+      if (cancelled || !divRef.current) return
       L = mod.default ?? mod
       // Fix default icon paths broken by webpack
       delete (L.Icon.Default.prototype as any)._getIconUrl
@@ -47,6 +49,7 @@ export function MapPicker({ onSelect, initialLat = 20, initialLng = 0 }: MapPick
     })
 
     return () => {
+      cancelled = true
       mapRef.current?.remove()
       mapRef.current = null
     }

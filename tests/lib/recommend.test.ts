@@ -207,6 +207,73 @@ describe('recommend()', () => {
   })
 })
 
+describe('REPELS type', () => {
+  it('gives positive weight (REPELS is a benefit, not a negative)', () => {
+    const crops = [makeCrop('tomato'), makeCrop('basil')]
+    const rels: RelationshipInput[] = [{
+      cropAId: 'basil',
+      cropBId: 'tomato',
+      type: 'REPELS',
+      confidence: 0.8,
+    }]
+    const result = recommend(crops, rels, 2, 3, 0)
+    // With positive weight, basil and tomato should be placed together
+    const filled = result.beds.filter(b => b.crops.length > 0)
+    expect(filled).toHaveLength(1)
+    expect(filled[0].crops.map(c => c.id).sort()).toEqual(['basil', 'tomato'])
+    expect(result.conflicts).toHaveLength(0)
+  })
+
+  it('REPELS pair generates a hint (positive affinity entry in relMap)', () => {
+    const crops = [makeCrop('marigold'), makeCrop('tomato')]
+    const rels: RelationshipInput[] = [{
+      cropAId: 'marigold',
+      cropBId: 'tomato',
+      type: 'REPELS',
+      confidence: 0.75,
+    }]
+    const result = recommend(crops, rels, 1, 2, 0)
+    const bed = result.beds[0]
+    // The pair has positive weight, so should produce a hint
+    expect(bed.hints).toHaveLength(1)
+    expect(bed.hints[0].details).toContain('repels pests')
+  })
+})
+
+describe('relMap dominant-type selection', () => {
+  it('returns companion entry for a pair with mixed types where companion outweighs avoid', () => {
+    const crops = [makeCrop('tomato'), makeCrop('basil')]
+    // 2 companion sources at 0.8 each, 1 avoid at 0.5 — net positive
+    const rels: RelationshipInput[] = [
+      { cropAId: 'basil', cropBId: 'tomato', type: 'COMPANION', confidence: 0.8 },
+      { cropAId: 'basil', cropBId: 'tomato', type: 'COMPANION', confidence: 0.8 },
+      { cropAId: 'basil', cropBId: 'tomato', type: 'AVOID', confidence: 0.5 },
+    ]
+    const result = recommend(crops, rels, 2, 3, 0)
+    // Net weight is positive: pair should be placed together and produce a hint
+    const filled = result.beds.filter(b => b.crops.length > 0)
+    expect(filled).toHaveLength(1)
+    const bed = filled[0]
+    // hint should be generated (relMap entry is the dominant COMPANION type)
+    expect(bed.hints.length).toBeGreaterThan(0)
+    expect(result.conflicts).toHaveLength(0)
+  })
+
+  it('avoid entry wins when avoid weight exceeds companion weight', () => {
+    const crops = [makeCrop('tomato'), makeCrop('fennel')]
+    // 1 avoid at 0.9, 1 companion at 0.3 — net negative
+    const rels: RelationshipInput[] = [
+      { cropAId: 'fennel', cropBId: 'tomato', type: 'AVOID', confidence: 0.9 },
+      { cropAId: 'fennel', cropBId: 'tomato', type: 'COMPANION', confidence: 0.3 },
+    ]
+    const result = recommend(crops, rels, 2, 2, 0)
+    // Net weight is negative: crops should be separated
+    expect(result.conflicts).toHaveLength(0)
+    const filledBeds = result.beds.filter(b => b.crops.length > 0)
+    expect(filledBeds).toHaveLength(2)
+  })
+})
+
 describe('minTempCToZoneName()', () => {
   it('maps -30°C to Zone 4', () => expect(minTempCToZoneName(-30)).toBe('Zone 4'))
   it('maps -1°C to Zone 10', () => expect(minTempCToZoneName(-1)).toBe('Zone 10'))

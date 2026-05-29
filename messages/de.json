@@ -27,7 +27,7 @@
   "Landing": {
     "title": "power2plant",
     "subtitle": "Begleitpflanzung — Gartenplaner",
-    "lookupTitle": "Pflanze nachschlagen",
+    "lookupTitle": "Begleitpflanze finden",
     "lookupDesc": "Begleiter und Antagonisten für jede Pflanze finden",
     "planTitle": "Beete planen",
     "planDesc": "Du weißt, was du anbauen willst — finde, was zusammenpasst",
@@ -35,7 +35,7 @@
     "gardenDesc": "Schau, wie die Pflanzen in deinen Beeten miteinander auskommen"
   },
   "Nav": {
-    "lookup": "Pflanze nachschlagen",
+    "lookup": "Begleitpflanze finden",
     "plan": "Beete planen",
     "garden": "Mein Garten",
     "admin": "Admin"
@@ -322,6 +322,15 @@
     "traditionalDesc": "Aus der Gartenbautradition überliefert. Weit verbreitet, aber nicht formal untersucht.",
     "anecdotalLabel": "Anekdotisch",
     "anecdotalDesc": "Basiert auf einzelnen Gärtnerberichten oder Volksweisheit. Als Ausgangspunkt betrachten."
+  },
+  "ResearchRequests": {
+    "title": "Forschungsanfragen",
+    "description": "Pflanzenkombinationen ohne Begleitpflanzungsdaten. Stimme ab, um zu zeigen, was die Community am dringendsten braucht.",
+    "loading": "Lädt…",
+    "empty": "Noch keine Forschungsanfragen. Fehlende Daten für ein Pflanzenpaar erscheinen hier.",
+    "loginToVote": "Melde dich an, um für die gewünschten Paare abzustimmen.",
+    "vote": "Abstimmen",
+    "voted": "Abgestimmt"
   },
   "FeedbackButton": {
     "label": "Problem melden",

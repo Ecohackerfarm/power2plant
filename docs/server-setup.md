@@ -1,13 +1,13 @@
 # Server Setup — power2plant
 
-Ubuntu 24.04, IPv6-only, `power2plant.ecohackerfarm.org`.
+Ubuntu 24.04 on a VPS with a persistent data volume.
 
 ## Variables
 
 Export these before running any commands or scripts:
 
 ```sh
-export VOLUME_PATH=/mnt/HC_Volume_105677979
+export VOLUME_PATH=/mnt/data   # path where your persistent volume is mounted
 export DEPLOY_USERNAME=deploy
 export PROJECT=power2plant
 export DOMAIN=power2plant.ecohackerfarm.org
@@ -15,6 +15,11 @@ export ADMIN_EMAIL=admin@ecohackerfarm.com
 export GITHUB_USER=JustTB
 export GITHUB_PAT=<fine-grained-PAT>        # never commit a real value here
 export WEBHOOK_SECRET=$(openssl rand -hex 32)   # generate once; store somewhere safe
+
+# Staging (optional — set to enable staging environment)
+export STAGING_DOMAIN=staging.power2plant.ecohackerfarm.org
+export STAGING_WEBHOOK_SECRET=$(openssl rand -hex 32)
+export STAGING_APP_PORT=3001  # default; override if 3001 is taken
 
 # Derived — don't change:
 export PROJECT_PATH=$VOLUME_PATH/$PROJECT
@@ -29,6 +34,7 @@ export AI_PATH=$VOLUME_PATH/ai
 $VOLUME_PATH/
 ├── $PROJECT/              ← this project
 │   ├── prod/              (production clone — app + db)
+│   ├── staging/           (staging clone — deploys on release/*)
 │   ├── dev/               (dev clone — agent works here)
 │   └── (webhook/ lives inside prod clone)
 └── ai/                    ← orchestration agent (separate, multi-project)
@@ -36,30 +42,33 @@ $VOLUME_PATH/
 Symlinks:  /opt/$PROJECT → $PROJECT_PATH
            /opt/ai       → $AI_PATH
 
-Host:  nginx (www-data) — TLS termination → prod:3000
+Host:  nginx (www-data) — TLS termination → prod:3000, staging:3001
        certbot (root)   — Let's Encrypt auto-renew
        $DEPLOY_USERNAME — system user, owns project dirs, runs compose
 ```
 
-**Deploy trigger flow:**
+**Deploy trigger flows:**
 ```
-GitHub push → webhook container → writes /run/p2p-deploy.trigger
-→ systemd path unit → deploy.service → scripts/server/deploy.sh
+push → main         → webhook deploy-prod    → /run/p2p/deploy.trigger
+                    → systemd path unit      → deploy.service → scripts/server/deploy.sh
+
+push → release/*    → webhook deploy-staging → /run/p2p/staging-deploy.branch
+                                             → /run/p2p/staging-deploy.trigger
+                    → systemd path unit      → staging-deploy.service → scripts/server/staging-deploy.sh
 ```
 
 ---
 
-## 1. Hetzner volume
+## 1. Persistent volume
 
-Verify the volume survives reboots:
+Mount a persistent data volume at `$VOLUME_PATH` and verify it survives reboots:
 ```sh
 grep "$VOLUME_PATH" /etc/fstab
 ```
-If missing: Hetzner Cloud Console → volume page has the exact fstab line.
 
 Create layout and symlinks:
 ```sh
-mkdir -p $PROJECT_PATH/{prod/data,dev/data}
+mkdir -p $PROJECT_PATH/{prod/data,staging/data,dev/data}
 mkdir -p $AI_PATH
 
 ln -s $PROJECT_PATH /opt/$PROJECT
@@ -70,8 +79,8 @@ Postgres data lands on the volume via `VOLUME_DATA_DIR` in each stack's `.env`.
 Docker images stay on root disk — disposable, re-pull on a new machine.
 
 **To migrate to a new machine:**
-1. `systemctl stop ${PROJECT}-prod ${PROJECT}-dev`
-2. Detach volume in Hetzner Cloud Console
+1. `systemctl stop ${PROJECT}-prod ${PROJECT}-staging ${PROJECT}-dev`
+2. Detach the volume from the old machine
 3. Attach to new machine, mount at `$VOLUME_PATH`
 4. Install Docker, recreate symlinks, restore systemd units — data already there
 
@@ -80,8 +89,8 @@ Docker images stay on root disk — disposable, re-pull on a new machine.
 ## 2. DNS
 
 ```
-power2plant    AAAA    2a01:4f9:c012:379d::1
-power2plant    A       <your-ipv4-address>
+<your-domain>    A       <your-ipv4-address>
+<your-domain>    AAAA    <your-ipv6-address>   # optional
 ```
 
 IPv4 is required for GitHub webhook delivery (GitHub doesn't support IPv6).
@@ -89,8 +98,8 @@ Certbot, nginx, and browser traffic work on either.
 
 Verify addresses:
 ```sh
-ip -6 addr show | grep 2a01:4f9:c012:379d   # confirm IPv6
-ip -4 addr show                              # confirm IPv4
+ip -4 addr show   # confirm IPv4
+ip -6 addr show   # confirm IPv6 (if applicable)
 ```
 
 Verify propagation before requesting certs:
@@ -168,7 +177,7 @@ POSTGRES_PASSWORD=<same-strong-db-password>
 BETTER_AUTH_SECRET=<min-32-char-random>
 BETTER_AUTH_URL=https://power2plant.ecohackerfarm.org
 NEXT_PUBLIC_APP_URL=https://power2plant.ecohackerfarm.org
-VOLUME_DATA_DIR=/mnt/HC_Volume_105677979/power2plant/prod/data
+VOLUME_DATA_DIR=$VOLUME_PATH/power2plant/prod/data
 ```
 
 ```sh
@@ -271,7 +280,91 @@ Add webhook in GitHub repo → Settings → Webhooks:
 
 ---
 
-## 11. AI agent stack
+## 11. Staging environment
+
+Staging runs on the same machine as prod, isolated in separate containers (ports 3001/5433). It deploys automatically on every push to a `release/*` branch.
+
+### Clone
+
+```sh
+sudo -u $DEPLOY_USERNAME git clone \
+  https://github.com/Ecohackerfarm/power2plant.git \
+  $PROJECT_PATH/staging
+```
+
+### Staging .env
+
+Create `$PROJECT_PATH/staging/.env`:
+```env
+DATABASE_URL=postgresql://power2plant:<staging-db-password>@db:5432/power2plant
+POSTGRES_PASSWORD=<staging-db-password>
+BETTER_AUTH_SECRET=<min-32-char-random>
+BETTER_AUTH_URL=https://staging.power2plant.ecohackerfarm.org
+NEXT_PUBLIC_APP_URL=https://staging.power2plant.ecohackerfarm.org
+VOLUME_DATA_DIR=$VOLUME_PATH/power2plant/staging/data
+APP_PORT=3001
+DB_PORT=5433
+STAGING_DATA_SOURCE=prod
+```
+
+```sh
+chmod 600 $PROJECT_PATH/staging/.env
+```
+
+`STAGING_DATA_SOURCE` controls the one-time DB bootstrap:
+- `prod` — pipes a non-user `pg_dump` from the live prod DB into staging (plant data, relationships, research requests, etc.); auth, garden, bed, and planting tables excluded
+- `seed` (default) — restores `db/seed.sql` (the committed dataset used for fresh prod installs)
+
+Bootstrap is sentinel-guarded (`$VOLUME_DATA_DIR/seeded.marker`). To force a reseed after switching the source: `rm $PROJECT_PATH/staging/data/seeded.marker`, then push to a `release/*` branch.
+
+### Run setup.sh with staging vars
+
+Export `STAGING_DOMAIN` and `STAGING_WEBHOOK_SECRET` (see Variables section), then re-run:
+
+```sh
+cd $PROJECT_PATH/prod
+bash scripts/server/setup.sh
+```
+
+This adds the staging systemd units, nginx vhost, and regenerates `webhook/hooks.json` with both secrets. If `hooks.json` already exists from a previous run, delete it first so it is regenerated:
+
+```sh
+rm $PROJECT_PATH/prod/webhook/hooks.json
+bash scripts/server/setup.sh
+```
+
+### TLS cert (staging)
+
+```sh
+certbot --nginx -d $STAGING_DOMAIN --non-interactive --agree-tos -m $ADMIN_EMAIL
+```
+
+Re-run `setup.sh` to swap the bootstrap config to full HTTPS:
+```sh
+bash scripts/server/setup.sh
+```
+
+### Start staging
+
+```sh
+systemctl start ${PROJECT}-staging
+```
+
+Seed bootstrap runs automatically on the first deploy triggered by a `release/*` push.
+
+### Add GitHub webhook (staging)
+
+GitHub repo → Settings → Webhooks → Add webhook:
+- Payload URL: `https://$STAGING_DOMAIN/hooks/deploy-staging`
+- Content type: `application/json`
+- Secret: `$STAGING_WEBHOOK_SECRET`
+- Events: `push` only
+
+Pushes to `release/*` trigger staging; pushes to `main` trigger prod. Each hook validates its own HMAC-256 secret independently.
+
+---
+
+## 12. AI agent stack
 
 Lives at `$AI_PATH` (`/opt/ai`) — separate from this project, multi-project capable.
 
@@ -314,27 +407,36 @@ ssh -i /home/ai/.ssh/power2plant_dev -p 2222 -o StrictHostKeyChecking=no node@ap
 
 ---
 
-## 12. Port map
+## 13. Port map
 
 | Port | Bound to            | Service                             |
 |------|---------------------|-------------------------------------|
 | 22   | host                | host SSH                            |
 | 80   | `0.0.0.0:80,[::]:80`| nginx → HTTPS redirect              |
-| 443  | `[::]:443`          | nginx → prod app + /hooks/          |
+| 443  | `[::]:443`          | nginx → prod app + staging + /hooks/|
 | 3000 | `127.0.0.1:3000`    | prod app (Docker, not direct)       |
+| 3001 | `127.0.0.1:3001`    | staging app (Docker, not direct)    |
 | 2222 | Docker-internal     | dev app SSH (ai agent only)         |
 | 9000 | `127.0.0.1:9000`    | webhook (proxied via nginx /hooks/) |
 
-Port 9000 blocked by ufw — only reachable through nginx `/hooks/`.
+Ports 3001 and 9000 blocked by ufw — only reachable through nginx.
 
 ---
 
-## 13. Day-2 ops
+## 14. Day-2 ops
 
-### Manual deploy
+### Manual deploy (prod)
 ```sh
 cd $PROJECT_PATH/prod
 sudo -u $DEPLOY_USERNAME git pull origin main
+sudo -u $DEPLOY_USERNAME docker compose up -d --build
+```
+
+### Manual deploy (staging)
+```sh
+cd $PROJECT_PATH/staging
+sudo -u $DEPLOY_USERNAME git fetch origin
+sudo -u $DEPLOY_USERNAME git checkout -B release/v0.x.y origin/release/v0.x.y
 sudo -u $DEPLOY_USERNAME docker compose up -d --build
 ```
 

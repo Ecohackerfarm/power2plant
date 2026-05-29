@@ -50,12 +50,13 @@ function CropPicker({ label, value, onChange, showGenusHint = false }: {
     if (query.trim().length < 2) { setResults([]); setActiveIndex(-1); return }
     const timer = setTimeout(async () => {
       const res = await fetch(`/api/crops?q=${encodeURIComponent(query.trim())}&locale=${locale}`)
+      if (!res.ok) { setResults([]); return }
       const data = await res.json()
       setResults(data.crops ?? [])
       setActiveIndex(-1)
     }, 300)
     return () => clearTimeout(timer)
-  }, [query])
+  }, [query, locale])
 
   useEffect(() => {
     if (activeIndex < 0 || !listRef.current) return

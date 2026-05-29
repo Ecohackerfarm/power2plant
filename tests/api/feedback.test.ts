@@ -84,6 +84,38 @@ describe('POST /api/feedback', () => {
     expect(res.status).toBe(400)
   })
 
+  it('returns 400 when pageUrl exceeds 2048 chars', async () => {
+    vi.mocked(prisma.feedback.count).mockResolvedValue(0)
+    const res = await POST(makeReq({ ...validBody, pageUrl: '/' + 'x'.repeat(2048) }))
+    expect(res.status).toBe(400)
+    const body = await res.json()
+    expect(body.error).toMatch(/2048/)
+  })
+
+  it('accepts pageUrl at exactly 2048 chars', async () => {
+    vi.mocked(prisma.feedback.count).mockResolvedValue(0)
+    vi.mocked(prisma.feedback.create).mockResolvedValue({} as never)
+    const res = await POST(makeReq({ ...validBody, pageUrl: '/' + 'x'.repeat(2047) }))
+    expect(res.status).toBe(201)
+  })
+
+  it('returns 400 when annotation exceeds 50 KB', async () => {
+    vi.mocked(prisma.feedback.count).mockResolvedValue(0)
+    // Build an annotation JSON object whose serialised form is > 50_000 bytes
+    const bigAnnotation = { data: 'x'.repeat(50_001) }
+    const res = await POST(makeReq({ ...validBody, annotation: bigAnnotation }))
+    expect(res.status).toBe(400)
+    const body = await res.json()
+    expect(body.error).toMatch(/50 KB/)
+  })
+
+  it('accepts annotation within 50 KB', async () => {
+    vi.mocked(prisma.feedback.count).mockResolvedValue(0)
+    vi.mocked(prisma.feedback.create).mockResolvedValue({} as never)
+    const res = await POST(makeReq({ ...validBody, annotation: { x: 0.1, y: 0.2 } }))
+    expect(res.status).toBe(201)
+  })
+
   it('stores ipHash not raw IP', async () => {
     vi.mocked(prisma.feedback.count).mockResolvedValue(0)
     vi.mocked(prisma.feedback.create).mockResolvedValue({} as never)

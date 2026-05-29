@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { scoreFromHistory, MIN_SUBMISSIONS, type SubmissionRecord } from '@/lib/trust-score'
+import { describe, it, expect, vi } from 'vitest'
+import { scoreFromHistory, computeAndSaveTrustScore, MIN_SUBMISSIONS, type SubmissionRecord } from '@/lib/trust-score'
 
 function makeHistory(overrides: Partial<SubmissionRecord>[]): SubmissionRecord[] {
   return overrides.map(o => ({ claimedValue: 0.25, derivedValue: 0.25, ...o }))
@@ -65,5 +65,28 @@ describe('scoreFromHistory', () => {
     }))
     expect(scoreFromHistory(history)).toBeGreaterThanOrEqual(0.1)
     expect(scoreFromHistory(history)).toBe(0.1)
+  })
+})
+
+describe('computeAndSaveTrustScore', () => {
+  it('writes trustScore: 1.0 to DB when count < MIN_SUBMISSIONS', async () => {
+    const updateMock = vi.fn().mockResolvedValue({})
+    const db = {
+      relationshipSource: {
+        findMany: vi.fn().mockResolvedValue([]), // 0 testimonies < MIN_SUBMISSIONS
+      },
+      user: {
+        update: updateMock,
+      },
+    }
+
+    const score = await computeAndSaveTrustScore('user-1', db as any)
+
+    expect(score).toBe(1.0)
+    expect(updateMock).toHaveBeenCalledOnce()
+    expect(updateMock).toHaveBeenCalledWith({
+      where: { id: 'user-1' },
+      data: { trustScore: 1.0 },
+    })
   })
 })

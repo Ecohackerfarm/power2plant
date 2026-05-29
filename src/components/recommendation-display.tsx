@@ -278,10 +278,10 @@ export function RecommendationDisplay({ result, alternatives = [], onAccepted }:
                               {t('noDataTitle')}
                             </p>
                             <ul className="space-y-1">
-                              {bed.noDataPairs.map((pair, i) => (
-                                <li key={i}>
+                              {bed.noDataPairs.map((pair) => (
+                                <li key={`${pair.cropAId}-${pair.cropBId}`}>
                                   <Link
-                                    href={`/research-requests?a=${pair.cropAId}&b=${pair.cropBId}`}
+                                    href={`/research-requests?a=${encodeURIComponent(pair.cropAId)}&b=${encodeURIComponent(pair.cropBId)}`}
                                     className="flex items-center justify-between gap-2 text-xs rounded px-1 py-0.5 -mx-1 hover:bg-muted group"
                                   >
                                     <span>

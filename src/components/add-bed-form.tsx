@@ -32,6 +32,7 @@ export function AddBedForm({ onSaved }: AddBedFormProps) {
       setSearching(true)
       try {
         const res = await fetch(`/api/crops?q=${encodeURIComponent(query.trim())}&locale=${locale}`)
+        if (!res.ok) { setResults([]); return }
         const data = await res.json()
         setResults(data.crops ?? [])
       } finally {
@@ -39,7 +40,7 @@ export function AddBedForm({ onSaved }: AddBedFormProps) {
       }
     }, 300)
     return () => clearTimeout(timer)
-  }, [query])
+  }, [query, locale])
 
   const addCrop = useCallback((crop: Crop) => {
     setSelectedCrops(prev => prev.find(c => c.id === crop.id) ? prev : [...prev, crop])

@@ -42,7 +42,6 @@ const COMMON_CROPS: CommonCrop[] = [
   { botanicalName: 'Vicia faba', commonNames: ['Broad Bean', 'Fava Bean', 'Horse Bean', 'Windsor Bean'] },
   { botanicalName: 'Glycine max', commonNames: ['Soybean', 'Soya Bean', 'Edamame'] },
   { botanicalName: 'Pastinaca sativa', commonNames: ['Parsnip', 'Wild Parsnip', 'Cow Parsnip'] },
-  { botanicalName: 'Solanum tuberosum', commonNames: ['Potato'] },
   { botanicalName: 'Ipomoea batatas', commonNames: ['Sweet Potato', 'Kumara', 'Yam'] },
   { botanicalName: 'Brassica napus', commonNames: ['Swede', 'Rutabaga', 'Turnip-rooted Cabbage', 'Rapeseed'] },
   { botanicalName: 'Cichorium intybus', commonNames: ['Chicory', 'Common Chicory', 'Radicchio'] },

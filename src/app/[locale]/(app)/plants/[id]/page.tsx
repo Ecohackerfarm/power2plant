@@ -42,7 +42,7 @@ export default function PlantPage() {
       .then(r => r.ok ? r.json() : Promise.reject(r.status))
       .then(({ crop, companions }) => { setCrop(crop); setCompanions(companions) })
       .finally(() => setLoading(false))
-  }, [id])
+  }, [id, locale])
 
   function addToWishlist(cropId: string) {
     const state = loadState()
@@ -107,7 +107,7 @@ export default function PlantPage() {
               <p className="text-sm text-muted-foreground line-clamp-4">{crop.wikipedia.extract}</p>
             )}
             <div className="flex gap-3 text-xs text-muted-foreground flex-wrap">
-              {crop.wikipedia.articleUrl && (
+              {crop.wikipedia.articleUrl && crop.wikipedia.articleUrl.startsWith('https://') && (
                 <a href={crop.wikipedia.articleUrl} target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">
                   {t('wikiReadMore')}
                 </a>

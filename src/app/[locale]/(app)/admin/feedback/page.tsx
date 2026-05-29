@@ -80,16 +80,19 @@ export default function AdminFeedbackPage() {
 
   const fetchItems = useCallback(async (p = 1) => {
     setLoading(true)
-    const params = new URLSearchParams({ page: String(p), limit: String(limit) })
-    if (statusFilter !== 'ALL') params.set('status', statusFilter)
-    if (modeFilter !== 'ALL') params.set('mode', modeFilter)
-    const res = await fetch(`/api/admin/feedback?${params}`)
-    if (res.ok) {
-      const data = await res.json()
-      setItems(data.items)
-      setTotal(data.total)
+    try {
+      const params = new URLSearchParams({ page: String(p), limit: String(limit) })
+      if (statusFilter !== 'ALL') params.set('status', statusFilter)
+      if (modeFilter !== 'ALL') params.set('mode', modeFilter)
+      const res = await fetch(`/api/admin/feedback?${params}`)
+      if (res.ok) {
+        const data = await res.json()
+        setItems(data.items)
+        setTotal(data.total)
+      }
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }, [statusFilter, modeFilter])
 
   useEffect(() => {
@@ -226,11 +229,11 @@ export default function AdminFeedbackPage() {
 
       {totalPages > 1 && (
         <div className="flex items-center gap-2 justify-center">
-          <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => { setPage(p => p - 1); fetchItems(page - 1) }}>
+          <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => { const next = page - 1; setPage(next); void fetchItems(next) }}>
             Previous
           </Button>
           <span className="text-sm text-muted-foreground">{page} / {totalPages}</span>
-          <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => { setPage(p => p + 1); fetchItems(page + 1) }}>
+          <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => { const next = page + 1; setPage(next); void fetchItems(next) }}>
             Next
           </Button>
         </div>

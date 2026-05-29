@@ -175,7 +175,7 @@ export default function RelationshipPage() {
                         <ul className="ml-4 space-y-1 border-l-2 border-muted pl-3">
                           {s.urls.map((u, j) => (
                             <li key={j} className="text-muted-foreground">
-                              <a href={u.url} target="_blank" rel="noopener noreferrer" className="underline">
+                              <a href={u.url.startsWith('http://') || u.url.startsWith('https://') ? u.url : '#'} target="_blank" rel="noopener noreferrer" className="underline">
                                 {u.url}
                               </a>
                               {u.sourceType && (
@@ -208,7 +208,7 @@ export default function RelationshipPage() {
                           {translateKey(s.position, s.position)}
                         </span>
                       )}
-                      {s.url && (
+                      {s.url && (s.url.startsWith('http://') || s.url.startsWith('https://')) && (
                         <> · <a href={s.url} target="_blank" rel="noopener noreferrer" className="underline">{t('link')}</a></>
                       )}
                       {s.sourceType && (

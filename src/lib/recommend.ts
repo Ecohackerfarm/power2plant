@@ -94,8 +94,8 @@ function buildHint(rel: RelationshipInput): { details: string; confidenceLevel: 
   return { details: parts.join(' · '), confidenceLevel: confidenceLabel(rel.confidence) }
 }
 
-const POSITIVE_TYPES = new Set(['COMPANION', 'ATTRACTS', 'NURSE', 'TRAP_CROP'])
-const NEGATIVE_TYPES = new Set(['AVOID', 'REPELS'])
+const POSITIVE_TYPES = new Set(['COMPANION', 'ATTRACTS', 'REPELS', 'NURSE', 'TRAP_CROP'])
+const NEGATIVE_TYPES = new Set(['AVOID'])
 
 function pairKey(idA: string, idB: string): string {
   return idA < idB ? `${idA}|${idB}` : `${idB}|${idA}`
@@ -117,9 +117,28 @@ function buildWeightMaps(relationships: RelationshipInput[]): WeightMaps {
         : 0
     weights.set(key, (weights.get(key) ?? 0) + delta)
   }
+  // Build relMap by picking the most-representative entry per pair:
+  // if net weight > 0 pick highest-confidence positive entry,
+  // if net weight < 0 pick highest-confidence negative entry,
+  // if 0 pick the entry with highest absolute confidence.
   const relMap = new Map<string, RelationshipInput>()
+  const relMapScore = new Map<string, number>()
   for (const r of relationships) {
-    relMap.set(pairKey(r.cropAId, r.cropBId), r)
+    const key = pairKey(r.cropAId, r.cropBId)
+    const netWeight = weights.get(key) ?? 0
+    const isPositive = POSITIVE_TYPES.has(r.type)
+    const isNegative = NEGATIVE_TYPES.has(r.type)
+    // Only consider entries that match the sign of the net weight
+    const matchesSign =
+      (netWeight > 0 && isPositive) ||
+      (netWeight < 0 && isNegative) ||
+      (netWeight === 0)
+    if (!matchesSign) continue
+    const score = r.confidence
+    if (!relMap.has(key) || score > (relMapScore.get(key) ?? -Infinity)) {
+      relMap.set(key, r)
+      relMapScore.set(key, score)
+    }
   }
   return { weights, relMap }
 }
@@ -235,6 +254,7 @@ function runPlacement(
           noDataPairs.push({
             cropAId: a.id < b.id ? a.id : b.id,
             cropBId: a.id < b.id ? b.id : a.id,
+            // pairLabel is user-supplied — sanitize before passing to any LLM call (prompt injection risk)
             pairLabel: `${getDisplayName(a)} & ${getDisplayName(b)}`,
           })
           continue

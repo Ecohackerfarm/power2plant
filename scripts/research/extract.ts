@@ -15,8 +15,11 @@ type Paper = {
 type Extraction = {
   type: 'COMPANION' | 'AVOID' | 'UNKNOWN'
   reason: 'PEST_CONTROL' | 'POLLINATION' | 'NUTRIENT' | 'SHADE' | 'ALLELOPATHY' | 'OTHER' | null
+  direction: 'A_TO_B' | 'B_TO_A' | 'MUTUAL' | 'UNKNOWN'
   confidence: number
   notes: string
+  cropAFound: boolean
+  cropBFound: boolean
 }
 
 type Extracted = Paper & Extraction
@@ -34,10 +37,13 @@ Abstract: ${abstract}
 Extract:
 1. type: Does this paper show they are COMPANION (beneficial together), AVOID (harmful together), or UNKNOWN (unclear)?
 2. reason: Primary mechanism if known (PEST_CONTROL, POLLINATION, NUTRIENT, SHADE, ALLELOPATHY, OTHER, or null)
-3. confidence: 0.0-1.0, how strongly does the abstract support this conclusion?
-4. notes: One sentence (max 200 chars) summarizing the finding.
+3. direction: Which direction does the benefit flow? A_TO_B (${cropA} benefits ${cropB}), B_TO_A (${cropB} benefits ${cropA}), MUTUAL (both benefit), or UNKNOWN.
+4. confidence: 0.0-1.0, how strongly does the abstract support this conclusion?
+5. notes: One sentence (max 200 chars) summarizing the finding.
+6. cropAFound: true if the abstract actually studies or mentions ${cropA} (any name variant), false if it only appears in the search query context.
+7. cropBFound: true if the abstract actually studies or mentions ${cropB} (any name variant), false if it only appears in the search query context.
 
-Respond ONLY with valid JSON: {"type": ..., "reason": ..., "confidence": ..., "notes": ...}`
+Respond ONLY with valid JSON: {"type": ..., "reason": ..., "direction": ..., "confidence": ..., "notes": ..., "cropAFound": ..., "cropBFound": ...}`
 }
 
 function stripCodeFences(text: string): string {
@@ -81,6 +87,13 @@ async function extractFromPaper(paper: Paper): Promise<Extraction | null> {
       console.warn(`Invalid confidence for ${paper.paperId}: ${parsed.confidence}`)
       return null
     }
+    // Default direction for backwards-compatibility with older extracted.json entries
+    if (!['A_TO_B', 'B_TO_A', 'MUTUAL', 'UNKNOWN'].includes(parsed.direction)) {
+      parsed.direction = 'UNKNOWN'
+    }
+    // Default to true for backwards-compatibility with older extracted.json entries
+    if (parsed.cropAFound === undefined) parsed.cropAFound = true
+    if (parsed.cropBFound === undefined) parsed.cropBFound = true
 
     return parsed
   } catch (err) {
@@ -106,8 +119,13 @@ async function main(): Promise<void> {
     const extraction = await extractFromPaper(paper)
 
     if (extraction && extraction.type !== 'UNKNOWN' && extraction.confidence >= 0.5) {
-      results.push({ ...paper, ...extraction })
-      console.log(`Paper ${i + 1}/${papers.length}: ${paper.cropA} + ${paper.cropB} → ${extraction.type} (${extraction.confidence})`)
+      if (!extraction.cropAFound || !extraction.cropBFound) {
+        const missing = [!extraction.cropAFound && paper.cropA, !extraction.cropBFound && paper.cropB].filter(Boolean).join(', ')
+        console.log(`Paper ${i + 1}/${papers.length}: ${paper.cropA} + ${paper.cropB} → skipped (abstract does not mention: ${missing})`)
+      } else {
+        results.push({ ...paper, ...extraction })
+        console.log(`Paper ${i + 1}/${papers.length}: ${paper.cropA} + ${paper.cropB} → ${extraction.type} (${extraction.confidence})`)
+      }
     } else if (extraction) {
       console.log(`Paper ${i + 1}/${papers.length}: ${paper.cropA} + ${paper.cropB} → skipped (${extraction.type}, confidence ${extraction.confidence})`)
     } else {

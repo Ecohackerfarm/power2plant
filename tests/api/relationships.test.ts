@@ -8,6 +8,7 @@ vi.mock('@/lib/prisma', () => ({
     cropRelationship: { upsert: vi.fn(), update: vi.fn(), findMany: vi.fn() },
     user: { findMany: vi.fn() },
     $transaction: vi.fn(),
+    $queryRaw: vi.fn(),
   },
 }))
 
@@ -194,7 +195,7 @@ describe('POST /api/relationships', () => {
     vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as any)
     const res = await POST(makeReq({ ...validBody, sources: ['https://example.com'], sourceTypeOverrides: { 0: 'INVALID_TYPE' } }))
     expect(res.status).toBe(400)
-    expect((await res.json()).error).toContain('invalid sourceType for index')
+    expect((await res.json()).error).toContain('invalid sourceTypeOverrides entry')
   })
 
   it('returns 400 when sourceTypeOverrides is an array', async () => {
@@ -299,6 +300,27 @@ describe('GET /api/relationships', () => {
     return overrides.length > 0 ? overrides : defaults
   }
 
+  describe('confidence label thresholds (bug #133: route used >= 1.0, recommend.ts uses >= 0.875)', () => {
+    const cases: Array<[number, string]> = [
+      [1.0,   'PEER_REVIEWED'],
+      [0.9,   'PEER_REVIEWED'],
+      [0.875, 'PEER_REVIEWED'],
+      [0.874, 'OBSERVED'],
+      [0.625, 'OBSERVED'],
+      [0.624, 'TRADITIONAL'],
+      [0.375, 'TRADITIONAL'],
+      [0.374, 'ANECDOTAL'],
+      [0.0,   'ANECDOTAL'],
+    ]
+    it.each(cases)('confidence %f → %s', async (confidence, expected) => {
+      const row = { id: 'rel-1', type: 'COMPANION', reason: null, confidence, notes: null, cropA: { id: 'a', name: 'A', botanicalName: 'A', commonNames: [], translations: [] }, cropB: { id: 'b', name: 'B', botanicalName: 'B', commonNames: [], translations: [] }, _count: { sources: 1 } }
+      vi.mocked(prisma.cropRelationship.findMany).mockResolvedValue([row] as any)
+      const res = await GET(makeGetReq(''))
+      const body = await res.json()
+      expect(body.relationships[0].confidence).toBe(expected)
+    })
+  })
+
   it('returns 200 with array of relationships and no nextCursor when results fit in one page', async () => {
     const rows = mockRelationships()
     vi.mocked(prisma.cropRelationship.findMany).mockResolvedValue(rows as any)
@@ -332,7 +354,8 @@ describe('GET /api/relationships', () => {
     expect(body.nextCursor).toBe('rel-81')
   })
 
-  it('filters by ?q= — only relationships where cropA or cropB name matches', async () => {
+  it('filters by ?q= — only relationships where cropA or cropB id matches', async () => {
+    vi.mocked(prisma.$queryRaw).mockResolvedValue([{ id: 'crop-a' }] as any)
     const rows = mockRelationships()
     vi.mocked(prisma.cropRelationship.findMany).mockResolvedValue(rows as any)
     const res = await GET(makeGetReq('q=Tomato'))
@@ -341,7 +364,8 @@ describe('GET /api/relationships', () => {
       expect.objectContaining({
         where: expect.objectContaining({
           OR: expect.arrayContaining([
-            expect.objectContaining({ cropA: expect.objectContaining({ OR: expect.arrayContaining([{ name: { contains: 'Tomato', mode: 'insensitive' } }]) }) }),
+            expect.objectContaining({ cropAId: { in: ['crop-a'] } }),
+            expect.objectContaining({ cropBId: { in: ['crop-a'] } }),
           ]),
         }),
       }),
@@ -361,7 +385,7 @@ describe('GET /api/relationships', () => {
   })
 
   it('two-crop search: detects two crop names and queries their relationship', async () => {
-    vi.mocked(prisma.crop.findMany)
+    vi.mocked(prisma.$queryRaw)
       .mockResolvedValueOnce([{ id: 'crop-c' }] as any)  // crops matching "Fennel"
       .mockResolvedValueOnce([{ id: 'crop-d' }] as any)  // crops matching "Strawberry"
     const rows = mockRelationships([
@@ -386,20 +410,22 @@ describe('GET /api/relationships', () => {
   })
 
   it('two-crop search: falls back to single-crop filter when only one term matches', async () => {
-    vi.mocked(prisma.crop.findMany)
+    vi.mocked(prisma.$queryRaw)
       .mockResolvedValueOnce([{ id: 'crop-x' }] as any)  // "Some" matches
       .mockResolvedValueOnce([] as any)                   // "UnknownPlant" doesn't match
+      .mockResolvedValueOnce([{ id: 'crop-x' }] as any)  // single-term fallback
     const rows = mockRelationships()
     vi.mocked(prisma.cropRelationship.findMany).mockResolvedValue(rows as any)
 
     const res = await GET(makeGetReq('q=Some+UnknownPlant'))
     expect(res.status).toBe(200)
-    // should fall back to single-term filter (OR with cropA/cropB)
+    // falls back to single-term filter (cropAId/cropBId in)
     expect(prisma.cropRelationship.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
           OR: expect.arrayContaining([
-            expect.objectContaining({ cropA: expect.anything() }),
+            expect.objectContaining({ cropAId: { in: ['crop-x'] } }),
+            expect.objectContaining({ cropBId: { in: ['crop-x'] } }),
           ]),
         }),
       }),
@@ -407,7 +433,7 @@ describe('GET /api/relationships', () => {
   })
 
   it('two-crop search: comma-separated input resolves correctly', async () => {
-    vi.mocked(prisma.crop.findMany)
+    vi.mocked(prisma.$queryRaw)
       .mockResolvedValueOnce([{ id: 'crop-a' }] as any)
       .mockResolvedValueOnce([{ id: 'crop-b' }] as any)
     const rows = mockRelationships()
@@ -424,5 +450,79 @@ describe('GET /api/relationships', () => {
         }),
       }),
     )
+  })
+
+  describe('German locale search (bug: case-sensitive array has)', () => {
+    it('finds crops by lowercase German common name (gurke → Gurke)', async () => {
+      vi.mocked(prisma.$queryRaw).mockResolvedValue([{ id: 'crop-cucumber' }] as any)
+      const rows = mockRelationships([
+        { id: 'rel-5', type: 'COMPANION', reason: 'PEST_CONTROL', confidence: 0.5, notes: null, cropA: { id: 'crop-cucumber', name: 'Cucumber', botanicalName: 'Cucumis sativus', commonNames: ['Gurke'], translations: [{ commonNames: ['Gurke'] }] }, cropB: { id: 'crop-b', name: 'Basil', botanicalName: 'Ocimum basilicum', commonNames: [], translations: [] }, _count: { sources: 1 } },
+      ])
+      vi.mocked(prisma.cropRelationship.findMany).mockResolvedValue(rows as any)
+
+      const res = await GET(makeGetReq('q=gurke&locale=de'))
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body.relationships).toHaveLength(1)
+      expect(body.relationships[0].cropA.name).toBe('Cucumber')
+      // $queryRaw called — locale and lowercase like pattern passed as template args
+      expect(prisma.$queryRaw).toHaveBeenCalledWith(
+        expect.anything(), // SQL template parts
+        'de',
+        '%gurke%',
+        '%gurke%',
+        '%gurke%',
+        '%gurke%',
+        '%gurke%',
+      )
+    })
+
+    it('finds crops by lowercase German common name (basilikum → Basilikum)', async () => {
+      vi.mocked(prisma.$queryRaw).mockResolvedValue([{ id: 'crop-basil' }] as any)
+      const rows = mockRelationships([
+        { id: 'rel-6', type: 'COMPANION', reason: 'PEST_CONTROL', confidence: 0.75, notes: null, cropA: { id: 'crop-tomato', name: 'Tomato', botanicalName: 'Solanum lycopersicum', commonNames: [], translations: [] }, cropB: { id: 'crop-basil', name: 'Basil', botanicalName: 'Ocimum basilicum', commonNames: [], translations: [{ commonNames: ['Basilikum'] }] }, _count: { sources: 2 } },
+      ])
+      vi.mocked(prisma.cropRelationship.findMany).mockResolvedValue(rows as any)
+
+      const res = await GET(makeGetReq('q=basilikum&locale=de'))
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body.relationships).toHaveLength(1)
+      expect(body.relationships[0].cropB.name).toBe('Basil')
+    })
+
+    it('two-crop German search: Gurke Basilikum finds their relationship', async () => {
+      vi.mocked(prisma.$queryRaw)
+        .mockResolvedValueOnce([{ id: 'crop-cucumber' }] as any)
+        .mockResolvedValueOnce([{ id: 'crop-basil' }] as any)
+      const rows = mockRelationships([
+        { id: 'rel-7', type: 'COMPANION', reason: 'NUTRIENT', confidence: 0.5, notes: null, cropA: { id: 'crop-cucumber', name: 'Cucumber', botanicalName: 'Cucumis sativus', commonNames: [], translations: [{ commonNames: ['Gurke'] }] }, cropB: { id: 'crop-basil', name: 'Basil', botanicalName: 'Ocimum basilicum', commonNames: [], translations: [{ commonNames: ['Basilikum'] }] }, _count: { sources: 1 } },
+      ])
+      vi.mocked(prisma.cropRelationship.findMany).mockResolvedValue(rows as any)
+
+      const res = await GET(makeGetReq('q=Gurke+Basilikum&locale=de'))
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body.relationships).toHaveLength(1)
+      expect(prisma.cropRelationship.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            OR: expect.arrayContaining([
+              expect.objectContaining({ cropAId: { in: ['crop-cucumber'] }, cropBId: { in: ['crop-basil'] } }),
+            ]),
+          }),
+        }),
+      )
+    })
+
+    it('returns empty when German term has no match', async () => {
+      vi.mocked(prisma.$queryRaw).mockResolvedValue([] as any)
+      vi.mocked(prisma.cropRelationship.findMany).mockResolvedValue([] as any)
+
+      const res = await GET(makeGetReq('q=nichtvorhanden&locale=de'))
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body.relationships).toHaveLength(0)
+    })
   })
 })
