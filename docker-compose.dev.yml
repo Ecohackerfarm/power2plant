@@ -6,6 +6,8 @@ services:
       args:
         FROZEN_LOCKFILE: "false"
         AGENT_PUBKEY: ${AGENT_PUBKEY:-}
+        SHELL_UID: ${SHELL_UID:-1000}
+        SHELL_GID: ${SHELL_GID:-1000}
     command: >
       sh -c "
         mkdir -p /run/ssh-persist &&
