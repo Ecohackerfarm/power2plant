@@ -17,6 +17,9 @@ vi.mock('@/lib/prisma', () => ({
     crop: {
       findMany: vi.fn(),
     },
+    cropTranslation: {
+      findMany: vi.fn().mockResolvedValue([]),
+    },
     $transaction: vi.fn(),
   },
 }))
@@ -51,14 +54,15 @@ describe('GET /api/garden/plantings', () => {
   it('returns 401 when not authenticated', async () => {
     vi.mocked(auth.api.getSession).mockResolvedValue(null)
     const req = new Request('http://localhost/api/garden/plantings')
-    const res = await GET()
+    const res = await GET(req)
     expect(res.status).toBe(401)
   })
 
   it('returns { beds: [] } when user has no garden', async () => {
     vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as any)
     vi.mocked(prisma.userGarden.findUnique).mockResolvedValue(null)
-    const res = await GET()
+    const req = new Request('http://localhost/api/garden/plantings')
+    const res = await GET(req)
     expect(res.status).toBe(200)
     const body = await res.json()
     expect(body).toEqual({ beds: [] })
@@ -79,7 +83,8 @@ describe('GET /api/garden/plantings', () => {
         },
       ],
     } as any)
-    const res = await GET()
+    const req = new Request('http://localhost/api/garden/plantings')
+    const res = await GET(req)
     expect(res.status).toBe(200)
     const body = await res.json()
     expect(body.beds).toHaveLength(1)

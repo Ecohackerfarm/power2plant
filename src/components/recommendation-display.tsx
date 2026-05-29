@@ -1,6 +1,6 @@
 'use client'
 import { useState, useRef, useEffect, useMemo } from 'react'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { ArrowRight } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -46,6 +46,7 @@ interface RecommendationDisplayProps {
 
 export function RecommendationDisplay({ result, alternatives = [], onAccepted }: RecommendationDisplayProps) {
   const t = useTranslations('Recommendations')
+  const locale = useLocale()
   const { data: session } = useSession()
   const [accepting, setAccepting] = useState(false)
   const [acceptError, setAcceptError] = useState<string | null>(null)
@@ -124,7 +125,7 @@ export function RecommendationDisplay({ result, alternatives = [], onAccepted }:
         setAcceptError(t('noBeds'))
         return
       }
-      const res = await fetch('/api/garden/plantings', {
+      const res = await fetch(`/api/garden/plantings?locale=${locale}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -149,7 +150,7 @@ export function RecommendationDisplay({ result, alternatives = [], onAccepted }:
     setSavingBed(true)
     try {
       // GET existing beds
-      const getRes = await fetch('/api/garden/plantings')
+      const getRes = await fetch(`/api/garden/plantings?locale=${locale}`)
       if (!getRes.ok) throw new Error('Failed to fetch existing beds')
       const { beds: existingBeds } = await getRes.json() as {
         beds: { name: string; plantings: { cropId: string }[] }[]
@@ -171,7 +172,7 @@ export function RecommendationDisplay({ result, alternatives = [], onAccepted }:
         return
       }
 
-      const postRes = await fetch('/api/garden/plantings', {
+      const postRes = await fetch(`/api/garden/plantings?locale=${locale}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ beds: allBeds }),
