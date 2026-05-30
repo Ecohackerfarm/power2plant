@@ -7,15 +7,34 @@ function toTitleCase(str: string): string {
   return str.replace(/\b\w/g, c => c.toUpperCase())
 }
 
+type CropLike = { commonNames: string[]; name: string; botanicalName: string }
+
+async function buildTranslationMap(cropIds: string[], locale: string): Promise<Map<string, string[]>> {
+  if (locale === 'en' || cropIds.length === 0) return new Map()
+  const rows = await prisma.cropTranslation.findMany({
+    where: { cropId: { in: cropIds }, locale },
+    select: { cropId: true, commonNames: true },
+  })
+  return new Map(rows.filter(r => r.commonNames.length > 0).map(r => [r.cropId, r.commonNames]))
+}
+
+function resolveName(crop: CropLike & { id: string }, tMap: Map<string, string[]>): string {
+  const translated = tMap.get(crop.id)
+  if (translated?.[0]) return translated[0]
+  return crop.commonNames?.[0] ?? (crop.name !== crop.botanicalName ? crop.name : crop.botanicalName)
+}
+
 async function getSession() {
   return auth.api.getSession({ headers: await headers() })
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await getSession()
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+
+  const locale = new URL(request.url).searchParams.get('locale') ?? 'en'
 
   const garden = await prisma.userGarden.findUnique({
     where: { userId: session.user.id },
@@ -34,13 +53,16 @@ export async function GET() {
     return NextResponse.json({ beds: [] })
   }
 
+  const allCropIds = garden.beds.flatMap(b => b.plantings.map(p => p.cropId))
+  const tMap = await buildTranslationMap(allCropIds, locale)
+
   const beds = garden.beds.map((bed) => ({
     id: bed.id,
     name: bed.name,
     plantings: bed.plantings.map((p) => ({
       plantingId: p.id,
       cropId: p.cropId,
-      cropName: toTitleCase(p.crop.commonNames?.[0] ?? (p.crop.name !== p.crop.botanicalName ? p.crop.name : p.crop.botanicalName)),
+      cropName: toTitleCase(resolveName(p.crop, tMap)),
       status: p.status,
     })),
   }))
@@ -143,13 +165,17 @@ export async function POST(request: Request) {
     return createdBeds
   })
 
+  const locale = new URL(request.url).searchParams.get('locale') ?? 'en'
+  const savedCropIds = result.flatMap(b => b.plantings.map(p => p.cropId))
+  const tMap = await buildTranslationMap(savedCropIds, locale)
+
   const responseBeds = result.map((bed) => ({
     id: bed.id,
     name: bed.name,
     plantings: bed.plantings.map((p) => ({
       plantingId: p.id,
       cropId: p.cropId,
-      cropName: toTitleCase(p.crop.commonNames?.[0] ?? (p.crop.name !== p.crop.botanicalName ? p.crop.name : p.crop.botanicalName)),
+      cropName: toTitleCase(resolveName(p.crop, tMap)),
       status: p.status,
     })),
   }))

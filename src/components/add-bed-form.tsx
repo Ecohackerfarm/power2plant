@@ -54,7 +54,7 @@ export function AddBedForm({ onSaved }: AddBedFormProps) {
     if (selectedCrops.length === 0) return
     setSaving(true)
     try {
-      const getRes = await fetch('/api/garden/plantings')
+      const getRes = await fetch(`/api/garden/plantings?locale=${locale}`)
       const existing = getRes.ok ? await getRes.json() : { beds: [] }
       const existingBeds = (existing.beds ?? []).map(
         (b: { name: string; plantings: { cropId: string }[] }) => ({

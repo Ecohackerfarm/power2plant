@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback, useImperativeHandle, forwardRef } from 'react'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -58,6 +58,7 @@ const STATUS_KEY: Record<PlantingStatus, 'planned' | 'planted' | 'harvested'> = 
 
 export const MyGarden = forwardRef<MyGardenRef, MyGardenProps>(function MyGarden({ onAddMore }, ref) {
   const t = useTranslations('MyGarden')
+  const locale = useLocale()
   const { data: session } = useSession()
   const [beds, setBeds] = useState<Bed[]>([])
   const [bedAnalysis, setBedAnalysis] = useState<BedAnalysis[]>([])
@@ -70,7 +71,7 @@ export const MyGarden = forwardRef<MyGardenRef, MyGardenProps>(function MyGarden
     setLoading(true)
     try {
       const [plantingsRes, analysisRes] = await Promise.all([
-        fetch('/api/garden/plantings'),
+        fetch(`/api/garden/plantings?locale=${locale}`),
         fetch('/api/garden/bed-analysis'),
       ])
       if (plantingsRes.ok) {
@@ -84,7 +85,7 @@ export const MyGarden = forwardRef<MyGardenRef, MyGardenProps>(function MyGarden
     } finally {
       setLoading(false)
     }
-  }, [session])
+  }, [session, locale])
 
   useEffect(() => {
     void fetchBeds()
