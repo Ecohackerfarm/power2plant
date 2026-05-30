@@ -295,7 +295,10 @@
     "companions": "{count} companion pair{count, plural, one {} other {s}}",
     "antagonists": "{count} conflict{count, plural, one {} other {s}}",
     "unknownPairs": "{count} unknown pair{count, plural, one {} other {s}}",
-    "addMoreForAnalysis": "Add more plants to see relationships."
+    "addMoreForAnalysis": "Add more plants to see relationships.",
+    "voteResearch": "Vote to research",
+    "voted": "Voted",
+    "voteError": "Failed to submit vote — please try again."
   },
   "AddBedForm": {
     "title": "Add a bed",

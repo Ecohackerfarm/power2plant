@@ -17,11 +17,18 @@ interface Planting {
   status: PlantingStatus
 }
 
+interface UnknownPair {
+  cropAId: string
+  cropBId: string
+  cropAName: string
+  cropBName: string
+}
+
 interface BedAnalysis {
   bedId: string
   companions: { id: string; cropAName: string; cropBName: string; confidence: number }[]
   antagonists: { id: string; cropAName: string; cropBName: string }[]
-  unknownCount: number
+  unknownPairs: UnknownPair[]
 }
 
 interface Bed {
@@ -65,6 +72,8 @@ export const MyGarden = forwardRef<MyGardenRef, MyGardenProps>(function MyGarden
   const [loading, setLoading] = useState(false)
   const [shareUrl, setShareUrl] = useState<string | null>(null)
   const [sharing, setSharing] = useState(false)
+  const [votedPairs, setVotedPairs] = useState<Set<string>>(new Set())
+  const [votingPair, setVotingPair] = useState<string | null>(null)
 
   const fetchBeds = useCallback(async () => {
     if (!session) return
@@ -107,6 +116,26 @@ export const MyGarden = forwardRef<MyGardenRef, MyGardenProps>(function MyGarden
     if (!res.ok) {
       toast.error(t('statusError'))
       void fetchBeds()
+    }
+  }
+
+  async function voteResearch(pair: UnknownPair) {
+    const key = [pair.cropAId, pair.cropBId].sort().join(':')
+    if (votedPairs.has(key) || votingPair === key) return
+    setVotingPair(key)
+    try {
+      const res = await fetch('/api/research-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cropAId: pair.cropAId, cropBId: pair.cropBId }),
+      })
+      if (res.ok) {
+        setVotedPairs(prev => new Set([...prev, key]))
+      } else {
+        toast.error(t('voteError'))
+      }
+    } finally {
+      setVotingPair(null)
     }
   }
 
@@ -180,10 +209,30 @@ export const MyGarden = forwardRef<MyGardenRef, MyGardenProps>(function MyGarden
                             </ul>
                           </details>
                         )}
-                        {analysis.unknownCount > 0 && (
-                          <p className="text-xs text-muted-foreground">
-                            ? {(t as (k: string, v: Record<string, unknown>) => string)('unknownPairs', { count: analysis.unknownCount })}
-                          </p>
+                        {analysis.unknownPairs.length > 0 && (
+                          <details className="text-xs">
+                            <summary className="text-muted-foreground cursor-pointer">
+                              ? {(t as (k: string, v: Record<string, unknown>) => string)('unknownPairs', { count: analysis.unknownPairs.length })}
+                            </summary>
+                            <ul className="mt-1 ml-3 space-y-1">
+                              {analysis.unknownPairs.map(pair => {
+                                const key = [pair.cropAId, pair.cropBId].sort().join(':')
+                                const voted = votedPairs.has(key)
+                                return (
+                                  <li key={key} className="flex items-center justify-between gap-2 text-muted-foreground">
+                                    <span>{pair.cropAName} × {pair.cropBName}</span>
+                                    <button
+                                      className={`shrink-0 underline hover:no-underline ${voted ? 'opacity-50 cursor-default' : ''}`}
+                                      disabled={voted || votingPair === key}
+                                      onClick={() => { if (!voted) void voteResearch(pair) }}
+                                    >
+                                      {voted ? t('voted') : t('voteResearch')}
+                                    </button>
+                                  </li>
+                                )
+                              })}
+                            </ul>
+                          </details>
                         )}
                       </div>
                     ) : null}

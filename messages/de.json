@@ -295,7 +295,10 @@
     "companions": "{count} Mischkulturpaar{count, plural, one {} other {e}}",
     "antagonists": "{count} Konflikt{count, plural, one {} other {e}}",
     "unknownPairs": "{count} unbekanntes Paar{count, plural, one {} other {e}}",
-    "addMoreForAnalysis": "Füge weitere Pflanzen hinzu, um Beziehungen zu sehen."
+    "addMoreForAnalysis": "Füge weitere Pflanzen hinzu, um Beziehungen zu sehen.",
+    "voteResearch": "Für Forschung abstimmen",
+    "voted": "Abgestimmt",
+    "voteError": "Abstimmung fehlgeschlagen — bitte erneut versuchen."
   },
   "AddBedForm": {
     "title": "Beet hinzufügen",
