@@ -22,8 +22,9 @@ model Crop {
   plantings         Planting[]
   relationshipsA    CropRelationship[]  @relation("CropA")
   relationshipsB    CropRelationship[]  @relation("CropB")
-  translations      CropTranslation[]
-  researchRequestsA ResearchRequest[]   @relation("ResearchRequestCropA")
+  translations         CropTranslation[]
+  enrichmentAttempts   CropEnrichmentAttempt[]
+  researchRequestsA    ResearchRequest[]   @relation("ResearchRequestCropA")
   researchRequestsB ResearchRequest[]   @relation("ResearchRequestCropB")
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
@@ -38,6 +39,18 @@ model CropTranslation {
 
   @@unique([cropId, locale])
   @@index([locale])
+}
+
+model CropEnrichmentAttempt {
+  id          String   @id @default(cuid())
+  cropId      String
+  locale      String
+  source      String
+  attemptedAt DateTime @default(now())
+  crop        Crop     @relation(fields: [cropId], references: [id], onDelete: Cascade)
+
+  @@unique([cropId, locale, source])
+  @@index([locale, source])
 }
 
 model CropSource {

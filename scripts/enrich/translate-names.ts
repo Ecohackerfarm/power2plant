@@ -327,20 +327,30 @@ async function main() {
     console.log(`Enriching translations: locale=${locale} source=${source} force=${force}`)
   }
 
-  const existing = force ? new Set<string>() : new Set(
-    (await prisma.cropTranslation.findMany({
-      where: { locale },
-      select: { cropId: true },
-    })).map(t => t.cropId),
-  )
-
   const crops = await prisma.crop.findMany({
     select: { id: true, botanicalName: true, commonNames: true },
     orderBy: { botanicalName: 'asc' },
   })
 
-  const pending = crops.filter(c => !existing.has(c.id) && c.botanicalName && !alreadyFetched.has(c.botanicalName))
-  console.log(`${pending.length} crops to process (${existing.size} already translated, ${crops.length} total)`)
+  const wikidataDone = (source === 'wikidata' || source === 'both') && !force
+    ? new Set((await prisma.cropEnrichmentAttempt.findMany({
+        where: { locale, source: 'wikidata' },
+        select: { cropId: true },
+      })).map(a => a.cropId))
+    : new Set<string>()
+
+  const gbifDone = (source === 'gbif' || source === 'both') && !force
+    ? new Set((await prisma.cropEnrichmentAttempt.findMany({
+        where: { locale, source: 'gbif' },
+        select: { cropId: true },
+      })).map(a => a.cropId))
+    : new Set<string>()
+
+  const pending = crops.filter(c => c.botanicalName && !alreadyFetched.has(c.botanicalName) && (
+    ((source === 'wikidata' || source === 'both') && !wikidataDone.has(c.id)) ||
+    ((source === 'gbif'     || source === 'both') && !gbifDone.has(c.id))
+  ))
+  console.log(`${pending.length} crops to process (wikidata_done=${wikidataDone.size} gbif_done=${gbifDone.size}, ${crops.length} total)`)
 
   let saved = 0
   let skipped = 0
@@ -348,12 +358,13 @@ async function main() {
 
   // ── Wikidata pass (batched) ────────────────────────────────────────────────
   if (source === 'wikidata' || source === 'both') {
-    console.log(`\n[Wikidata/${langMap.wikidata}] Processing ${pending.length} crops in batches of ${WIKIDATA_BATCH}...`)
+    const wikidataPending = pending.filter(c => !wikidataDone.has(c.id))
+    console.log(`\n[Wikidata/${langMap.wikidata}] Processing ${wikidataPending.length} crops in batches of ${WIKIDATA_BATCH}...`)
 
-    for (let i = 0; i < pending.length; i += WIKIDATA_BATCH) {
-      const batch = pending.slice(i, i + WIKIDATA_BATCH)
+    for (let i = 0; i < wikidataPending.length; i += WIKIDATA_BATCH) {
+      const batch = wikidataPending.slice(i, i + WIKIDATA_BATCH)
       const batchNum    = Math.floor(i / WIKIDATA_BATCH) + 1
-      const totalBatches = Math.ceil(pending.length / WIKIDATA_BATCH)
+      const totalBatches = Math.ceil(wikidataPending.length / WIKIDATA_BATCH)
       process.stdout.write(`  Batch ${batchNum}/${totalBatches}... `)
 
       const results = await fetchWikidataBatch(batch.map(c => c.botanicalName), langMap.wikidata)
@@ -361,7 +372,6 @@ async function main() {
       for (const crop of batch) {
         const names = results.get(crop.botanicalName) ?? []
         if (dryRun) {
-          // Always write a row (empty de_names = no match) so resume skips this crop
           appendFileSync(outFile, tsvRow(crop.botanicalName, crop.commonNames, names) + '\n', 'utf8')
         } else if (names.length > 0) {
           await prisma.cropTranslation.upsert({
@@ -373,6 +383,13 @@ async function main() {
         if (names.length > 0) { foundThisRun.add(crop.botanicalName); saved++ }
       }
 
+      if (!dryRun) {
+        await prisma.cropEnrichmentAttempt.createMany({
+          data: batch.map(c => ({ cropId: c.id, locale, source: 'wikidata' })),
+          skipDuplicates: true,
+        })
+      }
+
       console.log(`got ${[...results.values()].reduce((s, v) => s + v.length, 0)} names for ${results.size} crops`)
       if (results.size > 0) await sleep(WD_DELAY_MS)
     }
@@ -382,18 +399,9 @@ async function main() {
 
   // ── GBIF gap-fill pass (per-crop) ─────────────────────────────────────────
   if (source === 'gbif' || source === 'both') {
-    const nowTranslated = dryRun
-      ? new Set(existing)
-      : new Set(
-          (await prisma.cropTranslation.findMany({
-            where: { locale },
-            select: { cropId: true },
-          })).map(t => t.cropId),
-        )
-
-    const gbifPending = source === 'gbif'
-      ? pending
-      : pending.filter(c => !nowTranslated.has(c.id) && !foundThisRun.has(c.botanicalName))
+    const gbifPending = pending.filter(c =>
+      !gbifDone.has(c.id) && !foundThisRun.has(c.botanicalName)
+    )
 
     console.log(`\n[GBIF/${langMap.gbif}] Gap-filling ${gbifPending.length} crops...`)
 
@@ -404,25 +412,31 @@ async function main() {
 
       const names = await fetchGbifNames(crop.botanicalName, langMap.gbif)
       if (dryRun) {
-        // Always write a row so resume skips this crop
         appendFileSync(outFile, tsvRow(crop.botanicalName, crop.commonNames, names) + '\n', 'utf8')
-      }
-      if (names.length === 0) {
-        console.log('no match')
-        skipped++
-        await sleep(GBIF_DELAY_MS)
-        continue
       }
 
       if (!dryRun) {
-        await prisma.cropTranslation.upsert({
-          where:  { cropId_locale: { cropId: crop.id, locale } },
-          create: { cropId: crop.id, locale, commonNames: names },
-          update: { commonNames: names },
+        if (names.length > 0) {
+          await prisma.cropTranslation.upsert({
+            where:  { cropId_locale: { cropId: crop.id, locale } },
+            create: { cropId: crop.id, locale, commonNames: names },
+            update: { commonNames: names },
+          })
+        }
+        await prisma.cropEnrichmentAttempt.upsert({
+          where:  { cropId_locale_source: { cropId: crop.id, locale, source: 'gbif' } },
+          create: { cropId: crop.id, locale, source: 'gbif' },
+          update: { attemptedAt: new Date() },
         })
       }
-      console.log(`→ ${names.join(', ')}`)
-      saved++
+
+      if (names.length === 0) {
+        console.log('no match')
+        skipped++
+      } else {
+        console.log(`→ ${names.join(', ')}`)
+        saved++
+      }
       await sleep(GBIF_DELAY_MS)
     }
 
