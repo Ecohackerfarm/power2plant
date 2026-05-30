@@ -66,7 +66,9 @@
     "wishlist": "Deine Wunschliste ({count} Pflanzen)",
     "clearAll": "Alle entfernen",
     "addAtLeast2": "Mindestens 2 Pflanzen für eine Empfehlung hinzufügen.",
-    "moreInfo": "mehr Info →"
+    "moreInfo": "mehr Info →",
+    "saveToInspirations": "Zu Inspirationen speichern",
+    "removeInspiration": "Aus Inspirationen entfernen"
   },
   "BedConfig": {
     "title": "Schritt 3 — Beete",
@@ -266,7 +268,25 @@
     "backHome": "← power2plant",
     "title": "Mein Garten",
     "subtitle": "Verwalte deine gespeicherten Gartenbeete.",
-    "signInPrompt": "Anmelden, um Gartenbeete zu verwalten."
+    "signInPrompt": "Anmelden, um deinen Garten zu verwalten.",
+    "overviewTitle": "Mein Garten",
+    "overviewSubtitle": "Dein persönlicher Gartenbereich.",
+    "bedsTitle": "Meine Beete",
+    "bedsSubtitle": "Verwalte deine gespeicherten Gartenbeete.",
+    "bedsSection": "Meine Beete",
+    "bedsSummary": "{count} Beet{count, plural, one {} other {e}}, {plantings} Pflanze{plantings, plural, one {} other {n}}",
+    "manageBeds": "Beete verwalten →",
+    "noBedsYet": "Noch keine Beete gespeichert.",
+    "goToPlan": "Beete planen →",
+    "inspirationsSection": "Meine Inspirationen",
+    "loading": "Wird geladen…",
+    "backToOverview": "Mein Garten"
+  },
+  "MyInspirations": {
+    "loading": "Wird geladen…",
+    "empty": "Noch keine Inspirationen gespeichert.",
+    "emptyHint": "Stöbere durch Pflanzen und speichere interessante.",
+    "remove": "Entfernen"
   },
   "SharePage": {
     "backHome": "← power2plant",

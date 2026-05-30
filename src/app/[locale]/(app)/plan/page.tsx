@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { useGarden } from '@/hooks/use-garden'
+import { useInspirations } from '@/hooks/use-inspirations'
 import { ZoneDetector } from '@/components/zone-detector'
 import { BedConfig } from '@/components/bed-config'
 import { RecommendationDisplay } from '@/components/recommendation-display'
@@ -17,6 +18,7 @@ export default function PlanPage() {
   const t = useTranslations('Home')
   const { data: session } = useSession()
   const { state, hydrated, setZone, addToWishlist, removeFromWishlist, clearWishlist, setBeds } = useGarden()
+  const { inspirationIds, add: addInspiration, remove: removeInspiration } = useInspirations()
   const [result, setResult] = useState<RecommendResponse | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -100,6 +102,9 @@ export default function PlanPage() {
         onRemove={removeFromWishlist}
         onClearAll={clearWishlist}
         initialQuery={searchQuery}
+        inspirationIds={inspirationIds}
+        onInspire={addInspiration}
+        onUninspire={removeInspiration}
       />
 
       <BedConfig
