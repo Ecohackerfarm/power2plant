@@ -160,7 +160,7 @@ export const MyGarden = forwardRef<MyGardenRef, MyGardenProps>(function MyGarden
                       <p className="text-xs text-muted-foreground">{t('addMoreForAnalysis')}</p>
                     ) : analysis ? (
                       <div className="border-t pt-2 space-y-1">
-                        <p className="text-xs font-medium text-muted-foreground">{t('bedRelationships')}</p>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t('bedRelationships')}</p>
                         {analysis.companions.length > 0 && (
                           <p className="text-xs text-green-600">
                             ✓ {(t as (k: string, v: Record<string, unknown>) => string)('companions', { count: analysis.companions.length })}
