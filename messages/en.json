@@ -298,7 +298,16 @@
     "addMoreForAnalysis": "Add more plants to see relationships.",
     "voteResearch": "Vote to research",
     "voted": "Voted",
-    "voteError": "Failed to submit vote — please try again."
+    "voteError": "Failed to submit vote — please try again.",
+    "editBed": "Edit bed",
+    "saveEdit": "Save",
+    "cancelEdit": "Cancel",
+    "saveError": "Failed to save — please try again.",
+    "deleteError": "Failed to delete — please try again.",
+    "searchPlants": "Search plants to add…",
+    "searching": "Searching…",
+    "alreadyAdded": "Added",
+    "mustHaveOnePlant": "A bed must have at least 1 plant."
   },
   "AddBedForm": {
     "title": "Add a bed",

@@ -298,7 +298,16 @@
     "addMoreForAnalysis": "Füge weitere Pflanzen hinzu, um Beziehungen zu sehen.",
     "voteResearch": "Für Forschung abstimmen",
     "voted": "Abgestimmt",
-    "voteError": "Abstimmung fehlgeschlagen — bitte erneut versuchen."
+    "voteError": "Abstimmung fehlgeschlagen — bitte erneut versuchen.",
+    "editBed": "Beet bearbeiten",
+    "saveEdit": "Speichern",
+    "cancelEdit": "Abbrechen",
+    "saveError": "Speichern fehlgeschlagen — bitte erneut versuchen.",
+    "deleteError": "Löschen fehlgeschlagen — bitte erneut versuchen.",
+    "searchPlants": "Pflanzen suchen…",
+    "searching": "Suche läuft…",
+    "alreadyAdded": "Hinzugefügt",
+    "mustHaveOnePlant": "Ein Beet muss mindestens 1 Pflanze haben."
   },
   "AddBedForm": {
     "title": "Beet hinzufügen",
