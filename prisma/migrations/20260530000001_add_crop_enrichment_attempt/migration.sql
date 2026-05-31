@@ -1,5 +1,5 @@
 -- CreateTable
-CREATE TABLE "CropEnrichmentAttempt" (
+CREATE TABLE IF NOT EXISTS "CropEnrichmentAttempt" (
     "id" TEXT NOT NULL DEFAULT gen_random_uuid(),
     "cropId" TEXT NOT NULL,
     "locale" TEXT NOT NULL,
@@ -10,10 +10,14 @@ CREATE TABLE "CropEnrichmentAttempt" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "CropEnrichmentAttempt_cropId_locale_source_key" ON "CropEnrichmentAttempt"("cropId", "locale", "source");
+CREATE UNIQUE INDEX IF NOT EXISTS "CropEnrichmentAttempt_cropId_locale_source_key" ON "CropEnrichmentAttempt"("cropId", "locale", "source");
 
 -- CreateIndex
-CREATE INDEX "CropEnrichmentAttempt_locale_source_idx" ON "CropEnrichmentAttempt"("locale", "source");
+CREATE INDEX IF NOT EXISTS "CropEnrichmentAttempt_locale_source_idx" ON "CropEnrichmentAttempt"("locale", "source");
 
--- AddForeignKey
-ALTER TABLE "CropEnrichmentAttempt" ADD CONSTRAINT "CropEnrichmentAttempt_cropId_fkey" FOREIGN KEY ("cropId") REFERENCES "Crop"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+-- AddForeignKey (no-op if constraint already exists)
+DO $$ BEGIN
+  ALTER TABLE "CropEnrichmentAttempt" ADD CONSTRAINT "CropEnrichmentAttempt_cropId_fkey"
+    FOREIGN KEY ("cropId") REFERENCES "Crop"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
