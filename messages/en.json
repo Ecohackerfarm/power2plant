@@ -262,7 +262,17 @@
     "RESEARCH": "Research",
     "link": "link",
     "genusLevelBanner": "Relationship defined at genus level ({genusA} ↔ {genusB}) — applies to all {genus} species.",
-    "appliesToAllSpecies": "Applies to all {genus} species."
+    "appliesToAllSpecies": "Applies to all {genus} species.",
+    "researchAttemptedTitle": "AI research attempted — no paper found",
+    "researchAttemptedHint": "Research AI searched for peer-reviewed evidence but found none for this specific pair.",
+    "researchAttemptModel": "Model",
+    "researchAttemptDate": "Searched on",
+    "researchAttemptResult": "Result",
+    "researchAttemptNotes": "Notes",
+    "NOT_FOUND": "No evidence found",
+    "LOW_CONFIDENCE": "Insufficient evidence",
+    "researchAttemptClose": "Close",
+    "researchAttemptNoRelationship": "No relationship data found."
   },
   "GardenPage": {
     "backHome": "← power2plant",

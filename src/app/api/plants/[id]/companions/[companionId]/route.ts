@@ -84,7 +84,24 @@ export async function GET(
     }
   }
 
-  if (!rel) return NextResponse.json({ error: 'relationship not found' }, { status: 404 })
+  // Query research attempts for this pair regardless of whether a relationship was found
+  const [cA, cB] = id < companionId ? [id, companionId] : [companionId, id]
+  const researchAttempts = await prisma.relationshipResearchAttempt.findMany({
+    where: { cropAId: cA, cropBId: cB },
+    select: { id: true, model: true, result: true, confidence: true, notes: true, attemptedAt: true },
+    orderBy: { attemptedAt: 'desc' },
+  })
+
+  if (!rel) {
+    if (researchAttempts.length === 0) {
+      return NextResponse.json({ error: 'relationship not found' }, { status: 404 })
+    }
+    return NextResponse.json({
+      relationship: null,
+      sources: [],
+      researchAttempts: researchAttempts.map(a => ({ ...a, attemptedAt: a.attemptedAt.toISOString() })),
+    })
+  }
 
   const rawSources = await prisma.relationshipSource.findMany({
     where: { relationshipId: rel.relId },
@@ -150,5 +167,6 @@ export async function GET(
       ...(resolvedToGenus ? { resolvedToGenus: true, genusA, genusB } : {}),
     },
     sources,
+    researchAttempts: researchAttempts.map(a => ({ ...a, attemptedAt: a.attemptedAt.toISOString() })),
   })
 }
