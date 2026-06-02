@@ -99,3 +99,11 @@ ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
 CMD ["sh", "-c", "prisma migrate deploy && node server.js"]
+
+# ---- scripts ----
+# On-demand admin/research container. Not started by default.
+# Usage: docker compose --profile scripts run --rm scripts pnpm research:import
+FROM deps AS scripts
+WORKDIR /app
+COPY . .
+RUN pnpm exec prisma generate

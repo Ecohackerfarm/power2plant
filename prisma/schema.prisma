@@ -164,6 +164,7 @@ model Planting {
 enum RelationshipType {
   COMPANION
   AVOID
+  NEUTRAL
   ATTRACTS
   REPELS
   NURSE
