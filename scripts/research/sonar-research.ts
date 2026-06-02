@@ -84,41 +84,6 @@ async function recordAttempt(pair: CropPair, rawType: string, rawConfidence: num
   }
 }
 
-let prisma: PrismaClient | null = null
-if (process.env.DATABASE_URL) {
-  prisma = new PrismaClient()
-}
-
-async function resolveCropId(name: string): Promise<string | null> {
-  if (!prisma) return null
-  const byBotanical = await prisma.crop.findUnique({ where: { botanicalName: name } })
-  if (byBotanical) return byBotanical.id
-  const matches = await prisma.crop.findMany({
-    where: { OR: [{ name: { equals: name, mode: 'insensitive' } }, { commonNames: { has: name } }] },
-    orderBy: [{ isCommonCrop: 'desc' }, { createdAt: 'asc' }],
-    select: { id: true },
-  })
-  return matches[0]?.id ?? null
-}
-
-async function recordAttempt(pair: CropPair, rawType: string, rawConfidence: number, rawNotes: string): Promise<void> {
-  if (!prisma) return
-  try {
-    const [idA, idB] = await Promise.all([resolveCropId(pair.cropA), resolveCropId(pair.cropB)])
-    if (!idA || !idB) return
-    const [cropAId, cropBId] = idA < idB ? [idA, idB] : [idB, idA]
-    const result = rawType === 'UNKNOWN' ? 'NOT_FOUND' : 'LOW_CONFIDENCE'
-    await prisma.relationshipResearchAttempt.upsert({
-      where: { cropAId_cropBId_model: { cropAId, cropBId, model: MODEL } },
-      create: { cropAId, cropBId, model: MODEL, result, confidence: rawConfidence, notes: rawNotes || null },
-      update: { result, confidence: rawConfidence, notes: rawNotes || null, attemptedAt: new Date() },
-    })
-    console.log(`  recorded attempt: ${result} (${rawConfidence.toFixed(2)})`)
-  } catch (err) {
-    console.warn(`  could not record attempt: ${err instanceof Error ? err.message : String(err)}`)
-  }
-}
-
 const BASE_URL = process.env.LLM_BASE_URL ?? 'https://openrouter.ai/api/v1'
 const MODEL = process.env.LLM_MODEL ?? 'perplexity/sonar-deep-research'
 const API_KEY = process.env.LLM_API_KEY ?? process.env.OPENROUTER_API_KEY
