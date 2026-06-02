@@ -26,6 +26,9 @@ interface SonarFinding {
   cropAFound: boolean
   cropBFound: boolean
   sourceUrl: string | null
+  genusWide?: boolean
+  actualSpeciesA?: string | null
+  actualSpeciesB?: string | null
 }
 
 export interface ExtractedEntry {
@@ -43,6 +46,42 @@ export interface ExtractedEntry {
   cropAFound: boolean
   cropBFound: boolean
   _source: 'sonar'
+  genusWide?: boolean
+}
+
+let prisma: PrismaClient | null = null
+if (process.env.DATABASE_URL) {
+  prisma = new PrismaClient()
+}
+
+async function resolveCropId(name: string): Promise<string | null> {
+  if (!prisma) return null
+  const byBotanical = await prisma.crop.findUnique({ where: { botanicalName: name } })
+  if (byBotanical) return byBotanical.id
+  const matches = await prisma.crop.findMany({
+    where: { OR: [{ name: { equals: name, mode: 'insensitive' } }, { commonNames: { has: name } }] },
+    orderBy: [{ isCommonCrop: 'desc' }, { createdAt: 'asc' }],
+    select: { id: true },
+  })
+  return matches[0]?.id ?? null
+}
+
+async function recordAttempt(pair: CropPair, rawType: string, rawConfidence: number, rawNotes: string): Promise<void> {
+  if (!prisma) return
+  try {
+    const [idA, idB] = await Promise.all([resolveCropId(pair.cropA), resolveCropId(pair.cropB)])
+    if (!idA || !idB) return
+    const [cropAId, cropBId] = idA < idB ? [idA, idB] : [idB, idA]
+    const result = rawType === 'UNKNOWN' ? 'NOT_FOUND' : 'LOW_CONFIDENCE'
+    await prisma.relationshipResearchAttempt.upsert({
+      where: { cropAId_cropBId_model: { cropAId, cropBId, model: MODEL } },
+      create: { cropAId, cropBId, model: MODEL, result, confidence: rawConfidence, notes: rawNotes || null },
+      update: { result, confidence: rawConfidence, notes: rawNotes || null, attemptedAt: new Date() },
+    })
+    console.log(`  recorded attempt: ${result} (${rawConfidence.toFixed(2)})`)
+  } catch (err) {
+    console.warn(`  could not record attempt: ${err instanceof Error ? err.message : String(err)}`)
+  }
 }
 
 let prisma: PrismaClient | null = null
@@ -113,11 +152,15 @@ Respond ONLY with a JSON object — no markdown, no explanation:
   "notes": "<one sentence ≤200 chars summarising the scientific finding>",
   "cropAFound": <true if studies specifically research ${cropA}>,
   "cropBFound": <true if studies specifically research ${cropB}>,
-  "sourceUrl": "<direct URL or DOI URL of the best supporting study, e.g. https://doi.org/10.xxxx/xxxx — null if not found>"
+  "sourceUrl": "<direct URL or DOI URL of the best supporting study, e.g. https://doi.org/10.xxxx/xxxx — null if not found>",
+  "genusWide": <true if the best evidence is for a related species within the same genus AND the mechanism (chemical volatiles, root exudates, allelopathy) is likely shared across the whole genus — false otherwise>,
+  "actualSpeciesA": "<if genusWide true: exact botanical name of the ${cropA}-side species actually studied — null otherwise>",
+  "actualSpeciesB": "<if genusWide true: exact botanical name of the ${cropB}-side species actually studied — null otherwise>"
 }
 
 direction: A_TO_B = ${cropA} benefits ${cropB}; B_TO_A = ${cropB} benefits ${cropA}; MUTUAL = both benefit.
-confidence: 0.9+ multiple peer-reviewed studies confirming; 0.7 one solid study; 0.5 limited evidence; 0.3 observational only; 0.1 no evidence found.`
+confidence: 0.9+ multiple peer-reviewed studies confirming; 0.7 one solid study; 0.5 limited evidence; 0.3 observational only; 0.1 no evidence found.
+genusWide example: asked for Allium cepa, best evidence is for Allium fistulosum via sulfur volatiles → genusWide: true, actualSpeciesA: "Allium fistulosum".`
 }
 
 async function researchPair(pair: CropPair): Promise<ExtractedEntry[]> {
@@ -157,22 +200,27 @@ async function researchPair(pair: CropPair): Promise<ExtractedEntry[]> {
 
   const citationUrl = finding.sourceUrl?.trim() || null
   const year = new Date().getFullYear()
+  const genusWide = finding.genusWide === true
+  const effectiveCropA = genusWide && finding.actualSpeciesA?.trim() ? finding.actualSpeciesA.trim() : pair.cropA
+  const effectiveCropB = genusWide && finding.actualSpeciesB?.trim() ? finding.actualSpeciesB.trim() : pair.cropB
 
   return [{
-    cropA: pair.cropA,
-    cropB: pair.cropB,
+    cropA: effectiveCropA,
+    cropB: effectiveCropB,
     type: finding.type,
     reason: finding.reason,
     direction: finding.direction,
     confidence: finding.confidence,
     notes: finding.notes,
-    cropAFound: finding.cropAFound ?? true,
-    cropBFound: finding.cropBFound ?? true,
+    // When genusWide overrides cropA/B with the actual studied species, that species IS confirmed
+    cropAFound: effectiveCropA !== pair.cropA ? true : (finding.cropAFound ?? true),
+    cropBFound: effectiveCropB !== pair.cropB ? true : (finding.cropBFound ?? true),
     _source: 'sonar' as const,
-    title: `Sonar synthesis: ${pair.cropA} + ${pair.cropB}`,
+    title: `Sonar synthesis: ${effectiveCropA} + ${effectiveCropB}`,
     doi: citationUrl ? extractDoi(citationUrl) : null,
     year,
     citationUrl,
+    genusWide,
   }]
 }
 
