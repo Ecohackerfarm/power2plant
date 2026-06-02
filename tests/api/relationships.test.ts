@@ -525,4 +525,149 @@ describe('GET /api/relationships', () => {
       expect(body.relationships).toHaveLength(0)
     })
   })
+
+  describe('Latin name and cross-term search (Solanum/Allium/Onion Tomato)', () => {
+    const onionTomatoRel = {
+      id: 'rel-ot',
+      type: 'COMPANION' as const,
+      reason: 'PEST_CONTROL',
+      confidence: 0.5,
+      notes: null,
+      cropA: { id: 'crop-allium', name: 'Allium L.', botanicalName: 'Allium L.', commonNames: ['Onion'], translations: [] },
+      cropB: { id: 'crop-tomato', name: 'Solanum lycopersicum', botanicalName: 'Solanum lycopersicum', commonNames: ['Tomato'], translations: [{ commonNames: ['Tomate'] }] },
+      _count: { sources: 2 },
+    }
+
+    it('single botanical genus "Solanum" finds Onion-Tomato via single-crop search', async () => {
+      // "Solanum" has no space → detectTwoCropIds returns null → single-crop findCropIds
+      vi.mocked(prisma.$queryRaw).mockResolvedValueOnce([{ id: 'crop-tomato' }] as any)
+      vi.mocked(prisma.cropRelationship.findMany).mockResolvedValue([onionTomatoRel] as any)
+
+      const res = await GET(makeGetReq('q=Solanum'))
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body.relationships).toHaveLength(1)
+      expect(prisma.cropRelationship.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            OR: expect.arrayContaining([
+              expect.objectContaining({ cropAId: { in: ['crop-tomato'] } }),
+              expect.objectContaining({ cropBId: { in: ['crop-tomato'] } }),
+            ]),
+          }),
+        }),
+      )
+    })
+
+    it('two common names "Onion Tomato" finds Onion-Tomato via two-crop search', async () => {
+      vi.mocked(prisma.$queryRaw)
+        .mockResolvedValueOnce([{ id: 'crop-allium' }] as any)  // "Onion" → Allium
+        .mockResolvedValueOnce([{ id: 'crop-tomato' }] as any)  // "Tomato" → Tomato
+      vi.mocked(prisma.cropRelationship.findMany).mockResolvedValue([onionTomatoRel] as any)
+
+      const res = await GET(makeGetReq('q=Onion+Tomato'))
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body.relationships).toHaveLength(1)
+      expect(prisma.cropRelationship.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            OR: expect.arrayContaining([
+              expect.objectContaining({ cropAId: { in: ['crop-allium'] }, cropBId: { in: ['crop-tomato'] } }),
+              expect.objectContaining({ cropAId: { in: ['crop-tomato'] }, cropBId: { in: ['crop-allium'] } }),
+            ]),
+          }),
+        }),
+      )
+    })
+
+    it('common name + botanical genus "Onion Solanum" finds Onion-Tomato via two-crop search', async () => {
+      vi.mocked(prisma.$queryRaw)
+        .mockResolvedValueOnce([{ id: 'crop-allium' }] as any)                                                    // "Onion" → Allium
+        .mockResolvedValueOnce([{ id: 'crop-tomato' }, { id: 'crop-potato' }] as any)  // "Solanum" → all Solanum
+      vi.mocked(prisma.cropRelationship.findMany).mockResolvedValue([onionTomatoRel] as any)
+
+      const res = await GET(makeGetReq('q=Onion+Solanum'))
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body.relationships).toHaveLength(1)
+      expect(prisma.cropRelationship.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            OR: expect.arrayContaining([
+              expect.objectContaining({ cropAId: { in: ['crop-allium'] }, cropBId: { in: ['crop-tomato', 'crop-potato'] } }),
+            ]),
+          }),
+        }),
+      )
+    })
+
+    it('full botanical name "Solanum lycopersicum" falls back to single-crop search (genus subset bug fix)', async () => {
+      // "Solanum" matches all Solanaceae; "lycopersicum" is a subset → skip split → single-crop fallback
+      vi.mocked(prisma.$queryRaw)
+        .mockResolvedValueOnce([{ id: 'crop-tomato' }, { id: 'crop-potato' }] as any)  // findCropIds("Solanum")
+        .mockResolvedValueOnce([{ id: 'crop-tomato' }] as any)                          // findCropIds("lycopersicum") — subset of above
+        .mockResolvedValueOnce([{ id: 'crop-tomato' }] as any)                          // single-crop fallback: findCropIds("Solanum lycopersicum")
+      vi.mocked(prisma.cropRelationship.findMany).mockResolvedValue([onionTomatoRel] as any)
+
+      const res = await GET(makeGetReq('q=Solanum+lycopersicum'))
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body.relationships).toHaveLength(1)
+      // Must use single-crop WHERE (not two-crop), so Onion side is not excluded
+      expect(prisma.cropRelationship.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            OR: expect.arrayContaining([
+              expect.objectContaining({ cropAId: { in: ['crop-tomato'] } }),
+              expect.objectContaining({ cropBId: { in: ['crop-tomato'] } }),
+            ]),
+          }),
+        }),
+      )
+    })
+
+    it('full botanical name "Allium cepa" falls back to single-crop search (genus subset bug fix)', async () => {
+      vi.mocked(prisma.$queryRaw)
+        .mockResolvedValueOnce([{ id: 'crop-allium' }, { id: 'crop-garlic' }] as any)  // findCropIds("Allium") — all Allium
+        .mockResolvedValueOnce([{ id: 'crop-allium' }] as any)                          // findCropIds("cepa") — subset
+        .mockResolvedValueOnce([{ id: 'crop-allium' }] as any)                          // single-crop fallback: findCropIds("Allium cepa")
+      vi.mocked(prisma.cropRelationship.findMany).mockResolvedValue([onionTomatoRel] as any)
+
+      const res = await GET(makeGetReq('q=Allium+cepa'))
+      expect(res.status).toBe(200)
+      expect(prisma.cropRelationship.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            OR: expect.arrayContaining([
+              expect.objectContaining({ cropAId: { in: ['crop-allium'] } }),
+              expect.objectContaining({ cropBId: { in: ['crop-allium'] } }),
+            ]),
+          }),
+        }),
+      )
+    })
+
+    it('German two-crop "Tomate Zwiebel" finds Tomato-Onion relationship', async () => {
+      vi.mocked(prisma.$queryRaw)
+        .mockResolvedValueOnce([{ id: 'crop-tomato' }] as any)  // "Tomate" via DE translation
+        .mockResolvedValueOnce([{ id: 'crop-allium' }] as any)  // "Zwiebel" via DE translation
+      const relRow = { ...onionTomatoRel, cropB: { ...onionTomatoRel.cropB, translations: [{ commonNames: ['Tomate'] }] }, cropA: { ...onionTomatoRel.cropA, translations: [{ commonNames: ['Zwiebel'] }] } }
+      vi.mocked(prisma.cropRelationship.findMany).mockResolvedValue([relRow] as any)
+
+      const res = await GET(makeGetReq('q=Tomate+Zwiebel&locale=de'))
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body.relationships).toHaveLength(1)
+      expect(prisma.cropRelationship.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            OR: expect.arrayContaining([
+              expect.objectContaining({ cropAId: { in: ['crop-tomato'] }, cropBId: { in: ['crop-allium'] } }),
+            ]),
+          }),
+        }),
+      )
+    })
+  })
 })
