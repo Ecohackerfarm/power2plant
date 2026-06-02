@@ -2,9 +2,8 @@
 set -e
 
 # Produces two seed files:
-#   db/seed.sql                      — schema + canonical plant data
-#   db/seed-enrichment-attempts.sql  — CropEnrichmentAttempt rows (large table, separate file)
-# Both are kept under GitHub's 100 MB file limit.
+#   db/seed.sql                          — schema + canonical plant data
+#   db/seed-enrichment-attempts.sql.gz   — CropEnrichmentAttempt rows (gzipped; never diffed)
 # Auth and per-user garden tables are schema-only so no personal data is committed.
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -13,7 +12,7 @@ ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 
 DB_URL="${DATABASE_URL:-postgresql://power2plant:power2plant@localhost:5432/power2plant}"
 OUT="$SCRIPT_DIR/seed.sql"
-OUT_ENRICHMENT="$SCRIPT_DIR/seed-enrichment-attempts.sql"
+OUT_ENRICHMENT="$SCRIPT_DIR/seed-enrichment-attempts.sql.gz"
 
 if ! pg_isready -d "$DB_URL" -q; then
   echo "ERROR: Database not reachable at $DB_URL" >&2
@@ -46,6 +45,6 @@ pg_dump "$DB_URL" \
   --no-acl \
   --table='public."CropEnrichmentAttempt"' \
   --data-only \
-  --file="$OUT_ENRICHMENT"
+  | gzip > "$OUT_ENRICHMENT"
 
-echo "Done — $(du -sh "$OUT_ENRICHMENT" | cut -f1), $(wc -l < "$OUT_ENRICHMENT") lines"
+echo "Done — $(du -sh "$OUT_ENRICHMENT" | cut -f1)"
