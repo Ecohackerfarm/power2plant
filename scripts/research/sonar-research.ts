@@ -177,8 +177,9 @@ async function researchPair(pair: CropPair): Promise<ExtractedEntry[]> {
     direction: finding.direction,
     confidence: finding.confidence,
     notes: finding.notes,
-    cropAFound: finding.cropAFound ?? true,
-    cropBFound: finding.cropBFound ?? true,
+    // When genusWide overrides cropA/B with the actual studied species, that species IS confirmed
+    cropAFound: effectiveCropA !== pair.cropA ? true : (finding.cropAFound ?? true),
+    cropBFound: effectiveCropB !== pair.cropB ? true : (finding.cropBFound ?? true),
     _source: 'sonar' as const,
     title: `Sonar synthesis: ${effectiveCropA} + ${effectiveCropB}`,
     doi: citationUrl ? extractDoi(citationUrl) : null,
