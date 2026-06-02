@@ -262,7 +262,17 @@
     "RESEARCH": "Forschung",
     "link": "Link",
     "genusLevelBanner": "Beziehung auf Gattungsebene definiert ({genusA} ↔ {genusB}) — gilt für alle Arten der Gattung {genus}.",
-    "appliesToAllSpecies": "Gilt für alle Arten der Gattung {genus}."
+    "appliesToAllSpecies": "Gilt für alle Arten der Gattung {genus}.",
+    "researchAttemptedTitle": "KI-Recherche durchgeführt — kein Paper gefunden",
+    "researchAttemptedHint": "Die Recherche-KI hat nach wissenschaftlichen Belegen gesucht, aber keine für dieses spezifische Pflanzenpaar gefunden.",
+    "researchAttemptModel": "Modell",
+    "researchAttemptDate": "Gesucht am",
+    "researchAttemptResult": "Ergebnis",
+    "researchAttemptNotes": "Hinweis",
+    "NOT_FOUND": "Kein Beleg gefunden",
+    "LOW_CONFIDENCE": "Unzureichende Belege",
+    "researchAttemptClose": "Schließen",
+    "researchAttemptNoRelationship": "Keine Beziehungsdaten gefunden."
   },
   "GardenPage": {
     "backHome": "← power2plant",

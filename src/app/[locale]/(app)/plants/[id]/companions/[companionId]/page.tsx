@@ -28,6 +28,10 @@ type Source = {
   urls?: Array<{ url: string; sourceType: string | null; confidence: string }>
 }
 
+type ResearchAttempt = {
+  id: string; model: string; result: string; confidence: number | null; notes: string | null; attemptedAt: string
+}
+
 function CropCard({ name, botanical, commonNames, isNitrogen, nitrogenLabel }: {
   name: string; botanical: string; commonNames: string[]; isNitrogen: boolean; nitrogenLabel: string
 }) {
@@ -47,20 +51,26 @@ export default function RelationshipPage() {
   const router = useRouter()
   const [rel, setRel] = useState<RelationshipRow | null>(null)
   const [sources, setSources] = useState<Source[]>([])
+  const [researchAttempts, setResearchAttempts] = useState<ResearchAttempt[]>([])
   const [loading, setLoading] = useState(true)
+  const [notFound, setNotFound] = useState(false)
+  const [expandedAttempt, setExpandedAttempt] = useState<string | null>(null)
 
   useEffect(() => {
     fetch(`/api/plants/${id}/companions/${companionId}`)
-      .then(r => r.ok ? r.json() : Promise.reject(r.status))
-      .then(({ relationship, sources }) => { setRel(relationship); setSources(sources) })
+      .then(r => r.json().then(body => ({ ok: r.ok, body })))
+      .then(({ ok, body }) => {
+        if (!ok && !body.researchAttempts?.length) { setNotFound(true); return }
+        setRel(body.relationship ?? null)
+        setSources(body.sources ?? [])
+        setResearchAttempts(body.researchAttempts ?? [])
+        if (!body.relationship) setNotFound(false)
+      })
       .finally(() => setLoading(false))
   }, [id, companionId])
 
   if (loading) return <main className="max-w-3xl mx-auto px-4 py-8"><p className="text-muted-foreground">{t('loading')}</p></main>
-  if (!rel) return <main className="max-w-3xl mx-auto px-4 py-8"><p className="text-red-600">{t('notFound')}</p></main>
-
-  const clevel = confidenceLabel(rel.confidence)
-  const isDirectGenus = !rel.resolvedToGenus && detectRank(rel.cropABotanical) === 'genus'
+  if (notFound) return <main className="max-w-3xl mx-auto px-4 py-8"><p className="text-red-600">{t('notFound')}</p></main>
 
   function translateKey(key: string, fallback?: string): string {
     try {
@@ -69,6 +79,19 @@ export default function RelationshipPage() {
       return fallback ?? key
     }
   }
+
+  if (!rel) {
+    return (
+      <main className="max-w-2xl mx-auto px-4 py-8 space-y-6">
+        <div><button onClick={() => router.back()} className="text-sm text-muted-foreground hover:text-foreground">{t('back')}</button></div>
+        <p className="text-muted-foreground text-sm">{t('researchAttemptNoRelationship')}</p>
+        <ResearchAttemptSection attempts={researchAttempts} expandedAttempt={expandedAttempt} setExpandedAttempt={setExpandedAttempt} translateKey={translateKey} t={t} />
+      </main>
+    )
+  }
+
+  const clevel = confidenceLabel(rel.confidence)
+  const isDirectGenus = !rel.resolvedToGenus && detectRank(rel.cropABotanical) === 'genus'
 
   return (
     <main
@@ -152,6 +175,8 @@ export default function RelationshipPage() {
         )}
       </dl>
 
+      <ResearchAttemptSection attempts={researchAttempts} expandedAttempt={expandedAttempt} setExpandedAttempt={setExpandedAttempt} translateKey={translateKey} t={t} />
+
       {sources.length > 0 && (
         <>
           <Separator />
@@ -226,5 +251,65 @@ export default function RelationshipPage() {
         </>
       )}
     </main>
+  )
+}
+
+function ResearchAttemptSection({ attempts, expandedAttempt, setExpandedAttempt, translateKey, t }: {
+  attempts: ResearchAttempt[]
+  expandedAttempt: string | null
+  setExpandedAttempt: (id: string | null) => void
+  translateKey: (key: string, fallback?: string) => string
+  t: ReturnType<typeof useTranslations<'RelationshipPage'>>
+}) {
+  if (attempts.length === 0) return null
+  return (
+    <>
+      <Separator />
+      <div>
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-xs font-medium bg-amber-100 text-amber-800 rounded px-2 py-0.5">
+            {t('researchAttemptedTitle')}
+          </span>
+        </div>
+        <p className="text-xs text-muted-foreground mb-3">{t('researchAttemptedHint')}</p>
+        <ul className="space-y-2">
+          {attempts.map(a => (
+            <li key={a.id} className="text-xs">
+              <button
+                onClick={() => setExpandedAttempt(expandedAttempt === a.id ? null : a.id)}
+                className="flex items-center gap-2 text-left hover:text-foreground text-muted-foreground w-full"
+              >
+                <span className="font-medium">{translateKey(a.result, a.result)}</span>
+                <span>·</span>
+                <span>{new Date(a.attemptedAt).toLocaleDateString()}</span>
+                <span className="ml-auto">{expandedAttempt === a.id ? '▲' : '▼'}</span>
+              </button>
+              {expandedAttempt === a.id && (
+                <dl className="mt-2 ml-2 space-y-1 border-l-2 border-muted pl-3 text-muted-foreground">
+                  <div className="flex gap-2">
+                    <dt className="w-24 shrink-0">{t('researchAttemptModel')}</dt>
+                    <dd className="font-mono text-xs break-all">{a.model}</dd>
+                  </div>
+                  <div className="flex gap-2">
+                    <dt className="w-24 shrink-0">{t('researchAttemptDate')}</dt>
+                    <dd>{new Date(a.attemptedAt).toLocaleString()}</dd>
+                  </div>
+                  <div className="flex gap-2">
+                    <dt className="w-24 shrink-0">{t('researchAttemptResult')}</dt>
+                    <dd>{translateKey(a.result, a.result)}{a.confidence != null && ` (${(a.confidence * 100).toFixed(0)}%)`}</dd>
+                  </div>
+                  {a.notes && (
+                    <div className="flex gap-2">
+                      <dt className="w-24 shrink-0">{t('researchAttemptNotes')}</dt>
+                      <dd>{a.notes}</dd>
+                    </div>
+                  )}
+                </dl>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </>
   )
 }

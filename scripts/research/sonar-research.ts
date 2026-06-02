@@ -10,6 +10,7 @@
  */
 import { readFileSync, writeFileSync, existsSync } from 'fs'
 import { join } from 'path'
+import { PrismaClient } from '@prisma/client'
 
 interface CropPair {
   cropA: string
@@ -42,6 +43,41 @@ export interface ExtractedEntry {
   cropAFound: boolean
   cropBFound: boolean
   _source: 'sonar'
+}
+
+let prisma: PrismaClient | null = null
+if (process.env.DATABASE_URL) {
+  prisma = new PrismaClient()
+}
+
+async function resolveCropId(name: string): Promise<string | null> {
+  if (!prisma) return null
+  const byBotanical = await prisma.crop.findUnique({ where: { botanicalName: name } })
+  if (byBotanical) return byBotanical.id
+  const matches = await prisma.crop.findMany({
+    where: { OR: [{ name: { equals: name, mode: 'insensitive' } }, { commonNames: { has: name } }] },
+    orderBy: [{ isCommonCrop: 'desc' }, { createdAt: 'asc' }],
+    select: { id: true },
+  })
+  return matches[0]?.id ?? null
+}
+
+async function recordAttempt(pair: CropPair, rawType: string, rawConfidence: number, rawNotes: string): Promise<void> {
+  if (!prisma) return
+  try {
+    const [idA, idB] = await Promise.all([resolveCropId(pair.cropA), resolveCropId(pair.cropB)])
+    if (!idA || !idB) return
+    const [cropAId, cropBId] = idA < idB ? [idA, idB] : [idB, idA]
+    const result = rawType === 'UNKNOWN' ? 'NOT_FOUND' : 'LOW_CONFIDENCE'
+    await prisma.relationshipResearchAttempt.upsert({
+      where: { cropAId_cropBId_model: { cropAId, cropBId, model: MODEL } },
+      create: { cropAId, cropBId, model: MODEL, result, confidence: rawConfidence, notes: rawNotes || null },
+      update: { result, confidence: rawConfidence, notes: rawNotes || null, attemptedAt: new Date() },
+    })
+    console.log(`  recorded attempt: ${result} (${rawConfidence.toFixed(2)})`)
+  } catch (err) {
+    console.warn(`  could not record attempt: ${err instanceof Error ? err.message : String(err)}`)
+  }
 }
 
 const BASE_URL = process.env.LLM_BASE_URL ?? 'https://openrouter.ai/api/v1'
@@ -177,15 +213,16 @@ async function main(): Promise<void> {
 
     try {
       const entries = await researchPair(pair)
-      const kept = entries.filter(
-        e => e.type !== 'UNKNOWN' && e.confidence >= 0.5 && e.cropAFound && e.cropBFound,
-      )
+      const kept = entries.filter(e => e.type !== 'UNKNOWN' && e.confidence >= 0.5)
       results.push(...kept)
       const summary = entries[0]
       console.log(
         `${i + 1}/${pairs.length}: ${pair.cropA} + ${pair.cropB}` +
         ` → ${summary?.type ?? 'UNKNOWN'} conf=${summary?.confidence ?? 0} citations=${entries[0]?.citationUrl ? entries.length : 0} kept=${kept.length}`,
       )
+      if (kept.length === 0 && summary) {
+        await recordAttempt(pair, summary.type, summary.confidence, summary.notes)
+      }
     } catch (err) {
       console.warn(
         `${i + 1}/${pairs.length}: ${pair.cropA} + ${pair.cropB} → ERROR: ${err instanceof Error ? err.message : String(err)}`,
@@ -199,6 +236,7 @@ async function main(): Promise<void> {
   }
 
   console.log(`\nTotal entries in extracted.json: ${results.length}`)
+  if (prisma) await prisma.$disconnect()
 }
 
 main().catch(err => {

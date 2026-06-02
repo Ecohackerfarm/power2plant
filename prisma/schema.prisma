@@ -24,8 +24,10 @@ model Crop {
   relationshipsB    CropRelationship[]  @relation("CropB")
   translations         CropTranslation[]
   enrichmentAttempts   CropEnrichmentAttempt[]
-  researchRequestsA    ResearchRequest[]   @relation("ResearchRequestCropA")
-  researchRequestsB ResearchRequest[]   @relation("ResearchRequestCropB")
+  researchRequestsA    ResearchRequest[]              @relation("ResearchRequestCropA")
+  researchRequestsB    ResearchRequest[]              @relation("ResearchRequestCropB")
+  researchAttemptsA    RelationshipResearchAttempt[]  @relation("ResearchAttemptCropA")
+  researchAttemptsB    RelationshipResearchAttempt[]  @relation("ResearchAttemptCropB")
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
 }
@@ -322,6 +324,27 @@ model AppConfig {
   feedbackDigestEnabled  Boolean  @default(false)
   feedbackDigestFreq     String   @default("daily")
   feedbackDigestEmails   String[] @default([])
+}
+
+enum ResearchAttemptResult {
+  NOT_FOUND
+  LOW_CONFIDENCE
+}
+
+model RelationshipResearchAttempt {
+  id          String                @id @default(cuid())
+  cropAId     String
+  cropBId     String
+  model       String
+  result      ResearchAttemptResult
+  confidence  Float?
+  notes       String?
+  attemptedAt DateTime              @default(now())
+  cropA       Crop                  @relation("ResearchAttemptCropA", fields: [cropAId], references: [id], onDelete: Cascade)
+  cropB       Crop                  @relation("ResearchAttemptCropB", fields: [cropBId], references: [id], onDelete: Cascade)
+
+  @@unique([cropAId, cropBId, model])
+  @@index([cropAId, cropBId])
 }
 
 model ResearchRequest {

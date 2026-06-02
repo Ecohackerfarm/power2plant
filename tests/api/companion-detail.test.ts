@@ -5,6 +5,7 @@ vi.mock('@/lib/prisma', () => ({
   default: {
     $queryRaw: vi.fn(),
     relationshipSource: { findMany: vi.fn() },
+    relationshipResearchAttempt: { findMany: vi.fn() },
   },
 }))
 
@@ -24,6 +25,11 @@ const fakeRel = {
 }
 
 describe('GET /api/plants/[id]/companions/[companionId]', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(prisma.relationshipResearchAttempt.findMany).mockResolvedValue([])
+  })
+
   it('returns 404 when relationship not found', async () => {
     vi.mocked(prisma.$queryRaw).mockResolvedValue([])
     const res = await GET(makeReq('crop-a', 'crop-b'), {
@@ -116,10 +122,29 @@ describe('GET /api/plants/[id]/companions/[companionId]', () => {
     const body = await res.json()
     expect(body.sources[0].sourceType).toBe('SCIENTIFIC_PAPER')
   })
+
+  it('returns 200 with relationship:null when no relationship but research attempts exist', async () => {
+    vi.mocked(prisma.$queryRaw).mockResolvedValue([])
+    vi.mocked(prisma.relationshipResearchAttempt.findMany).mockResolvedValue([
+      { id: 'att-1', model: 'perplexity/sonar-deep-research', result: 'NOT_FOUND', confidence: 0.1, notes: 'No studies found.', attemptedAt: new Date('2026-06-01') },
+    ])
+    const res = await GET(makeReq('crop-a', 'crop-b'), {
+      params: Promise.resolve({ id: 'crop-a', companionId: 'crop-b' }),
+    })
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.relationship).toBeNull()
+    expect(body.sources).toEqual([])
+    expect(body.researchAttempts).toHaveLength(1)
+    expect(body.researchAttempts[0].model).toBe('perplexity/sonar-deep-research')
+  })
 })
 
 describe('GET /api/plants/[id]/companions/[companionId] — genus fallback', () => {
-  beforeEach(() => vi.clearAllMocks())
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(prisma.relationshipResearchAttempt.findMany).mockResolvedValue([])
+  })
 
   const annuum = { id: 'crop-annuum', botanicalName: 'Capsicum annuum' }
   const basilicum = { id: 'crop-basil', botanicalName: 'Ocimum basilicum' }
