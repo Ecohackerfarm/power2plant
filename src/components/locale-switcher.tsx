@@ -6,6 +6,14 @@ import { useLocale } from 'next-intl'
 const LOCALE_LABELS: Record<string, string> = {
   en: 'EN',
   de: 'DE',
+  es: 'ES',
+  fr: 'FR',
+  pt: 'PT',
+  'zh-Hans': '中文',
+  ar: 'AR',
+  hi: 'HI',
+  ru: 'RU',
+  ja: '日本語',
 }
 
 export function LocaleSwitcher() {
