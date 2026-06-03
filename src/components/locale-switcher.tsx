@@ -26,21 +26,17 @@ export function LocaleSwitcher() {
   }
 
   return (
-    <div className="flex items-center gap-1 text-sm">
+    <select
+      value={locale}
+      onChange={(e) => switchLocale(e.target.value)}
+      className="text-sm bg-transparent border-none cursor-pointer text-muted-foreground hover:text-foreground focus:outline-none"
+      aria-label="Language"
+    >
       {routing.locales.map((l) => (
-        <button
-          key={l}
-          onClick={() => switchLocale(l)}
-          className={`px-1.5 py-0.5 rounded transition-colors ${
-            l === locale
-              ? 'font-semibold text-foreground'
-              : 'text-muted-foreground hover:text-foreground'
-          }`}
-          aria-current={l === locale ? 'true' : undefined}
-        >
+        <option key={l} value={l}>
           {LOCALE_LABELS[l] ?? l.toUpperCase()}
-        </button>
+        </option>
       ))}
-    </div>
+    </select>
   )
 }
