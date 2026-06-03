@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.15.2] - 2026-06-03
+
+### Fixed
+- UX: collapse language switcher into dropdown — all locales were shown as inline buttons cluttering the header
+
 ## [v0.15.1] - 2026-06-03
 
 ### Fixed
