@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.15.1] - 2026-06-03
+
+### Fixed
+- Docker: set explicit `target: runner` on app service build — scripts stage added after runner caused compose to pick scripts (last stage) as default, starting a Node REPL instead of the server
+
 ## [v0.12.0] - 2026-05-20
 
 ### Added
