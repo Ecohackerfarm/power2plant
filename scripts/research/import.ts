@@ -10,7 +10,7 @@ type RawDirection = 'A_TO_B' | 'B_TO_A' | 'MUTUAL' | 'UNKNOWN'
 interface ExtractedRelationship {
   cropA: string
   cropB: string
-  type: 'COMPANION' | 'AVOID'
+  type: 'COMPANION' | 'AVOID' | 'NEUTRAL'
   reason: string | null
   direction?: RawDirection
   confidence: number
@@ -18,24 +18,28 @@ interface ExtractedRelationship {
   doi: string | null
   title: string
   year: number
+  citationUrl?: string | null
   cropAFound?: boolean
   cropBFound?: boolean
+  genusWide?: boolean
 }
 
 interface AggregatedPair {
   cropA: string
   cropB: string
-  type: 'COMPANION' | 'AVOID'
+  type: 'COMPANION' | 'AVOID' | 'NEUTRAL'
   reason: string | null
   notes: string
+  genusWide: boolean
   papers: Array<{
     doi: string | null
+    citationUrl?: string | null
     title: string
     year: number
-    position: 'COMPANION' | 'AVOID'
+    position: 'COMPANION' | 'AVOID' | 'NEUTRAL'
     reason: string | null
     direction?: RawDirection
-    extractedCropA: string  // original cropA from extraction, for direction mapping
+    extractedCropA: string
   }>
 }
 
@@ -84,20 +88,24 @@ async function resolveCropId(name: string): Promise<string | null> {
 }
 
 function aggregateByPair(relationships: ExtractedRelationship[]): AggregatedPair[] {
-  const pairMap = new Map<string, { companion: number; avoid: number; entries: ExtractedRelationship[] }>()
+  const pairMap = new Map<string, { companion: number; avoid: number; neutral: number; entries: ExtractedRelationship[] }>()
 
   for (const entry of relationships) {
     const key = [entry.cropA, entry.cropB].sort().join('|')
-    if (!pairMap.has(key)) pairMap.set(key, { companion: 0, avoid: 0, entries: [] })
+    if (!pairMap.has(key)) pairMap.set(key, { companion: 0, avoid: 0, neutral: 0, entries: [] })
     const agg = pairMap.get(key)!
     agg.entries.push(entry)
     if (entry.type === 'COMPANION') agg.companion += entry.confidence
-    else agg.avoid += entry.confidence
+    else if (entry.type === 'AVOID') agg.avoid += entry.confidence
+    else if (entry.type === 'NEUTRAL') agg.neutral += entry.confidence
   }
 
   const results: AggregatedPair[] = []
   for (const [, agg] of pairMap) {
-    const winningType: 'COMPANION' | 'AVOID' = agg.companion >= agg.avoid ? 'COMPANION' : 'AVOID'
+    const max = Math.max(agg.companion, agg.avoid, agg.neutral)
+    const winningType: 'COMPANION' | 'AVOID' | 'NEUTRAL' =
+      agg.companion === max ? 'COMPANION' :
+      agg.avoid === max ? 'AVOID' : 'NEUTRAL'
     const winningEntries = agg.entries.filter(e => e.type === winningType)
     const best = winningEntries.reduce((a, b) => a.confidence >= b.confidence ? a : b)
     results.push({
@@ -106,10 +114,21 @@ function aggregateByPair(relationships: ExtractedRelationship[]): AggregatedPair
       type: winningType,
       reason: best.reason,
       notes: best.notes,
-      papers: agg.entries.map(e => ({ doi: e.doi, title: e.title, year: e.year, position: e.type, reason: e.reason, direction: e.direction, extractedCropA: e.cropA })),
+      genusWide: agg.entries.some(e => e.genusWide),
+      papers: agg.entries.map(e => ({ doi: e.doi, citationUrl: e.citationUrl, title: e.title, year: e.year, position: e.type, reason: e.reason, direction: e.direction, extractedCropA: e.cropA })),
     })
   }
   return results
+}
+
+// Finds the genus-level Crop record for a species botanical name.
+// Looks for a crop whose botanicalName matches "^<Genus> [A-Z]" (e.g. "Allium L.").
+async function findGenusCropId(botanicalName: string): Promise<string | null> {
+  const genusWord = botanicalName.split(' ')[0].replace(/[$()*+.[\]?\\^{}|]/g, '\\$&')
+  const rows = await prisma.$queryRaw<Array<{ id: string }>>`
+    SELECT id FROM "Crop" WHERE "botanicalName" ~ ${`^${genusWord} [A-Z]`} LIMIT 1
+  `
+  return rows[0]?.id ?? null
 }
 
 // Valid RelationshipReason enum values from Prisma schema
@@ -169,32 +188,40 @@ async function main(): Promise<void> {
         include: { sources: true },
       })
 
-      // Create one source per paper (deduplicated by DOI or title)
+      // Create one source per paper — deduplicated by URL (or by note-key when no URL),
+      // across both pre-existing sources and those added in this batch.
       let addedSources = 0
+      const seenUrls = new Set(relationship.sources.map(s => s.url).filter(Boolean) as string[])
+      const seenNoteKeys = new Set(relationship.sources.map(s => s.notes).filter(Boolean) as string[])
+
       for (const paper of pair.papers) {
-        const paperUrl = paper.doi ? `https://doi.org/${paper.doi}` : null
-        const exists = relationship.sources.some(s =>
-          (paperUrl !== null && s.url === paperUrl) ||
-          (s.notes?.includes(paper.title) ?? false)
-        )
-        if (!exists) {
-          // Resolve the per-paper extraction-order cropA to an ID so mapDirection
-          // can correctly flip A_TO_B ↔ B_TO_A when the stored pair order differs.
-          const paperCropAId = await resolveCropId(paper.extractedCropA)
-          await prisma.relationshipSource.create({
-            data: {
-              relationshipId: relationship.id,
-              source: 'RESEARCH',
-              confidence: 'PEER_REVIEWED',
-              position: paper.position,
-              reason: validateReason(paper.reason),
-              sourceDirection: mapDirection(paper.direction, paperCropAId ?? idA, cropAId) as any,
-              url: paperUrl,
-              notes: `${paper.title} (${paper.year})`,
-            },
-          })
-          addedSources++
+        const paperUrl = paper.doi ? `https://doi.org/${paper.doi}` : (paper.citationUrl ?? null)
+        const noteKey = `${paper.title} (${paper.year})`
+
+        if (paperUrl !== null) {
+          if (seenUrls.has(paperUrl)) continue
+          seenUrls.add(paperUrl)
+        } else {
+          if (seenNoteKeys.has(noteKey)) continue
+          seenNoteKeys.add(noteKey)
         }
+
+        // Resolve the per-paper extraction-order cropA to an ID so mapDirection
+        // can correctly flip A_TO_B ↔ B_TO_A when the stored pair order differs.
+        const paperCropAId = await resolveCropId(paper.extractedCropA)
+        await prisma.relationshipSource.create({
+          data: {
+            relationshipId: relationship.id,
+            source: 'RESEARCH',
+            confidence: paperUrl ? 'PEER_REVIEWED' : 'ANECDOTAL',
+            position: paper.position,
+            reason: validateReason(paper.reason),
+            sourceDirection: mapDirection(paper.direction, paperCropAId ?? idA, cropAId) as any,
+            url: paperUrl,
+            notes: noteKey,
+          },
+        })
+        addedSources++
       }
 
       // Recompute confidence as max(source evidence levels) across all sources,
@@ -217,6 +244,57 @@ async function main(): Promise<void> {
         )
       } else {
         skippedExisting++
+      }
+
+      // Genus dual-write: when evidence is genus-wide, also create/update the genus-level relationship
+      // with derived sources so all species in the genus benefit via the existing genus fallback.
+      if (pair.genusWide) {
+        try {
+          const genusAId = await findGenusCropId(pair.cropA)
+          const genusBId = await findGenusCropId(pair.cropB)
+          if (genusAId && genusBId && (genusAId !== idA || genusBId !== idB)) {
+            const [gCropAId, gCropBId] = genusAId < genusBId ? [genusAId, genusBId] : [genusBId, genusAId]
+            const genusRel = await prisma.cropRelationship.upsert({
+              where: { cropAId_cropBId: { cropAId: gCropAId, cropBId: gCropBId } },
+              create: { cropAId: gCropAId, cropBId: gCropBId, type: pair.type as RelationshipType, direction: 'MUTUAL', reason: validateReason(pair.reason), confidence: 0.25, notes: pair.notes },
+              update: {},
+              include: { sources: true },
+            })
+            const seenGenusUrls = new Set(genusRel.sources.map(s => s.url).filter(Boolean) as string[])
+            const seenGenusNoteKeys = new Set(genusRel.sources.map(s => s.notes).filter(Boolean) as string[])
+            let addedGenusSources = 0
+            for (const paper of pair.papers) {
+              const paperUrl = paper.doi ? `https://doi.org/${paper.doi}` : (paper.citationUrl ?? null)
+              const noteKey = `Derived from ${pair.cropA}: ${paper.title} (${paper.year})`
+              if (paperUrl !== null) {
+                if (seenGenusUrls.has(paperUrl)) continue
+                seenGenusUrls.add(paperUrl)
+              } else {
+                if (seenGenusNoteKeys.has(noteKey)) continue
+                seenGenusNoteKeys.add(noteKey)
+              }
+              await prisma.relationshipSource.create({
+                data: {
+                  relationshipId: genusRel.id,
+                  source: 'RESEARCH',
+                  confidence: paperUrl ? 'PEER_REVIEWED' : 'ANECDOTAL',
+                  position: paper.position,
+                  reason: validateReason(paper.reason),
+                  url: paperUrl,
+                  notes: noteKey,
+                },
+              })
+              addedGenusSources++
+            }
+            if (addedGenusSources > 0) {
+              const genusSources = await prisma.relationshipSource.findMany({ where: { relationshipId: genusRel.id }, select: { confidence: true } })
+              await prisma.cropRelationship.update({ where: { id: genusRel.id }, data: { confidence: computeRelationshipConfidence(genusSources.map(s => s.confidence)) } })
+              console.log(`  GENUS: derived relationship also created/updated (${addedGenusSources} sources)`)
+            }
+          }
+        } catch (err) {
+          console.warn(`  GENUS: could not create derived genus relationship: ${err instanceof Error ? err.message : String(err)}`)
+        }
       }
     } catch (err) {
       console.error(`ERROR importing pair ${pair.cropA} + ${pair.cropB}:`, err)

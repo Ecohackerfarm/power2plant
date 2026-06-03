@@ -38,6 +38,17 @@ RUN if [ -n "$AGENT_PUBKEY" ]; then \
     fi
 RUN passwd -d node && \
     printf '\nPort 2222\nPasswordAuthentication no\nPermitRootLogin prohibit-password\nStrictModes no\n' >> /etc/ssh/sshd_config
+# Align node uid/gid with the host/agent user so shared /app volume files
+# are mutually writable. Pass SHELL_UID/SHELL_GID at build time.
+ARG SHELL_UID=1000
+ARG SHELL_GID=1000
+RUN if [ "$SHELL_UID" != "1000" ] || [ "$SHELL_GID" != "1000" ]; then \
+      apk add --no-cache shadow && \
+      groupmod -g "$SHELL_GID" node && \
+      usermod -u "$SHELL_UID" node && \
+      chown -R node:node /home/node && \
+      apk del shadow; \
+    fi
 
 # ---- prod-deps ----
 # Flat (hoisted) layout so .bin shims have no absolute paths baked in —
@@ -88,3 +99,11 @@ ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
 CMD ["sh", "-c", "prisma migrate deploy && node server.js"]
+
+# ---- scripts ----
+# On-demand admin/research container. Not started by default.
+# Usage: docker compose --profile scripts run --rm scripts pnpm research:import
+FROM deps AS scripts
+WORKDIR /app
+COPY . .
+RUN pnpm exec prisma generate

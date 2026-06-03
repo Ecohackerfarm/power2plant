@@ -66,7 +66,9 @@
     "wishlist": "Your wishlist ({count} plants)",
     "clearAll": "Clear all",
     "addAtLeast2": "Add at least 2 plants to get a recommendation.",
-    "moreInfo": "more info →"
+    "moreInfo": "more info →",
+    "saveToInspirations": "Save to inspirations",
+    "removeInspiration": "Remove from inspirations"
   },
   "BedConfig": {
     "title": "Step 3 — Beds",
@@ -260,13 +262,41 @@
     "RESEARCH": "Research",
     "link": "link",
     "genusLevelBanner": "Relationship defined at genus level ({genusA} ↔ {genusB}) — applies to all {genus} species.",
-    "appliesToAllSpecies": "Applies to all {genus} species."
+    "appliesToAllSpecies": "Applies to all {genus} species.",
+    "researchAttemptedTitle": "AI research attempted — no paper found",
+    "researchAttemptedHint": "Research AI searched for peer-reviewed evidence but found none for this specific pair.",
+    "researchAttemptModel": "Model",
+    "researchAttemptDate": "Searched on",
+    "researchAttemptResult": "Result",
+    "researchAttemptNotes": "Notes",
+    "NOT_FOUND": "No evidence found",
+    "LOW_CONFIDENCE": "Insufficient evidence",
+    "researchAttemptClose": "Close",
+    "researchAttemptNoRelationship": "No relationship data found."
   },
   "GardenPage": {
     "backHome": "← power2plant",
     "title": "My Garden",
     "subtitle": "Manage your saved garden beds.",
-    "signInPrompt": "Sign in to manage your garden beds."
+    "signInPrompt": "Sign in to manage your garden.",
+    "overviewTitle": "My Garden",
+    "overviewSubtitle": "Your personal garden space.",
+    "bedsTitle": "My Beds",
+    "bedsSubtitle": "Manage your saved garden beds.",
+    "bedsSection": "My Beds",
+    "bedsSummary": "{count} bed{count, plural, one {} other {s}}, {plantings} plant{plantings, plural, one {} other {s}}",
+    "manageBeds": "Manage beds →",
+    "noBedsYet": "No beds saved yet.",
+    "goToPlan": "Plan beds →",
+    "inspirationsSection": "My Inspirations",
+    "loading": "Loading…",
+    "backToOverview": "My Garden"
+  },
+  "MyInspirations": {
+    "loading": "Loading…",
+    "empty": "No inspirations saved yet.",
+    "emptyHint": "Browse plants and bookmark ones you find interesting.",
+    "remove": "Remove"
   },
   "SharePage": {
     "backHome": "← power2plant",
@@ -295,7 +325,19 @@
     "companions": "{count} companion pair{count, plural, one {} other {s}}",
     "antagonists": "{count} conflict{count, plural, one {} other {s}}",
     "unknownPairs": "{count} unknown pair{count, plural, one {} other {s}}",
-    "addMoreForAnalysis": "Add more plants to see relationships."
+    "addMoreForAnalysis": "Add more plants to see relationships.",
+    "voteResearch": "Vote to research",
+    "voted": "Voted",
+    "voteError": "Failed to submit vote — please try again.",
+    "editBed": "Edit bed",
+    "saveEdit": "Save",
+    "cancelEdit": "Cancel",
+    "saveError": "Failed to save — please try again.",
+    "deleteError": "Failed to delete — please try again.",
+    "searchPlants": "Search plants to add…",
+    "searching": "Searching…",
+    "alreadyAdded": "Added",
+    "mustHaveOnePlant": "A bed must have at least 1 plant."
   },
   "AddBedForm": {
     "title": "Add a bed",

@@ -2,16 +2,26 @@
  * Enrich CropTranslation table with vernacular names from Wikidata (primary)
  * and GBIF (gap-fill).
  *
- * Usage:
- *   pnpm enrich:translate-names                         # de via wikidata+gbif, writes to DB
- *   pnpm enrich:translate-names --locale de
- *   pnpm enrich:translate-names --locale de --source wikidata
- *   pnpm enrich:translate-names --locale de --source gbif
- *   pnpm enrich:translate-names --locale de --fetch      # fetch + write translations-de.tsv, no DB writes
- *   pnpm enrich:translate-names --import data/intl/translations-de.tsv  # import reviewed TSV into DB
+ * Supported locales: de, es, fr, pt, zh-Hans, ar, hi, ru, ja
  *
+ * Usage:
+ *   pnpm enrich:translate-names                              # de via wikidata+gbif, writes to DB
+ *   pnpm enrich:translate-names --locale es
+ *   pnpm enrich:translate-names --locale zh-Hans --source wikidata
+ *   pnpm enrich:translate-names --locale ru --source gbif
+ *   pnpm enrich:translate-names --locale ja --fetch          # fetch + write translations-ja.tsv, no DB writes
+ *   pnpm enrich:translate-names --import data/intl/translations-ja.tsv
+ *   pnpm enrich:translate-names --locale de --source wikipedia  # recover genus crops: wikidata-attempted but
+ *                                                               #   no translation → retry via Wikipedia sitelink
+ *
+ * Run locales sequentially (not concurrently) to stay within Wikidata/GBIF rate limits.
  * Idempotent: skips crops that already have a translation for the locale.
  * Use --force to re-fetch and overwrite existing translations.
+ *
+ * Botanical name guard: names that look like Latin scientific names (same genus,
+ * Latin binomial pattern) are filtered out before writing. When Wikidata only
+ * returns a botanical name, the Wikipedia sitelink title is tried as fallback
+ * (disambiguation suffixes like " (Gattung)" are stripped automatically).
  *
  * TSV columns: botanical_name  en_names  {locale}_names  status
  * Edit the TSV to fix/remove rows before importing.
@@ -32,15 +42,41 @@ const WD_DELAY_MS    = 1500 // Wikidata polite crawl delay between batches
 const WD_RETRY_WAIT  = 10000 // wait after 429 before retry
 
 // BCP-47 locale → Wikidata lang code + GBIF ISO 639-2 response language code
+// GBIF vernacular names API returns language as ISO 639-2 3-letter codes.
+// Wikidata P1843 lang tags for CJK: 'zh' covers both simplified and traditional entries.
 const LOCALE_MAP: Record<string, { wikidata: string; gbif: string }> = {
-  de: { wikidata: 'de', gbif: 'deu' },
-  es: { wikidata: 'es', gbif: 'spa' },
-  fr: { wikidata: 'fr', gbif: 'fra' },
-  pt: { wikidata: 'pt', gbif: 'por' },
+  de:        { wikidata: 'de', gbif: 'deu' },
+  es:        { wikidata: 'es', gbif: 'spa' },
+  fr:        { wikidata: 'fr', gbif: 'fra' },
+  pt:        { wikidata: 'pt', gbif: 'por' },
+  'zh-Hans': { wikidata: 'zh', gbif: 'zho' },
+  ar:        { wikidata: 'ar', gbif: 'ara' },
+  hi:        { wikidata: 'hi', gbif: 'hin' },
+  ru:        { wikidata: 'ru', gbif: 'rus' },
+  ja:        { wikidata: 'ja', gbif: 'jpn' },
 }
 
 function sleep(ms: number): Promise<void> {
   return new Promise(r => setTimeout(r, ms))
+}
+
+// ── Name guards ───────────────────────────────────────────────────────────────
+
+// Returns true when a name looks like a Latin scientific name rather than a
+// vernacular translation. Catches same-genus synonyms and Latin binomials.
+function isBotanicalName(name: string, genus: string): boolean {
+  const n = name.trim()
+  if (!n) return false
+  // Same genus word → synonym, not a translation
+  if (n.split(/\s+/)[0].toLowerCase() === genus.toLowerCase()) return true
+  // Latin binomial/uninomial: starts uppercase, rest only lowercase Latin letters/hyphens/spaces
+  if (/^[A-Z][a-z×-]+(?:\s+(?:var|subsp|ssp|f|cv)\.?\s+)?(?:\s+[a-z×-]+)+$/.test(n)) return true
+  return false
+}
+
+// Strips Wikipedia article disambiguation suffixes, e.g. "Lauch (Gattung)" → "Lauch"
+function stripDisambiguation(title: string): string {
+  return title.replace(/\s*\([^)]*\)\s*$/, '').trim()
 }
 
 // ── Wikidata ──────────────────────────────────────────────────────────────────
@@ -48,9 +84,9 @@ function sleep(ms: number): Promise<void> {
 interface WikidataResult {
   results: {
     bindings: Array<{
-      botanical:    { value: string }
-      name:         { value: string }
-      nameSource:   { value: string } // "vernacular" | "label"
+      botanical:  { value: string }
+      name:       { value: string }
+      nameSource: { value: string } // "vernacular" | "label" | "wikipedia"
     }>
   }
 }
@@ -62,8 +98,10 @@ async function fetchWikidataBatch(
   lang: string,
 ): Promise<Map<string, string[]>> {
   const values = botanicalNames.map(n => `"${n.replace(/"/g, '\\"')}"`).join(' ')
-  // P1843 (vernacular name) is primary; rdfs:label is fallback.
-  // Both fetched in one query; code below picks P1843 if present.
+  const wikiHost = `https://${lang}.wikipedia.org/`
+  // P1843 (vernacular name) is primary; Wikipedia sitelink title is secondary fallback
+  // for genus crops where only a botanical synonym ends up in rdfs:label; rdfs:label is
+  // tertiary. All three are fetched in one query and merged in priority order below.
   const query = `
     SELECT ?botanical ?name ?nameSource WHERE {
       VALUES ?botanical { ${values} }
@@ -76,6 +114,11 @@ async function fetchWikidataBatch(
         ?taxon rdfs:label ?name .
         FILTER(LANG(?name) = "${lang}")
         BIND("label" AS ?nameSource)
+      } UNION {
+        ?article schema:about ?taxon .
+        ?article schema:isPartOf <${wikiHost}> .
+        ?article schema:name ?name .
+        BIND("wikipedia" AS ?nameSource)
       }
     }
   `
@@ -127,23 +170,50 @@ async function fetchWikidataBatch(
     return new Map()
   }
 
-  // Collect P1843 vernacular names and rdfs:label names separately
+  // Collect results by source bucket
   const vernacular = new Map<string, string[]>()
+  const wikipedia  = new Map<string, string[]>()
   const labels     = new Map<string, string[]>()
+
   for (const b of data.results.bindings) {
-    const key  = b.botanical.value
-    const name = b.name.value.trim()
+    const key = b.botanical.value
+    let name  = b.name.value.trim()
     if (!name || name.toLowerCase() === key.toLowerCase()) continue
-    const bucket = b.nameSource.value === 'vernacular' ? vernacular : labels
-    const list = bucket.get(key) ?? []
-    if (!list.includes(name)) list.push(name)
-    bucket.set(key, list)
+
+    if (b.nameSource.value === 'wikipedia') {
+      name = stripDisambiguation(name)
+      if (!name) continue
+      const list = wikipedia.get(key) ?? []
+      if (!list.includes(name)) list.push(name)
+      wikipedia.set(key, list)
+    } else if (b.nameSource.value === 'vernacular') {
+      const list = vernacular.get(key) ?? []
+      if (!list.includes(name)) list.push(name)
+      vernacular.set(key, list)
+    } else {
+      const list = labels.get(key) ?? []
+      if (!list.includes(name)) list.push(name)
+      labels.set(key, list)
+    }
   }
 
-  // Per crop: prefer P1843; fall back to rdfs:label
+  // Merge per crop: vernacular (unfiltered, curated by Wikidata editors) →
+  // wikipedia sitelink (stripped, botanical-filtered) → rdfs:label (botanical-filtered).
+  // Botanical names are filtered from wikipedia and label sources because Wikidata
+  // sometimes returns Latin synonyms there, especially for genus-level taxa.
   const out = new Map<string, string[]>()
-  for (const key of new Set([...vernacular.keys(), ...labels.keys()])) {
-    out.set(key, vernacular.get(key) ?? labels.get(key) ?? [])
+  for (const key of new Set([...vernacular.keys(), ...wikipedia.keys(), ...labels.keys()])) {
+    const genus = key.split(' ')[0]
+    const vern  = vernacular.get(key) ?? []
+    const wiki  = (wikipedia.get(key) ?? []).filter(n => !isBotanicalName(n, genus))
+    const lab   = (labels.get(key) ?? []).filter(n => !isBotanicalName(n, genus))
+
+    const seen = new Set(vern.map(n => n.toLowerCase()))
+    const merged = [...vern]
+    for (const n of [...wiki, ...lab]) {
+      if (!seen.has(n.toLowerCase())) { merged.push(n); seen.add(n.toLowerCase()) }
+    }
+    if (merged.length > 0) out.set(key, merged)
   }
   return out
 }
@@ -264,7 +334,7 @@ function parseArgs() {
   }
   return {
     locale:      get('--locale') ?? 'de',
-    source:      (get('--source') ?? 'both') as 'wikidata' | 'gbif' | 'both',
+    source:      (get('--source') ?? 'both') as 'wikidata' | 'gbif' | 'both' | 'wikipedia',
     force:       args.includes('--force'),
     debug:       args.includes('--debug'),
     dryRun:      args.includes('--fetch'),
@@ -309,6 +379,90 @@ async function main() {
     process.exit(1)
   }
 
+  // ── Wikipedia sitelink recovery mode ─────────────────────────────────────
+  // Targets crops that were already attempted by the wikidata source but have
+  // no CropTranslation (e.g. because the result was a botanical name and was
+  // deleted). Fetches via the Wikipedia sitelink UNION in the SPARQL query
+  // (same fetchWikidataBatch function) and records source='wikipedia'.
+  if (source === 'wikipedia') {
+    console.log(`[Wikipedia recovery] locale=${locale} — targeting wikidata-attempted crops with no translation`)
+
+    const allCrops = await prisma.crop.findMany({
+      select: { id: true, botanicalName: true, commonNames: true },
+      orderBy: { botanicalName: 'asc' },
+    })
+
+    const wikidataAttempted = new Set(
+      (await prisma.cropEnrichmentAttempt.findMany({
+        where: { locale, source: 'wikidata' },
+        select: { cropId: true },
+      })).map(a => a.cropId)
+    )
+
+    const wikipediaAttempted = force ? new Set<string>() : new Set(
+      (await prisma.cropEnrichmentAttempt.findMany({
+        where: { locale, source: 'wikipedia' },
+        select: { cropId: true },
+      })).map(a => a.cropId)
+    )
+
+    const hasTranslation = new Set(
+      (await prisma.cropTranslation.findMany({
+        where: { locale },
+        select: { cropId: true },
+      })).map(t => t.cropId)
+    )
+
+    const recovery = allCrops.filter(c =>
+      c.botanicalName &&
+      wikidataAttempted.has(c.id) &&
+      !hasTranslation.has(c.id) &&
+      !wikipediaAttempted.has(c.id)
+    )
+
+    console.log(`Found ${recovery.length} crops to recover (wikidata_attempted=${wikidataAttempted.size}, has_translation=${hasTranslation.size})`)
+    if (recovery.length === 0) {
+      console.log('Nothing to do.')
+      await prisma.$disconnect()
+      return
+    }
+
+    let saved = 0
+    for (let i = 0; i < recovery.length; i += WIKIDATA_BATCH) {
+      const batch = recovery.slice(i, i + WIKIDATA_BATCH)
+      const batchNum    = Math.floor(i / WIKIDATA_BATCH) + 1
+      const totalBatches = Math.ceil(recovery.length / WIKIDATA_BATCH)
+      process.stdout.write(`  Batch ${batchNum}/${totalBatches}... `)
+
+      const results = await fetchWikidataBatch(batch.map(c => c.botanicalName), langMap.wikidata)
+
+      for (const crop of batch) {
+        const names = results.get(crop.botanicalName) ?? []
+        if (names.length > 0) {
+          await prisma.cropTranslation.upsert({
+            where:  { cropId_locale: { cropId: crop.id, locale } },
+            create: { cropId: crop.id, locale, commonNames: names },
+            update: { commonNames: names },
+          })
+          if (DEBUG) console.log(`  → ${crop.botanicalName}: ${names.join(', ')}`)
+          saved++
+        }
+      }
+
+      await prisma.cropEnrichmentAttempt.createMany({
+        data: batch.map(c => ({ cropId: c.id, locale, source: 'wikipedia' })),
+        skipDuplicates: true,
+      })
+
+      console.log(`got ${[...results.values()].reduce((s, v) => s + v.length, 0)} names for ${results.size} crops`)
+      if (results.size > 0) await sleep(WD_DELAY_MS)
+    }
+
+    await prisma.$disconnect()
+    console.log(`\n[Wikipedia recovery] Done. ${saved} crops recovered.`)
+    return
+  }
+
   // Already-fetched botanical names from a previous interrupted run
   const alreadyFetched = new Set<string>()
   if (dryRun) {
@@ -327,20 +481,30 @@ async function main() {
     console.log(`Enriching translations: locale=${locale} source=${source} force=${force}`)
   }
 
-  const existing = force ? new Set<string>() : new Set(
-    (await prisma.cropTranslation.findMany({
-      where: { locale },
-      select: { cropId: true },
-    })).map(t => t.cropId),
-  )
-
   const crops = await prisma.crop.findMany({
     select: { id: true, botanicalName: true, commonNames: true },
     orderBy: { botanicalName: 'asc' },
   })
 
-  const pending = crops.filter(c => !existing.has(c.id) && c.botanicalName && !alreadyFetched.has(c.botanicalName))
-  console.log(`${pending.length} crops to process (${existing.size} already translated, ${crops.length} total)`)
+  const wikidataDone = (source === 'wikidata' || source === 'both') && !force
+    ? new Set((await prisma.cropEnrichmentAttempt.findMany({
+        where: { locale, source: 'wikidata' },
+        select: { cropId: true },
+      })).map(a => a.cropId))
+    : new Set<string>()
+
+  const gbifDone = (source === 'gbif' || source === 'both') && !force
+    ? new Set((await prisma.cropEnrichmentAttempt.findMany({
+        where: { locale, source: 'gbif' },
+        select: { cropId: true },
+      })).map(a => a.cropId))
+    : new Set<string>()
+
+  const pending = crops.filter(c => c.botanicalName && !alreadyFetched.has(c.botanicalName) && (
+    ((source === 'wikidata' || source === 'both') && !wikidataDone.has(c.id)) ||
+    ((source === 'gbif'     || source === 'both') && !gbifDone.has(c.id))
+  ))
+  console.log(`${pending.length} crops to process (wikidata_done=${wikidataDone.size} gbif_done=${gbifDone.size}, ${crops.length} total)`)
 
   let saved = 0
   let skipped = 0
@@ -348,12 +512,13 @@ async function main() {
 
   // ── Wikidata pass (batched) ────────────────────────────────────────────────
   if (source === 'wikidata' || source === 'both') {
-    console.log(`\n[Wikidata/${langMap.wikidata}] Processing ${pending.length} crops in batches of ${WIKIDATA_BATCH}...`)
+    const wikidataPending = pending.filter(c => !wikidataDone.has(c.id))
+    console.log(`\n[Wikidata/${langMap.wikidata}] Processing ${wikidataPending.length} crops in batches of ${WIKIDATA_BATCH}...`)
 
-    for (let i = 0; i < pending.length; i += WIKIDATA_BATCH) {
-      const batch = pending.slice(i, i + WIKIDATA_BATCH)
+    for (let i = 0; i < wikidataPending.length; i += WIKIDATA_BATCH) {
+      const batch = wikidataPending.slice(i, i + WIKIDATA_BATCH)
       const batchNum    = Math.floor(i / WIKIDATA_BATCH) + 1
-      const totalBatches = Math.ceil(pending.length / WIKIDATA_BATCH)
+      const totalBatches = Math.ceil(wikidataPending.length / WIKIDATA_BATCH)
       process.stdout.write(`  Batch ${batchNum}/${totalBatches}... `)
 
       const results = await fetchWikidataBatch(batch.map(c => c.botanicalName), langMap.wikidata)
@@ -361,7 +526,6 @@ async function main() {
       for (const crop of batch) {
         const names = results.get(crop.botanicalName) ?? []
         if (dryRun) {
-          // Always write a row (empty de_names = no match) so resume skips this crop
           appendFileSync(outFile, tsvRow(crop.botanicalName, crop.commonNames, names) + '\n', 'utf8')
         } else if (names.length > 0) {
           await prisma.cropTranslation.upsert({
@@ -373,6 +537,13 @@ async function main() {
         if (names.length > 0) { foundThisRun.add(crop.botanicalName); saved++ }
       }
 
+      if (!dryRun) {
+        await prisma.cropEnrichmentAttempt.createMany({
+          data: batch.map(c => ({ cropId: c.id, locale, source: 'wikidata' })),
+          skipDuplicates: true,
+        })
+      }
+
       console.log(`got ${[...results.values()].reduce((s, v) => s + v.length, 0)} names for ${results.size} crops`)
       if (results.size > 0) await sleep(WD_DELAY_MS)
     }
@@ -382,18 +553,9 @@ async function main() {
 
   // ── GBIF gap-fill pass (per-crop) ─────────────────────────────────────────
   if (source === 'gbif' || source === 'both') {
-    const nowTranslated = dryRun
-      ? new Set(existing)
-      : new Set(
-          (await prisma.cropTranslation.findMany({
-            where: { locale },
-            select: { cropId: true },
-          })).map(t => t.cropId),
-        )
-
-    const gbifPending = source === 'gbif'
-      ? pending
-      : pending.filter(c => !nowTranslated.has(c.id) && !foundThisRun.has(c.botanicalName))
+    const gbifPending = pending.filter(c =>
+      !gbifDone.has(c.id) && !foundThisRun.has(c.botanicalName)
+    )
 
     console.log(`\n[GBIF/${langMap.gbif}] Gap-filling ${gbifPending.length} crops...`)
 
@@ -404,25 +566,31 @@ async function main() {
 
       const names = await fetchGbifNames(crop.botanicalName, langMap.gbif)
       if (dryRun) {
-        // Always write a row so resume skips this crop
         appendFileSync(outFile, tsvRow(crop.botanicalName, crop.commonNames, names) + '\n', 'utf8')
-      }
-      if (names.length === 0) {
-        console.log('no match')
-        skipped++
-        await sleep(GBIF_DELAY_MS)
-        continue
       }
 
       if (!dryRun) {
-        await prisma.cropTranslation.upsert({
-          where:  { cropId_locale: { cropId: crop.id, locale } },
-          create: { cropId: crop.id, locale, commonNames: names },
-          update: { commonNames: names },
+        if (names.length > 0) {
+          await prisma.cropTranslation.upsert({
+            where:  { cropId_locale: { cropId: crop.id, locale } },
+            create: { cropId: crop.id, locale, commonNames: names },
+            update: { commonNames: names },
+          })
+        }
+        await prisma.cropEnrichmentAttempt.upsert({
+          where:  { cropId_locale_source: { cropId: crop.id, locale, source: 'gbif' } },
+          create: { cropId: crop.id, locale, source: 'gbif' },
+          update: { attemptedAt: new Date() },
         })
       }
-      console.log(`→ ${names.join(', ')}`)
-      saved++
+
+      if (names.length === 0) {
+        console.log('no match')
+        skipped++
+      } else {
+        console.log(`→ ${names.join(', ')}`)
+        saved++
+      }
       await sleep(GBIF_DELAY_MS)
     }
 

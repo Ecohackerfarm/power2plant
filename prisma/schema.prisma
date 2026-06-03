@@ -22,9 +22,12 @@ model Crop {
   plantings         Planting[]
   relationshipsA    CropRelationship[]  @relation("CropA")
   relationshipsB    CropRelationship[]  @relation("CropB")
-  translations      CropTranslation[]
-  researchRequestsA ResearchRequest[]   @relation("ResearchRequestCropA")
-  researchRequestsB ResearchRequest[]   @relation("ResearchRequestCropB")
+  translations         CropTranslation[]
+  enrichmentAttempts   CropEnrichmentAttempt[]
+  researchRequestsA    ResearchRequest[]              @relation("ResearchRequestCropA")
+  researchRequestsB    ResearchRequest[]              @relation("ResearchRequestCropB")
+  researchAttemptsA    RelationshipResearchAttempt[]  @relation("ResearchAttemptCropA")
+  researchAttemptsB    RelationshipResearchAttempt[]  @relation("ResearchAttemptCropB")
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
 }
@@ -38,6 +41,18 @@ model CropTranslation {
 
   @@unique([cropId, locale])
   @@index([locale])
+}
+
+model CropEnrichmentAttempt {
+  id          String   @id @default(cuid())
+  cropId      String
+  locale      String
+  source      String
+  attemptedAt DateTime @default(now())
+  crop        Crop     @relation(fields: [cropId], references: [id], onDelete: Cascade)
+
+  @@unique([cropId, locale, source])
+  @@index([locale, source])
 }
 
 model CropSource {
@@ -113,8 +128,9 @@ model UserGarden {
   minTempC    Float?
   bedCount    Int      @default(3)
   bedCapacity Int      @default(3)
-  wishlist    String[] @default([])
-  beds        Bed[]
+  wishlist     String[] @default([])
+  inspirations String[] @default([])
+  beds         Bed[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -150,6 +166,7 @@ model Planting {
 enum RelationshipType {
   COMPANION
   AVOID
+  NEUTRAL
   ATTRACTS
   REPELS
   NURSE
@@ -307,6 +324,27 @@ model AppConfig {
   feedbackDigestEnabled  Boolean  @default(false)
   feedbackDigestFreq     String   @default("daily")
   feedbackDigestEmails   String[] @default([])
+}
+
+enum ResearchAttemptResult {
+  NOT_FOUND
+  LOW_CONFIDENCE
+}
+
+model RelationshipResearchAttempt {
+  id          String                @id @default(cuid())
+  cropAId     String
+  cropBId     String
+  model       String
+  result      ResearchAttemptResult
+  confidence  Float?
+  notes       String?
+  attemptedAt DateTime              @default(now())
+  cropA       Crop                  @relation("ResearchAttemptCropA", fields: [cropAId], references: [id], onDelete: Cascade)
+  cropB       Crop                  @relation("ResearchAttemptCropB", fields: [cropBId], references: [id], onDelete: Cascade)
+
+  @@unique([cropAId, cropBId, model])
+  @@index([cropAId, cropBId])
 }
 
 model ResearchRequest {

@@ -27,7 +27,11 @@ export async function GET() {
     where: { userId: session.user.id },
     include: {
       beds: {
-        include: { plantings: { select: { cropId: true } } },
+        include: {
+          plantings: {
+            include: { crop: { select: { id: true, name: true, commonNames: true } } },
+          },
+        },
       },
     },
   })
@@ -38,6 +42,7 @@ export async function GET() {
 
   const results = await Promise.all(bedsWithPairs.map(async bed => {
     const ids = bed.plantings.map(p => p.cropId)
+    const cropNameMap = new Map(bed.plantings.map(p => [p.cropId, p.crop.commonNames?.[0] ?? p.crop.name]))
     const idList = Prisma.join(ids.map(id => Prisma.sql`${id}`))
 
     const rels = await prisma.$queryRaw<RelRow[]>`
@@ -57,12 +62,18 @@ export async function GET() {
     const companions = rels.filter(r => companionTypes.has(r.type))
     const antagonists = rels.filter(r => r.type === 'AVOID')
 
-    // Count unknown pairs (no relationship data)
-    let unknownCount = 0
+    const unknownPairs: { cropAId: string; cropBId: string; cropAName: string; cropBName: string }[] = []
     for (let i = 0; i < ids.length; i++) {
       for (let j = i + 1; j < ids.length; j++) {
         const pairKey = [ids[i], ids[j]].sort().join(':')
-        if (!knownPairIds.has(pairKey)) unknownCount++
+        if (!knownPairIds.has(pairKey)) {
+          unknownPairs.push({
+            cropAId: ids[i],
+            cropBId: ids[j],
+            cropAName: cropNameMap.get(ids[i]) ?? ids[i],
+            cropBName: cropNameMap.get(ids[j]) ?? ids[j],
+          })
+        }
       }
     }
 
@@ -70,7 +81,7 @@ export async function GET() {
       bedId: bed.id,
       companions: companions.map(r => ({ id: r.id, cropAId: r.cropAId, cropBId: r.cropBId, cropAName: r.cropAName, cropBName: r.cropBName, confidence: r.confidence })),
       antagonists: antagonists.map(r => ({ id: r.id, cropAId: r.cropAId, cropBId: r.cropBId, cropAName: r.cropAName, cropBName: r.cropBName })),
-      unknownCount,
+      unknownPairs,
     }
   }))
 

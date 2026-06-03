@@ -6,6 +6,8 @@ services:
       args:
         FROZEN_LOCKFILE: "false"
         AGENT_PUBKEY: ${AGENT_PUBKEY:-}
+        SHELL_UID: ${SHELL_UID:-1000}
+        SHELL_GID: ${SHELL_GID:-1000}
     command: >
       sh -c "
         mkdir -p /run/ssh-persist &&
@@ -36,6 +38,7 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
+    restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
@@ -44,6 +47,36 @@ services:
       power2plant-dev:
         aliases:
           - app-dev
+  fill-runner:
+    build:
+      context: .
+      target: dev
+      args:
+        FROZEN_LOCKFILE: "false"
+        AGENT_PUBKEY: ${AGENT_PUBKEY:-}
+        SHELL_UID: ${SHELL_UID:-1000}
+        SHELL_GID: ${SHELL_GID:-1000}
+    command: >
+      sh -c "
+        exec su node -s /bin/sh -c '
+          cd /app/.worktrees/feat/118-translate-more-locales &&
+          pnpm exec prisma generate &&
+          sh scripts/enrich/run-fills-pipelined.sh
+        '
+      "
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://power2plant:power2plant@db:5432/power2plant
+    volumes:
+      - .:/app
+      - /app/node_modules
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      default: {}
+      power2plant-dev: {}
   db:
     ports: !override
       - "5433:5432"

@@ -376,7 +376,7 @@ export function FeedbackButton() {
             <div className="grid gap-2">
               <Button
                 variant="outline"
-                className="justify-start h-auto py-3 text-left"
+                className="justify-start h-auto py-3 text-start"
                 onClick={() => setMode('data-selecting')}
               >
                 <div>
@@ -385,7 +385,7 @@ export function FeedbackButton() {
               </Button>
               <Button
                 variant="outline"
-                className="justify-start h-auto py-3 text-left"
+                className="justify-start h-auto py-3 text-start"
                 onClick={captureScreenshot}
               >
                 <div>

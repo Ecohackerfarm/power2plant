@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -25,6 +25,7 @@ export function AddBedForm({ onSaved }: AddBedFormProps) {
   const [selectedCrops, setSelectedCrops] = useState<Crop[]>([])
   const [searching, setSearching] = useState(false)
   const [saving, setSaving] = useState(false)
+  const searchInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (query.trim().length < 2) { setResults([]); return }
@@ -54,7 +55,7 @@ export function AddBedForm({ onSaved }: AddBedFormProps) {
     if (selectedCrops.length === 0) return
     setSaving(true)
     try {
-      const getRes = await fetch('/api/garden/plantings')
+      const getRes = await fetch(`/api/garden/plantings?locale=${locale}`)
       const existing = getRes.ok ? await getRes.json() : { beds: [] }
       const existingBeds = (existing.beds ?? []).map(
         (b: { name: string; plantings: { cropId: string }[] }) => ({
@@ -101,6 +102,7 @@ export function AddBedForm({ onSaved }: AddBedFormProps) {
         />
         <div className="space-y-1">
           <Input
+            ref={searchInputRef}
             placeholder={t('searchPlaceholder')}
             value={query}
             onChange={e => setQuery(e.target.value)}
@@ -119,7 +121,14 @@ export function AddBedForm({ onSaved }: AddBedFormProps) {
                     className={`flex items-center text-sm px-2 py-1.5 rounded select-none ${
                       added ? 'opacity-50 cursor-default' : 'cursor-pointer hover:bg-accent'
                     }`}
-                    onClick={() => { if (!added) addCrop(crop) }}
+                    onClick={() => {
+                      if (!added) {
+                        addCrop(crop)
+                        setQuery('')
+                        setResults([])
+                        searchInputRef.current?.focus()
+                      }
+                    }}
                   >
                     <span className="flex-1">
                       <span className="font-medium">{displayName}</span>

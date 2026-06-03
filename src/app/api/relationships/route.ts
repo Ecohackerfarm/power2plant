@@ -56,6 +56,11 @@ async function detectTwoCropIds(q: string, locale: string): Promise<[string[], s
     if (!a || !b) continue
     const [idsA, idsB] = await Promise.all([findCropIds(a, locale), findCropIds(b, locale)])
     if (idsA.length > 0 && idsB.length > 0) {
+      // Skip if one set is a subset of the other — this means the query is a single
+      // botanical name (genus + species epithet) not two distinct crops.
+      const setA = new Set(idsA)
+      const setB = new Set(idsB)
+      if (idsB.every(id => setA.has(id)) || idsA.every(id => setB.has(id))) continue
       return [idsA, idsB]
     }
   }

@@ -13,7 +13,7 @@ type Paper = {
 }
 
 type Extraction = {
-  type: 'COMPANION' | 'AVOID' | 'UNKNOWN'
+  type: 'COMPANION' | 'AVOID' | 'NEUTRAL' | 'UNKNOWN'
   reason: 'PEST_CONTROL' | 'POLLINATION' | 'NUTRIENT' | 'SHADE' | 'ALLELOPATHY' | 'OTHER' | null
   direction: 'A_TO_B' | 'B_TO_A' | 'MUTUAL' | 'UNKNOWN'
   confidence: number
@@ -35,7 +35,7 @@ Title: ${title}
 Abstract: ${abstract}
 
 Extract:
-1. type: Does this paper show they are COMPANION (beneficial together), AVOID (harmful together), or UNKNOWN (unclear)?
+1. type: Does this paper show they are COMPANION (beneficial together), AVOID (harmful together), NEUTRAL (no significant interaction documented), or UNKNOWN (unclear/insufficient data)?
 2. reason: Primary mechanism if known (PEST_CONTROL, POLLINATION, NUTRIENT, SHADE, ALLELOPATHY, OTHER, or null)
 3. direction: Which direction does the benefit flow? A_TO_B (${cropA} benefits ${cropB}), B_TO_A (${cropB} benefits ${cropA}), MUTUAL (both benefit), or UNKNOWN.
 4. confidence: 0.0-1.0, how strongly does the abstract support this conclusion?
@@ -79,7 +79,7 @@ async function extractFromPaper(paper: Paper): Promise<Extraction | null> {
     const text = data.choices[0]?.message?.content ?? ''
     const parsed = JSON.parse(stripCodeFences(text)) as Extraction
 
-    if (!['COMPANION', 'AVOID', 'UNKNOWN'].includes(parsed.type)) {
+    if (!['COMPANION', 'AVOID', 'NEUTRAL', 'UNKNOWN'].includes(parsed.type)) {
       console.warn(`Invalid type for ${paper.paperId}: ${parsed.type}`)
       return null
     }

@@ -1,24 +1,25 @@
 #!/bin/sh
 set -e
 
-# Produces db/seed.sql — a spin-up snapshot for new contributors. Schema for
-# every table is included, but data is dumped only for the canonical plant
-# datasets (Crop / CropRelationship / their sources). Auth and per-user
-# garden tables stay empty so we never commit personal data.
+# Produces two seed files:
+#   db/seed.sql                          — schema + canonical plant data
+#   db/seed-enrichment-attempts.sql.gz   — CropEnrichmentAttempt rows (gzipped; never diffed)
+# Auth and per-user garden tables are schema-only so no personal data is committed.
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 [ -f "$ROOT_DIR/.env" ] && . "$ROOT_DIR/.env"
 
 DB_URL="${DATABASE_URL:-postgresql://power2plant:power2plant@localhost:5432/power2plant}"
-OUT="$(dirname "$0")/seed.sql"
+OUT="$SCRIPT_DIR/seed.sql"
+OUT_ENRICHMENT="$SCRIPT_DIR/seed-enrichment-attempts.sql.gz"
 
 if ! pg_isready -d "$DB_URL" -q; then
   echo "ERROR: Database not reachable at $DB_URL" >&2
   exit 1
 fi
 
-echo "Dumping plant data to $OUT (user-generated tables: schema only) ..."
+echo "Dumping canonical plant data to $OUT ..."
 
 pg_dump "$DB_URL" \
   --format=plain \
@@ -31,8 +32,19 @@ pg_dump "$DB_URL" \
   --exclude-table-data='public."UserGarden"' \
   --exclude-table-data='public."Bed"' \
   --exclude-table-data='public."Planting"' \
+  --exclude-table-data='public."CropEnrichmentAttempt"' \
   --file="$OUT"
 
-LINES=$(wc -l < "$OUT")
-SIZE=$(du -sh "$OUT" | cut -f1)
-echo "Done — $SIZE, $LINES lines"
+echo "Done — $(du -sh "$OUT" | cut -f1), $(wc -l < "$OUT") lines"
+
+echo "Dumping CropEnrichmentAttempt to $OUT_ENRICHMENT ..."
+
+pg_dump "$DB_URL" \
+  --format=plain \
+  --no-owner \
+  --no-acl \
+  --table='public."CropEnrichmentAttempt"' \
+  --data-only \
+  | gzip > "$OUT_ENRICHMENT"
+
+echo "Done — $(du -sh "$OUT_ENRICHMENT" | cut -f1)"

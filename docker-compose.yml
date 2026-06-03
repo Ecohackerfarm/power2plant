@@ -5,6 +5,7 @@ services:
       POSTGRES_USER: power2plant
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-power2plant}
       POSTGRES_DB: power2plant
+    restart: unless-stopped
     ports:
       - "${DB_PORT:-5432}:5432"
     volumes:
@@ -24,6 +25,7 @@ services:
         BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
         BETTER_AUTH_URL: ${BETTER_AUTH_URL}
         NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
+    restart: unless-stopped
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgresql://power2plant:power2plant@db:5432/power2plant}
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
@@ -52,6 +54,24 @@ services:
       CRON_SECRET: ${CRON_SECRET}
     depends_on:
       app:
+        condition: service_healthy
+    networks:
+      - default
+
+  scripts:
+    build:
+      context: .
+      target: scripts
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://power2plant:power2plant@db:5432/power2plant}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      LLM_API_KEY: ${OPENROUTER_API_KEY}
+    volumes:
+      - ${VOLUME_DATA_DIR:-./data}/research:/app/data/research
+    profiles:
+      - scripts
+    depends_on:
+      db:
         condition: service_healthy
     networks:
       - default

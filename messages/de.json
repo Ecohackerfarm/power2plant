@@ -66,7 +66,9 @@
     "wishlist": "Deine Wunschliste ({count} Pflanzen)",
     "clearAll": "Alle entfernen",
     "addAtLeast2": "Mindestens 2 Pflanzen für eine Empfehlung hinzufügen.",
-    "moreInfo": "mehr Info →"
+    "moreInfo": "mehr Info →",
+    "saveToInspirations": "Zu Inspirationen speichern",
+    "removeInspiration": "Aus Inspirationen entfernen"
   },
   "BedConfig": {
     "title": "Schritt 3 — Beete",
@@ -260,13 +262,41 @@
     "RESEARCH": "Forschung",
     "link": "Link",
     "genusLevelBanner": "Beziehung auf Gattungsebene definiert ({genusA} ↔ {genusB}) — gilt für alle Arten der Gattung {genus}.",
-    "appliesToAllSpecies": "Gilt für alle Arten der Gattung {genus}."
+    "appliesToAllSpecies": "Gilt für alle Arten der Gattung {genus}.",
+    "researchAttemptedTitle": "KI-Recherche durchgeführt — kein Paper gefunden",
+    "researchAttemptedHint": "Die Recherche-KI hat nach wissenschaftlichen Belegen gesucht, aber keine für dieses spezifische Pflanzenpaar gefunden.",
+    "researchAttemptModel": "Modell",
+    "researchAttemptDate": "Gesucht am",
+    "researchAttemptResult": "Ergebnis",
+    "researchAttemptNotes": "Hinweis",
+    "NOT_FOUND": "Kein Beleg gefunden",
+    "LOW_CONFIDENCE": "Unzureichende Belege",
+    "researchAttemptClose": "Schließen",
+    "researchAttemptNoRelationship": "Keine Beziehungsdaten gefunden."
   },
   "GardenPage": {
     "backHome": "← power2plant",
     "title": "Mein Garten",
     "subtitle": "Verwalte deine gespeicherten Gartenbeete.",
-    "signInPrompt": "Anmelden, um Gartenbeete zu verwalten."
+    "signInPrompt": "Anmelden, um deinen Garten zu verwalten.",
+    "overviewTitle": "Mein Garten",
+    "overviewSubtitle": "Dein persönlicher Gartenbereich.",
+    "bedsTitle": "Meine Beete",
+    "bedsSubtitle": "Verwalte deine gespeicherten Gartenbeete.",
+    "bedsSection": "Meine Beete",
+    "bedsSummary": "{count} Beet{count, plural, one {} other {e}}, {plantings} Pflanze{plantings, plural, one {} other {n}}",
+    "manageBeds": "Beete verwalten →",
+    "noBedsYet": "Noch keine Beete gespeichert.",
+    "goToPlan": "Beete planen →",
+    "inspirationsSection": "Meine Inspirationen",
+    "loading": "Wird geladen…",
+    "backToOverview": "Mein Garten"
+  },
+  "MyInspirations": {
+    "loading": "Wird geladen…",
+    "empty": "Noch keine Inspirationen gespeichert.",
+    "emptyHint": "Stöbere durch Pflanzen und speichere interessante.",
+    "remove": "Entfernen"
   },
   "SharePage": {
     "backHome": "← power2plant",
@@ -295,7 +325,19 @@
     "companions": "{count} Mischkulturpaar{count, plural, one {} other {e}}",
     "antagonists": "{count} Konflikt{count, plural, one {} other {e}}",
     "unknownPairs": "{count} unbekanntes Paar{count, plural, one {} other {e}}",
-    "addMoreForAnalysis": "Füge weitere Pflanzen hinzu, um Beziehungen zu sehen."
+    "addMoreForAnalysis": "Füge weitere Pflanzen hinzu, um Beziehungen zu sehen.",
+    "voteResearch": "Für Forschung abstimmen",
+    "voted": "Abgestimmt",
+    "voteError": "Abstimmung fehlgeschlagen — bitte erneut versuchen.",
+    "editBed": "Beet bearbeiten",
+    "saveEdit": "Speichern",
+    "cancelEdit": "Abbrechen",
+    "saveError": "Speichern fehlgeschlagen — bitte erneut versuchen.",
+    "deleteError": "Löschen fehlgeschlagen — bitte erneut versuchen.",
+    "searchPlants": "Pflanzen suchen…",
+    "searching": "Suche läuft…",
+    "alreadyAdded": "Hinzugefügt",
+    "mustHaveOnePlant": "Ein Beet muss mindestens 1 Pflanze haben."
   },
   "AddBedForm": {
     "title": "Beet hinzufügen",

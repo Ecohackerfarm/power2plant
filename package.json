@@ -1,6 +1,6 @@
 {
   "name": "power2plant",
-  "version": "0.12.1",
+  "version": "0.15.0",
   "description": "Companion planting recommendations for your garden beds",
   "license": "MIT",
   "packageManager": "pnpm@11.4.0",
@@ -20,6 +20,9 @@
     "db:dump": "sh db/dump.sh",
     "db:restore": "sh db/restore.sh",
     "research:discover": "tsx scripts/research/discover.ts",
+    "research:fetch-pairs": "tsx scripts/research/fetch-unreviewed-pairs.ts",
+    "research:sonar": "tsx scripts/research/sonar-research.ts",
+    "research:discover-companions": "tsx scripts/research/discover-companions.ts",
     "research:search": "tsx scripts/research/search-papers.ts",
     "research:extract": "tsx scripts/research/extract.ts",
     "research:import": "tsx scripts/research/import.ts",

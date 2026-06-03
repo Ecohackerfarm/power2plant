@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
+import { Bookmark } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getDisplayName } from '@/lib/recommend'
 import type { CropRow } from '@/lib/crop-rank'
@@ -18,9 +19,12 @@ interface PlantSearchProps {
   onRemove: (cropId: string) => void
   onClearAll: () => void
   initialQuery?: string
+  inspirationIds?: string[]
+  onInspire?: (cropId: string) => void
+  onUninspire?: (cropId: string) => void
 }
 
-export function PlantSearch({ wishlistIds, onAdd, onRemove, onClearAll, initialQuery }: PlantSearchProps) {
+export function PlantSearch({ wishlistIds, onAdd, onRemove, onClearAll, initialQuery, inspirationIds, onInspire, onUninspire }: PlantSearchProps) {
   const t = useTranslations('PlantSearch')
   const locale = useLocale()
   const [query, setQuery] = useState(initialQuery ?? '')
@@ -168,6 +172,25 @@ export function PlantSearch({ wishlistIds, onAdd, onRemove, onClearAll, initialQ
                   </span>
                   {added && (
                     <span className="text-xs text-muted-foreground ml-2 shrink-0">{t('added')}</span>
+                  )}
+                  {onInspire && (
+                    <button
+                      onClick={e => {
+                        e.stopPropagation()
+                        const inspired = inspirationIds?.includes(crop.id)
+                        inspired ? onUninspire?.(crop.id) : onInspire(crop.id)
+                      }}
+                      className={cn(
+                        'ml-2 shrink-0 transition-colors',
+                        inspirationIds?.includes(crop.id)
+                          ? 'text-amber-500 hover:text-amber-600'
+                          : 'text-muted-foreground hover:text-foreground',
+                      )}
+                      title={inspirationIds?.includes(crop.id) ? t('removeInspiration') : t('saveToInspirations')}
+                      aria-label={inspirationIds?.includes(crop.id) ? t('removeInspiration') : t('saveToInspirations')}
+                    >
+                      <Bookmark className={cn('w-3.5 h-3.5', inspirationIds?.includes(crop.id) && 'fill-current')} />
+                    </button>
                   )}
                   <a
                     href={`/plants/${crop.id}`}
