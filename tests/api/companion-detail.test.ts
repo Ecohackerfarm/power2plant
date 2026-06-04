@@ -126,7 +126,7 @@ describe('GET /api/plants/[id]/companions/[companionId]', () => {
   it('returns 200 with relationship:null when no relationship but research attempts exist', async () => {
     vi.mocked(prisma.$queryRaw).mockResolvedValue([])
     vi.mocked(prisma.relationshipResearchAttempt.findMany).mockResolvedValue([
-      { id: 'att-1', model: 'perplexity/sonar-deep-research', result: 'NOT_FOUND', confidence: 0.1, notes: 'No studies found.', attemptedAt: new Date('2026-06-01') },
+      { id: 'att-1', cropAId: 'crop-a', cropBId: 'crop-b', model: 'perplexity/sonar-deep-research', result: 'NOT_FOUND', confidence: 0.1, notes: 'No studies found.', attemptedAt: new Date('2026-06-01') },
     ])
     const res = await GET(makeReq('crop-a', 'crop-b'), {
       params: Promise.resolve({ id: 'crop-a', companionId: 'crop-b' }),
