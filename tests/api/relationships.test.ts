@@ -474,6 +474,7 @@ describe('GET /api/relationships', () => {
         '%gurke%',
         '%gurke%',
         '%gurke%',
+        '%gurke%',
       )
     })
 
