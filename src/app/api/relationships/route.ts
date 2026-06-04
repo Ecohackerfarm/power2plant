@@ -28,9 +28,10 @@ async function findCropIds(term: string, locale: string): Promise<string[]> {
     WHERE
       lower(c.name) LIKE ${like}
       OR lower(c."botanicalName") LIKE ${like}
+      OR lower(c."canonicalName") LIKE ${like}
       OR EXISTS (SELECT 1 FROM unnest(c."commonNames") cn WHERE lower(cn) LIKE ${like})
       OR EXISTS (SELECT 1 FROM unnest(COALESCE(t."commonNames", ARRAY[]::TEXT[])) cn WHERE lower(cn) LIKE ${like})
-      OR EXISTS (SELECT 1 FROM unnest(c."synonyms") sn WHERE lower(sn) LIKE ${like})
+      OR EXISTS (SELECT 1 FROM "BotanicalSynonym" bs WHERE bs."cropId" = c.id AND lower(bs.name) LIKE ${like})
     LIMIT 50
   `
   return rows.map(r => r.id)

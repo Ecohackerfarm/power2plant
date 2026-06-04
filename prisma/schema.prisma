@@ -10,12 +10,12 @@ datasource db {
 model Crop {
   id                String              @id @default(cuid())
   botanicalName     String              @unique
+  canonicalName     String?
   name              String
   slug              String              @unique
   isNitrogenFixer   Boolean             @default(false)
   isCommonCrop      Boolean             @default(false)
   commonNames       String[]            @default([])
-  synonyms          String[]            @default([])
   minTempC          Float?
   imageUrl          String?
   sources           CropSource[]
@@ -24,12 +24,15 @@ model Crop {
   relationshipsB    CropRelationship[]  @relation("CropB")
   translations         CropTranslation[]
   enrichmentAttempts   CropEnrichmentAttempt[]
+  botanicalSynonyms    BotanicalSynonym[]
   researchRequestsA    ResearchRequest[]              @relation("ResearchRequestCropA")
   researchRequestsB    ResearchRequest[]              @relation("ResearchRequestCropB")
   researchAttemptsA    RelationshipResearchAttempt[]  @relation("ResearchAttemptCropA")
   researchAttemptsB    RelationshipResearchAttempt[]  @relation("ResearchAttemptCropB")
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
+
+  @@index([canonicalName])
 }
 
 model CropTranslation {
@@ -48,11 +51,23 @@ model CropEnrichmentAttempt {
   cropId      String
   locale      String
   source      String
+  version     Int      @default(1)
   attemptedAt DateTime @default(now())
   crop        Crop     @relation(fields: [cropId], references: [id], onDelete: Cascade)
 
   @@unique([cropId, locale, source])
   @@index([locale, source])
+}
+
+model BotanicalSynonym {
+  id     String @id @default(cuid())
+  cropId String
+  name   String
+  source String
+  crop   Crop   @relation(fields: [cropId], references: [id], onDelete: Cascade)
+
+  @@unique([cropId, name])
+  @@index([name])
 }
 
 model CropSource {

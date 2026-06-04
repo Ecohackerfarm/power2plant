@@ -32,6 +32,9 @@ import { readFileSync, writeFileSync, appendFileSync } from 'fs'
 
 const prisma = new PrismaClient()
 
+// Bump when the fetch/filter logic changes so old attempts are retried automatically.
+const SCRIPT_VERSION = 2
+
 const WIKIDATA_SPARQL = 'https://query.wikidata.org/sparql'
 const GBIF_API = 'https://api.gbif.org/v1'
 const USER_AGENT = 'power2plant/0.12 (https://github.com/Ecohackerfarm/power2plant; mailto:admin@power2plant.app)'
@@ -388,7 +391,7 @@ async function main() {
     console.log(`[Wikipedia recovery] locale=${locale} — targeting wikidata-attempted crops with no translation`)
 
     const allCrops = await prisma.crop.findMany({
-      select: { id: true, botanicalName: true, commonNames: true },
+      select: { id: true, botanicalName: true, canonicalName: true, commonNames: true },
       orderBy: { botanicalName: 'asc' },
     })
 
@@ -399,11 +402,11 @@ async function main() {
       })).map(a => a.cropId)
     )
 
-    const wikipediaAttempted = force ? new Set<string>() : new Set(
+    const wikipediaAttemptedVersions = force ? new Map<string, number>() : new Map(
       (await prisma.cropEnrichmentAttempt.findMany({
         where: { locale, source: 'wikipedia' },
-        select: { cropId: true },
-      })).map(a => a.cropId)
+        select: { cropId: true, version: true },
+      })).map(a => [a.cropId, a.version])
     )
 
     const hasTranslation = new Set(
@@ -417,7 +420,7 @@ async function main() {
       c.botanicalName &&
       wikidataAttempted.has(c.id) &&
       !hasTranslation.has(c.id) &&
-      !wikipediaAttempted.has(c.id)
+      ((wikipediaAttemptedVersions.get(c.id) ?? 0) < SCRIPT_VERSION)
     )
 
     console.log(`Found ${recovery.length} crops to recover (wikidata_attempted=${wikidataAttempted.size}, has_translation=${hasTranslation.size})`)
@@ -434,24 +437,30 @@ async function main() {
       const totalBatches = Math.ceil(recovery.length / WIKIDATA_BATCH)
       process.stdout.write(`  Batch ${batchNum}/${totalBatches}... `)
 
-      const results = await fetchWikidataBatch(batch.map(c => c.botanicalName), langMap.wikidata)
+      const lookupNames = batch.map(c => c.canonicalName ?? c.botanicalName)
+      const results = await fetchWikidataBatch(lookupNames, langMap.wikidata)
 
       for (const crop of batch) {
-        const names = results.get(crop.botanicalName) ?? []
+        const key = crop.canonicalName ?? crop.botanicalName
+        const names = results.get(key) ?? []
         if (names.length > 0) {
           await prisma.cropTranslation.upsert({
             where:  { cropId_locale: { cropId: crop.id, locale } },
             create: { cropId: crop.id, locale, commonNames: names },
             update: { commonNames: names },
           })
-          if (DEBUG) console.log(`  → ${crop.botanicalName}: ${names.join(', ')}`)
+          if (DEBUG) console.log(`  → ${crop.botanicalName} (lookup: ${key}): ${names.join(', ')}`)
           saved++
         }
       }
 
       await prisma.cropEnrichmentAttempt.createMany({
-        data: batch.map(c => ({ cropId: c.id, locale, source: 'wikipedia' })),
+        data: batch.map(c => ({ cropId: c.id, locale, source: 'wikipedia', version: SCRIPT_VERSION })),
         skipDuplicates: true,
+      })
+      await prisma.cropEnrichmentAttempt.updateMany({
+        where: { cropId: { in: batch.map(c => c.id) }, locale, source: 'wikipedia' },
+        data:  { version: SCRIPT_VERSION, attemptedAt: new Date() },
       })
 
       console.log(`got ${[...results.values()].reduce((s, v) => s + v.length, 0)} names for ${results.size} crops`)
@@ -482,22 +491,22 @@ async function main() {
   }
 
   const crops = await prisma.crop.findMany({
-    select: { id: true, botanicalName: true, commonNames: true },
+    select: { id: true, botanicalName: true, canonicalName: true, commonNames: true },
     orderBy: { botanicalName: 'asc' },
   })
 
   const wikidataDone = (source === 'wikidata' || source === 'both') && !force
     ? new Set((await prisma.cropEnrichmentAttempt.findMany({
         where: { locale, source: 'wikidata' },
-        select: { cropId: true },
-      })).map(a => a.cropId))
+        select: { cropId: true, version: true },
+      })).filter(a => a.version >= SCRIPT_VERSION).map(a => a.cropId))
     : new Set<string>()
 
   const gbifDone = (source === 'gbif' || source === 'both') && !force
     ? new Set((await prisma.cropEnrichmentAttempt.findMany({
         where: { locale, source: 'gbif' },
-        select: { cropId: true },
-      })).map(a => a.cropId))
+        select: { cropId: true, version: true },
+      })).filter(a => a.version >= SCRIPT_VERSION).map(a => a.cropId))
     : new Set<string>()
 
   const pending = crops.filter(c => c.botanicalName && !alreadyFetched.has(c.botanicalName) && (
@@ -521,10 +530,12 @@ async function main() {
       const totalBatches = Math.ceil(wikidataPending.length / WIKIDATA_BATCH)
       process.stdout.write(`  Batch ${batchNum}/${totalBatches}... `)
 
-      const results = await fetchWikidataBatch(batch.map(c => c.botanicalName), langMap.wikidata)
+      const lookupNames = batch.map(c => c.canonicalName ?? c.botanicalName)
+      const results = await fetchWikidataBatch(lookupNames, langMap.wikidata)
 
       for (const crop of batch) {
-        const names = results.get(crop.botanicalName) ?? []
+        const key = crop.canonicalName ?? crop.botanicalName
+        const names = results.get(key) ?? []
         if (dryRun) {
           appendFileSync(outFile, tsvRow(crop.botanicalName, crop.commonNames, names) + '\n', 'utf8')
         } else if (names.length > 0) {
@@ -539,8 +550,12 @@ async function main() {
 
       if (!dryRun) {
         await prisma.cropEnrichmentAttempt.createMany({
-          data: batch.map(c => ({ cropId: c.id, locale, source: 'wikidata' })),
+          data: batch.map(c => ({ cropId: c.id, locale, source: 'wikidata', version: SCRIPT_VERSION })),
           skipDuplicates: true,
+        })
+        await prisma.cropEnrichmentAttempt.updateMany({
+          where: { cropId: { in: batch.map(c => c.id) }, locale, source: 'wikidata' },
+          data:  { version: SCRIPT_VERSION, attemptedAt: new Date() },
         })
       }
 
@@ -579,8 +594,8 @@ async function main() {
         }
         await prisma.cropEnrichmentAttempt.upsert({
           where:  { cropId_locale_source: { cropId: crop.id, locale, source: 'gbif' } },
-          create: { cropId: crop.id, locale, source: 'gbif' },
-          update: { attemptedAt: new Date() },
+          create: { cropId: crop.id, locale, source: 'gbif', version: SCRIPT_VERSION },
+          update: { attemptedAt: new Date(), version: SCRIPT_VERSION },
         })
       }
 

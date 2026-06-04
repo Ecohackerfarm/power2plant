@@ -42,9 +42,10 @@ export async function GET(request: Request) {
     WHERE
       lower(c.name) LIKE ${likeQ}
       OR lower(c."botanicalName") LIKE ${likeQ}
+      OR lower(c."canonicalName") LIKE ${likeQ}
       OR EXISTS (SELECT 1 FROM unnest(c."commonNames") cn WHERE lower(cn) LIKE ${likeQ})
       OR EXISTS (SELECT 1 FROM unnest(COALESCE(t."commonNames", ARRAY[]::TEXT[])) cn WHERE lower(cn) LIKE ${likeQ})
-      OR EXISTS (SELECT 1 FROM unnest(c."synonyms") sn WHERE lower(sn) LIKE ${likeQ})
+      OR EXISTS (SELECT 1 FROM "BotanicalSynonym" bs WHERE bs."cropId" = c.id AND lower(bs.name) LIKE ${likeQ})
     ORDER BY
       CASE
         WHEN lower(c.name) = ${ql}
