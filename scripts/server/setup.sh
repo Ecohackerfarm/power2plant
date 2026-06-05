@@ -420,6 +420,7 @@ echo "       cd ${PROD_PATH}/webhook && sudo -u ${DEPLOY_USERNAME} docker compos
 echo "  5. Add GitHub webhook (prod):"
 echo "       URL: https://${DOMAIN}/hooks/deploy-prod"
 echo "       Secret: (the WEBHOOK_SECRET you exported)"
+echo "       Trigger: Releases only (action: published)"
 if $SETUP_STAGING; then
 echo ""
 echo "  Staging:"
