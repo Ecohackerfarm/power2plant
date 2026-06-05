@@ -70,9 +70,10 @@ services:
     volumes:
       - .:/app
       - /app/node_modules
-    restart: unless-stopped
+    profiles:
+      - scripts
     depends_on:
-      app:
+      db:
         condition: service_healthy
     networks:
       default: {}
