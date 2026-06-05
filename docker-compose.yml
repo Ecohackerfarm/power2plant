@@ -6,8 +6,6 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-power2plant}
       POSTGRES_DB: power2plant
     restart: unless-stopped
-    ports:
-      - "${DB_PORT:-5432}:5432"
     volumes:
       - ${VOLUME_DATA_DIR:-./data}/postgres:/var/lib/postgresql/data
     healthcheck:
