@@ -1,6 +1,6 @@
 {
   "name": "power2plant",
-  "version": "0.17.0",
+  "version": "0.18.0",
   "description": "Companion planting recommendations for your garden beds",
   "license": "MIT",
   "packageManager": "pnpm@11.4.0",
