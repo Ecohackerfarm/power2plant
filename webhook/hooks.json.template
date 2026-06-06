@@ -19,8 +19,15 @@
         {
           "match": {
             "type": "value",
-            "value": "refs/heads/main",
-            "parameter": { "source": "payload", "name": "ref" }
+            "value": "release",
+            "parameter": { "source": "header", "name": "X-GitHub-Event" }
+          }
+        },
+        {
+          "match": {
+            "type": "value",
+            "value": "published",
+            "parameter": { "source": "payload", "name": "action" }
           }
         }
       ]
