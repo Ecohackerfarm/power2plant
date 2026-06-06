@@ -488,7 +488,8 @@ async function runLocale(locale: string, opts: {
   }
 
   const crops = await prisma.crop.findMany({
-    select: { id: true, botanicalName: true, canonicalName: true, commonNames: true },
+    select: { id: true, botanicalName: true, canonicalName: true, commonNames: true,
+              botanicalSynonyms: { select: { name: true } } },
     orderBy: { botanicalName: 'asc' },
   })
 
@@ -521,28 +522,80 @@ async function runLocale(locale: string, opts: {
     const wikidataPending = pending.filter(c => !wikidataDone.has(c.id))
     console.log(`\n[Wikidata/${langMap.wikidata}] Processing ${wikidataPending.length} crops in batches of ${WIKIDATA_BATCH}...`)
 
+    const saveTranslation = async (crop: typeof wikidataPending[number], names: string[]) => {
+      if (dryRun) {
+        appendFileSync(outFile, tsvRow(crop.botanicalName, crop.commonNames, names) + '\n', 'utf8')
+      } else {
+        await prisma.cropTranslation.upsert({
+          where:  { cropId_locale: { cropId: crop.id, locale } },
+          create: { cropId: crop.id, locale, commonNames: names },
+          update: { commonNames: names },
+        })
+      }
+      foundThisRun.add(crop.botanicalName)
+      saved++
+    }
+
     for (let i = 0; i < wikidataPending.length; i += WIKIDATA_BATCH) {
       const batch = wikidataPending.slice(i, i + WIKIDATA_BATCH)
       const batchNum    = Math.floor(i / WIKIDATA_BATCH) + 1
       const totalBatches = Math.ceil(wikidataPending.length / WIKIDATA_BATCH)
-      process.stdout.write(`  Batch ${batchNum}/${totalBatches}... `)
+      console.log(`  Batch ${batchNum}/${totalBatches}...`)
 
-      const lookupNames = batch.map(c => c.canonicalName ?? c.botanicalName)
-      const results = await fetchWikidataBatch(lookupNames, langMap.wikidata)
+      const found = new Set<string>() // crop ids resolved in this batch
 
+      // Stage 1: botanicalName
+      process.stdout.write(`    [1/3] botanicalName... `)
+      const byBotanical = await fetchWikidataBatch(batch.map(c => c.botanicalName), langMap.wikidata)
       for (const crop of batch) {
-        const key = crop.canonicalName ?? crop.botanicalName
-        const names = results.get(key) ?? []
-        if (dryRun) {
-          appendFileSync(outFile, tsvRow(crop.botanicalName, crop.commonNames, names) + '\n', 'utf8')
-        } else if (names.length > 0) {
-          await prisma.cropTranslation.upsert({
-            where:  { cropId_locale: { cropId: crop.id, locale } },
-            create: { cropId: crop.id, locale, commonNames: names },
-            update: { commonNames: names },
-          })
+        const names = byBotanical.get(crop.botanicalName) ?? []
+        if (names.length > 0) { await saveTranslation(crop, names); found.add(crop.id) }
+      }
+      console.log(`${found.size} found`)
+      if (byBotanical.size > 0) await sleep(WD_DELAY_MS)
+
+      // Stage 2: canonicalName (only crops still unresolved, only where canonicalName differs)
+      const stage2 = batch.filter(c =>
+        !found.has(c.id) && c.canonicalName && c.canonicalName !== c.botanicalName
+      )
+      if (stage2.length > 0) {
+        process.stdout.write(`    [2/3] canonicalName (${stage2.length} crops)... `)
+        const byCanonical = await fetchWikidataBatch(stage2.map(c => c.canonicalName!), langMap.wikidata)
+        let s2found = 0
+        for (const crop of stage2) {
+          const names = byCanonical.get(crop.canonicalName!) ?? []
+          if (names.length > 0) { await saveTranslation(crop, names); found.add(crop.id); s2found++ }
         }
-        if (names.length > 0) { foundThisRun.add(crop.botanicalName); saved++ }
+        console.log(`${s2found} found`)
+        if (byCanonical.size > 0) await sleep(WD_DELAY_MS)
+      }
+
+      // Stage 3: botanical synonyms (only crops still unresolved, only those with synonyms)
+      const stage3 = batch.filter(c => !found.has(c.id) && c.botanicalSynonyms.length > 0)
+      if (stage3.length > 0) {
+        // Build synonym→crop map (first crop wins per synonym name)
+        const synToCrop = new Map<string, typeof batch[number]>()
+        for (const crop of stage3) {
+          for (const s of crop.botanicalSynonyms) {
+            if (!synToCrop.has(s.name)) synToCrop.set(s.name, crop)
+          }
+        }
+        const synNames = [...synToCrop.keys()]
+        process.stdout.write(`    [3/3] synonyms (${synNames.length} names for ${stage3.length} crops)... `)
+        let s3found = 0
+        for (let j = 0; j < synNames.length; j += WIKIDATA_BATCH) {
+          const synBatch = synNames.slice(j, j + WIKIDATA_BATCH)
+          const bySynonym = await fetchWikidataBatch(synBatch, langMap.wikidata)
+          for (const [synName, names] of bySynonym) {
+            const crop = synToCrop.get(synName)
+            if (!crop || found.has(crop.id) || names.length === 0) continue
+            await saveTranslation(crop, names)
+            found.add(crop.id)
+            s3found++
+          }
+          if (bySynonym.size > 0) await sleep(WD_DELAY_MS)
+        }
+        console.log(`${s3found} found`)
       }
 
       if (!dryRun) {
@@ -555,9 +608,6 @@ async function runLocale(locale: string, opts: {
           data:  { version: SCRIPT_VERSION, attemptedAt: new Date() },
         })
       }
-
-      console.log(`got ${[...results.values()].reduce((s, v) => s + v.length, 0)} names for ${results.size} crops`)
-      if (results.size > 0) await sleep(WD_DELAY_MS)
     }
 
     console.log(`[Wikidata] Done. ${saved} crops enriched.`)
