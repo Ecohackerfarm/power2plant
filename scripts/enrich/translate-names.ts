@@ -7,6 +7,7 @@
  * Usage:
  *   pnpm enrich:translate-names                              # de via wikidata+gbif, writes to DB
  *   pnpm enrich:translate-names --locale es
+ *   pnpm enrich:translate-names --locale de,es,fr             # multiple locales, run sequentially
  *   pnpm enrich:translate-names --locale zh-Hans --source wikidata
  *   pnpm enrich:translate-names --locale ru --source gbif
  *   pnpm enrich:translate-names --locale ja --fetch          # fetch + write translations-ja.tsv, no DB writes
@@ -336,7 +337,7 @@ function parseArgs() {
     return i !== -1 ? args[i + 1] : undefined
   }
   return {
-    locale:      get('--locale') ?? 'de',
+    locales:     (get('--locale') ?? 'de').split(',').map(s => s.trim()),
     source:      (get('--source') ?? 'both') as 'wikidata' | 'gbif' | 'both' | 'wikipedia',
     force:       args.includes('--force'),
     debug:       args.includes('--debug'),
@@ -346,14 +347,13 @@ function parseArgs() {
   }
 }
 
-async function main() {
-  const { locale, source, force, debug, dryRun, importFile, cleanEmpty } = parseArgs()
-  DEBUG = debug
-
-  if (importFile) {
-    await runImport(importFile)
-    return
-  }
+async function runLocale(locale: string, opts: {
+  source: 'wikidata' | 'gbif' | 'both' | 'wikipedia',
+  force: boolean,
+  dryRun: boolean,
+  cleanEmpty: boolean,
+}) {
+  const { source, force, dryRun, cleanEmpty } = opts
 
   const outFile = `data/intl/translations-${locale}.tsv`
 
@@ -372,7 +372,6 @@ async function main() {
       console.error(`Could not read ${outFile}`)
       process.exit(1)
     }
-    await prisma.$disconnect()
     return
   }
 
@@ -426,7 +425,6 @@ async function main() {
     console.log(`Found ${recovery.length} crops to recover (wikidata_attempted=${wikidataAttempted.size}, has_translation=${hasTranslation.size})`)
     if (recovery.length === 0) {
       console.log('Nothing to do.')
-      await prisma.$disconnect()
       return
     }
 
@@ -467,7 +465,6 @@ async function main() {
       if (results.size > 0) await sleep(WD_DELAY_MS)
     }
 
-    await prisma.$disconnect()
     console.log(`\n[Wikipedia recovery] Done. ${saved} crops recovered.`)
     return
   }
@@ -617,8 +614,25 @@ async function main() {
     console.log(`  pnpm enrich:translate-names --import ${outFile}`)
   }
 
-  await prisma.$disconnect()
   if (!dryRun) console.log(`\nFinished. ${saved} translations saved.`)
+}
+
+async function main() {
+  const { locales, source, force, debug, dryRun, importFile, cleanEmpty } = parseArgs()
+  DEBUG = debug
+
+  if (importFile) {
+    await runImport(importFile)
+    await prisma.$disconnect()
+    return
+  }
+
+  for (const locale of locales) {
+    if (locales.length > 1) console.log(`\n${'='.repeat(60)}\nLocale: ${locale}\n${'='.repeat(60)}`)
+    await runLocale(locale, { source, force, dryRun, cleanEmpty })
+  }
+
+  await prisma.$disconnect()
 }
 
 main().catch(async e => {
