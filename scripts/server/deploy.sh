@@ -11,6 +11,7 @@ rm -f /run/p2p/deploy.trigger
 cd "$PROJECT_PATH"
 sudo -u "$DEPLOY_USERNAME" git pull origin main
 sudo -u "$DEPLOY_USERNAME" docker compose up -d --build
+sudo -u "$DEPLOY_USERNAME" docker compose build scripts
 
 # One-time seed bootstrap on a fresh volume — sentinel makes this a no-op on
 # every subsequent deploy. Never clobbers existing prod data.
