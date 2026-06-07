@@ -5,11 +5,11 @@ ALTER TABLE "ResearchRequest" ALTER COLUMN "cropBId" DROP NOT NULL;
 DROP INDEX IF EXISTS "ResearchRequest_cropAId_cropBId_key";
 
 -- Unique index for pair requests (both IDs present)
-CREATE UNIQUE INDEX "ResearchRequest_pair_key"
+CREATE UNIQUE INDEX IF NOT EXISTS "ResearchRequest_pair_key"
   ON "ResearchRequest"("cropAId", "cropBId")
   WHERE "cropBId" IS NOT NULL;
 
 -- Unique index for single-plant requests (no cropB)
-CREATE UNIQUE INDEX "ResearchRequest_single_key"
+CREATE UNIQUE INDEX IF NOT EXISTS "ResearchRequest_single_key"
   ON "ResearchRequest"("cropAId")
   WHERE "cropBId" IS NULL;
