@@ -103,7 +103,7 @@
     "title": "Observaciones de la comunidad",
     "backHome": "← Inicio",
     "searchPlaceholder": "Buscar por nombre de cultivo…",
-    "noObservations": "Aún no hay observaciones",
+    "noObservations": "Aún no hay hallazgos",
     "loadMore": "Cargar más",
     "loading": "Cargando…",
     "companion": "Compañera",
@@ -113,7 +113,7 @@
     "sourceCount": "{count, plural, one {# fuente} other {# fuentes}}",
     "companions": "Compañeras",
     "antagonists": "Antagonistas",
-    "contributeObservation": "Añadir una observación →",
+    "contributeObservation": "Añadir un hallazgo →",
     "COMPANION": "Compañera",
     "AVOID": "Evitar",
     "PEST_CONTROL": "Control de plagas",
@@ -137,7 +137,7 @@
     "success": "¡Gracias! Tu observación ha sido registrada.",
     "rateLimit": "Ya enviaste una relación para este par hoy.",
     "error": "Algo salió mal. Inténtalo de nuevo.",
-    "newObservation": "Nueva observación",
+    "newObservation": "Nuevo hallazgo",
     "plantA": "Planta A",
     "plantB": "Planta B",
     "relationship": "Relación",
@@ -212,7 +212,7 @@
     "inheritedFrom": "vía {genus}",
     "wikiReadMore": "Wikipedia →",
     "wikiAttribution": "Fuente: Wikipedia (CC BY-SA)",
-    "contributeObservation": "Añadir una observación →"
+    "contributeObservation": "Añadir un hallazgo →"
   },
   "RelationshipPage": {
     "back": "← Volver",

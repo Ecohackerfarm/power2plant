@@ -16,8 +16,8 @@
   },
   "Home": {
     "subtitle": "Recommandations de plantes compagnes pour vos planches de jardin.",
-    "contributeLink": "Contribuer une observation →",
-    "browseLink": "Parcourir les observations →",
+    "contributeLink": "Contribuer une découverte →",
+    "browseLink": "Parcourir les découvertes →",
     "myGarden": "Mon jardin →",
     "addingToGarden": "Ajout à votre jardin existant.",
     "startFresh": "Recommencer à zéro",
@@ -100,10 +100,10 @@
     "requestResearch": "Demander une recherche →"
   },
   "Relationships": {
-    "title": "Observations de la communauté",
+    "title": "Découvertes de la communauté",
     "backHome": "← Accueil",
     "searchPlaceholder": "Rechercher par nom de culture…",
-    "noObservations": "Pas encore d'observations",
+    "noObservations": "Pas encore de découvertes",
     "loadMore": "Charger plus",
     "loading": "Chargement…",
     "companion": "Compagne",
@@ -113,7 +113,7 @@
     "sourceCount": "{count, plural, one {# source} other {# sources}}",
     "companions": "Compagnes",
     "antagonists": "Antagonistes",
-    "contributeObservation": "Ajouter une observation →",
+    "contributeObservation": "Ajouter une découverte →",
     "COMPANION": "Compagne",
     "AVOID": "Éviter",
     "PEST_CONTROL": "Lutte antiparasitaire",
@@ -129,15 +129,15 @@
     "loadError": "Échec du chargement des relations. Réessayez."
   },
   "Contribute": {
-    "title": "Contribuer une observation",
+    "title": "Contribuer une découverte",
     "back": "← Retour",
-    "subtitle": "Partagez ce que vous avez remarqué dans votre jardin. Vos observations aident à améliorer les recommandations pour tous.",
-    "signInPrompt": "Connectez-vous pour contribuer des observations de culture compagne.",
+    "subtitle": "Partagez ce que vous avez remarqué dans votre jardin. Vos découvertes aident à améliorer les recommandations pour tous.",
+    "signInPrompt": "Connectez-vous pour contribuer des découvertes de culture compagne.",
     "signInLink": "Se connecter",
-    "success": "Merci ! Votre observation a été enregistrée.",
+    "success": "Merci ! Votre découverte a été enregistrée.",
     "rateLimit": "Vous avez déjà soumis une relation pour cette paire aujourd'hui.",
     "error": "Une erreur s'est produite. Réessayez.",
-    "newObservation": "Nouvelle observation",
+    "newObservation": "Nouvelle découverte",
     "plantA": "Plante A",
     "plantB": "Plante B",
     "relationship": "Relation",
@@ -149,7 +149,7 @@
     "notesOptional": "(facultatif, max. 2000 caractères)",
     "notesPlaceholder": "ex. Plantées ensemble pendant 3 saisons, j'ai remarqué moins de pucerons…",
     "evidenceLevel": "Niveau de preuve",
-    "evidenceLevelHint": "Sélectionnez la preuve de la meilleure qualité que vous avez pour cette observation.",
+    "evidenceLevelHint": "Sélectionnez la preuve de la meilleure qualité que vous avez pour cette découverte.",
     "sources": "Sources",
     "sourcesHint": "Les liens doi.org et PubMed sont automatiquement reconnus comme des articles scientifiques.",
     "sourcesOptional": "(facultatif)",
@@ -157,7 +157,7 @@
     "remove": "supprimer",
     "autoDetected": "Détecté automatiquement",
     "submitting": "Envoi en cours…",
-    "submit": "Soumettre l'observation",
+    "submit": "Soumettre la découverte",
     "genusHint": "Les entrées de genre (ex. Ocimum L.) représentent toute la famille végétale — choisissez une espèce pour des recommandations plus précises.",
     "change": "modifier",
     "searchFor": "Rechercher {label}…",
@@ -177,7 +177,7 @@
     "BLOG_FORUM": "Blog / Forum",
     "PERSONAL_OBSERVATION": "Observation personnelle",
     "sourcePosition": "Que dit votre source ?",
-    "sourcePositionHint": "Sélectionnez si votre source soutient une conclusion différente de votre observation ci-dessus."
+    "sourcePositionHint": "Sélectionnez si votre source soutient une conclusion différente de votre découverte ci-dessus."
   },
   "PlantPage": {
     "backToPlan": "← Retour au plan",
@@ -212,7 +212,7 @@
     "inheritedFrom": "via {genus}",
     "wikiReadMore": "Wikipedia →",
     "wikiAttribution": "Source : Wikipedia (CC BY-SA)",
-    "contributeObservation": "Ajouter une observation →"
+    "contributeObservation": "Ajouter une découverte →"
   },
   "RelationshipPage": {
     "back": "← Retour",

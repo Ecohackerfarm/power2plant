@@ -103,7 +103,7 @@
     "title": "コミュニティの観察",
     "backHome": "← ホーム",
     "searchPlaceholder": "作物名で検索…",
-    "noObservations": "観察はまだありません",
+    "noObservations": "発見はまだありません",
     "loadMore": "もっと読み込む",
     "loading": "読み込み中…",
     "companion": "コンパニオン",
@@ -113,7 +113,7 @@
     "sourceCount": "{count, plural, other {# 件の出典}}",
     "companions": "コンパニオン植物",
     "antagonists": "相性の悪い植物",
-    "contributeObservation": "観察を追加する →",
+    "contributeObservation": "発見を追加する →",
     "COMPANION": "コンパニオン",
     "AVOID": "避ける",
     "PEST_CONTROL": "害虫防除",
@@ -137,7 +137,7 @@
     "success": "ありがとうございます！観察が記録されました。",
     "rateLimit": "このペアの関係は今日すでに送信済みです。",
     "error": "エラーが発生しました。もう一度お試しください。",
-    "newObservation": "新しい観察",
+    "newObservation": "新しい発見",
     "plantA": "植物 A",
     "plantB": "植物 B",
     "relationship": "関係",
@@ -212,7 +212,7 @@
     "inheritedFrom": "{genus}より継承",
     "wikiReadMore": "Wikipedia →",
     "wikiAttribution": "出典：Wikipedia（CC BY-SA）",
-    "contributeObservation": "観察を追加する →"
+    "contributeObservation": "発見を追加する →"
   },
   "RelationshipPage": {
     "back": "← 戻る",

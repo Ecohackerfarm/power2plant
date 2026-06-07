@@ -16,8 +16,8 @@
   },
   "Home": {
     "subtitle": "Companion planting recommendations for your garden beds.",
-    "contributeLink": "Contribute an observation →",
-    "browseLink": "Browse observations →",
+    "contributeLink": "Contribute a finding →",
+    "browseLink": "Browse findings →",
     "myGarden": "My Garden →",
     "addingToGarden": "Adding to your existing garden.",
     "startFresh": "Start fresh",
@@ -102,10 +102,10 @@
     "requestResearch": "Request research →"
   },
   "Relationships": {
-    "title": "Community observations",
+    "title": "Community findings",
     "backHome": "← Home",
     "searchPlaceholder": "Search by crop name...",
-    "noObservations": "No observations yet",
+    "noObservations": "No findings yet",
     "loadMore": "Load more",
     "loading": "Loading…",
     "companion": "Companion",
@@ -115,7 +115,7 @@
     "sourceCount": "{count, plural, one {# source} other {# sources}}",
     "companions": "Companions",
     "antagonists": "Antagonists",
-    "contributeObservation": "Add an observation →",
+    "contributeObservation": "Add a finding →",
     "COMPANION": "Companion",
     "AVOID": "Avoid",
     "PEST_CONTROL": "Pest Control",
@@ -131,15 +131,15 @@
     "loadError": "Failed to load relationships. Please try again."
   },
   "Contribute": {
-    "title": "Contribute an observation",
+    "title": "Contribute a finding",
     "back": "← Back",
-    "subtitle": "Share what you've noticed in your garden. Your observations help improve recommendations for everyone.",
-    "signInPrompt": "Sign in to contribute companion planting observations.",
+    "subtitle": "Share what you've noticed in your garden. Your findings help improve recommendations for everyone.",
+    "signInPrompt": "Sign in to contribute companion planting findings.",
     "signInLink": "Sign in",
-    "success": "Thanks! Your observation has been recorded.",
+    "success": "Thanks! Your finding has been recorded.",
     "rateLimit": "You already submitted a relationship for this pair today.",
     "error": "Something went wrong. Please try again.",
-    "newObservation": "New observation",
+    "newObservation": "New finding",
     "plantA": "Plant A",
     "plantB": "Plant B",
     "relationship": "Relationship",
@@ -151,7 +151,7 @@
     "notesOptional": "(optional, max 2000 chars)",
     "notesPlaceholder": "e.g. Planted together for 3 seasons, noticed fewer aphids…",
     "evidenceLevel": "Evidence level",
-    "evidenceLevelHint": "Select the highest quality evidence you have for this observation.",
+    "evidenceLevelHint": "Select the highest quality evidence you have for this finding.",
     "sources": "Sources",
     "sourcesHint": "doi.org and PubMed links are recognised automatically as scientific papers.",
     "sourcesOptional": "(optional)",
@@ -159,7 +159,7 @@
     "remove": "remove",
     "autoDetected": "Auto-detected",
     "submitting": "Submitting…",
-    "submit": "Submit observation",
+    "submit": "Submit finding",
     "genusHint": "Genus entries (e.g. Ocimum L.) represent the whole plant family — pick a species for more precise recommendations.",
     "change": "change",
     "searchFor": "Search for {label}…",
@@ -179,7 +179,7 @@
     "BLOG_FORUM": "Blog / Forum",
     "PERSONAL_OBSERVATION": "Personal observation",
     "sourcePosition": "What does your source say?",
-    "sourcePositionHint": "Select if your source supports a different conclusion than your observation above."
+    "sourcePositionHint": "Select if your source supports a different conclusion than your finding above."
   },
   "PlantPage": {
     "backToPlan": "← Back to plan",
@@ -214,7 +214,7 @@
     "inheritedFrom": "via {genus}",
     "wikiReadMore": "Wikipedia →",
     "wikiAttribution": "Source: Wikipedia (CC BY-SA)",
-    "contributeObservation": "Add an observation →"
+    "contributeObservation": "Add a finding →"
   },
   "RelationshipPage": {
     "back": "← Back",
