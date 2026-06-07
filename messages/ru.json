@@ -103,7 +103,7 @@
     "title": "Наблюдения сообщества",
     "backHome": "← На главную",
     "searchPlaceholder": "Поиск по названию культуры…",
-    "noObservations": "Наблюдений пока нет",
+    "noObservations": "Находок пока нет",
     "loadMore": "Загрузить ещё",
     "loading": "Загрузка…",
     "companion": "Компаньон",
@@ -113,7 +113,7 @@
     "sourceCount": "{count, plural, one {# источник} few {# источника} other {# источников}}",
     "companions": "Компаньоны",
     "antagonists": "Антагонисты",
-    "contributeObservation": "Добавить наблюдение →",
+    "contributeObservation": "Добавить находку →",
     "COMPANION": "Компаньон",
     "AVOID": "Избегать",
     "PEST_CONTROL": "Борьба с вредителями",
@@ -137,7 +137,7 @@
     "success": "Спасибо! Ваше наблюдение записано.",
     "rateLimit": "Вы уже отправили отношение для этой пары сегодня.",
     "error": "Что-то пошло не так. Попробуйте ещё раз.",
-    "newObservation": "Новое наблюдение",
+    "newObservation": "Новая находка",
     "plantA": "Растение A",
     "plantB": "Растение B",
     "relationship": "Отношение",
@@ -212,7 +212,7 @@
     "inheritedFrom": "от {genus}",
     "wikiReadMore": "Википедия →",
     "wikiAttribution": "Источник: Википедия (CC BY-SA)",
-    "contributeObservation": "Добавить наблюдение →"
+    "contributeObservation": "Добавить находку →"
   },
   "RelationshipPage": {
     "back": "← Назад",
