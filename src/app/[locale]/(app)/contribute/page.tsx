@@ -243,7 +243,7 @@ export default function ContributePage() {
                       checked={type === rt}
                       onChange={() => setType(rt)}
                     />
-                    {t(rt as 'COMPANION' | 'AVOID')}
+                    {t(rt === 'COMPANION' ? 'companion' : 'avoid')}
                   </label>
                 ))}
               </div>
@@ -395,7 +395,7 @@ export default function ContributePage() {
                         checked={(position ?? type) === rt}
                         onChange={() => setPosition(rt)}
                       />
-                      {t(rt as 'COMPANION' | 'AVOID')}
+                      {t(rt === 'COMPANION' ? 'companion' : 'avoid')}
                     </label>
                   ))}
                 </div>
