@@ -41,10 +41,11 @@ async function findGenusCrop(botanicalName: string): Promise<GenusRow | null> {
 }
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string; companionId: string }> },
 ) {
   const { id, companionId } = await params
+  const locale = new URL(req.url).searchParams.get('locale') ?? 'en'
 
   // Try direct relationship
   const directRel = await findRelationship(id, companionId)
@@ -160,6 +161,16 @@ export async function GET(
     })),
     ...groupedCommunity,
   ]
+
+  if (locale !== 'en') {
+    const translations = await prisma.cropTranslation.findMany({
+      where: { cropId: { in: [rel.cropAId, rel.cropBId] }, locale },
+      select: { cropId: true, commonNames: true },
+    })
+    const tMap = new Map(translations.filter(t => t.commonNames.length > 0).map(t => [t.cropId, t.commonNames]))
+    if (tMap.has(rel.cropAId)) rel = { ...rel, cropACommonNames: tMap.get(rel.cropAId)! }
+    if (tMap.has(rel.cropBId)) rel = { ...rel, cropBCommonNames: tMap.get(rel.cropBId)! }
+  }
 
   return NextResponse.json({
     relationship: {

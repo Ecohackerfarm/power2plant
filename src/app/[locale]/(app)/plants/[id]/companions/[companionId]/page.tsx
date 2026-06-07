@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { useRouter } from '@/i18n/navigation'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
@@ -47,6 +47,7 @@ function CropCard({ name, botanical, commonNames, isNitrogen, nitrogenLabel }: {
 
 export default function RelationshipPage() {
   const t = useTranslations('RelationshipPage')
+  const locale = useLocale()
   const { id, companionId } = useParams<{ id: string; companionId: string }>()
   const router = useRouter()
   const [rel, setRel] = useState<RelationshipRow | null>(null)
@@ -57,7 +58,7 @@ export default function RelationshipPage() {
   const [expandedAttempt, setExpandedAttempt] = useState<string | null>(null)
 
   useEffect(() => {
-    fetch(`/api/plants/${id}/companions/${companionId}`)
+    fetch(`/api/plants/${id}/companions/${companionId}?locale=${locale}`)
       .then(r => r.json().then(body => ({ ok: r.ok, body })))
       .then(({ ok, body }) => {
         if (!ok && !body.researchAttempts?.length) { setNotFound(true); return }
