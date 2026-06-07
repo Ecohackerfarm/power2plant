@@ -10,7 +10,9 @@
     "pleaseWait": "Por favor aguarde…",
     "noAccount": "Sem conta? Cadastre-se",
     "haveAccount": "Já tem conta? Entre",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "checkYourEmail": "Verifique seu e-mail",
+    "verifyEmailSent": "Enviamos um link de verificação para o seu e-mail. Clique nele para ativar sua conta."
   },
   "Home": {
     "subtitle": "Recomendações de plantas companheiras para seus canteiros.",

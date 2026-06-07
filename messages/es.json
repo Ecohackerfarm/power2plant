@@ -10,7 +10,9 @@
     "pleaseWait": "Por favor espera…",
     "noAccount": "¿Sin cuenta? Regístrate",
     "haveAccount": "¿Ya tienes cuenta? Inicia sesión",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "checkYourEmail": "Revisa tu correo",
+    "verifyEmailSent": "Te enviamos un enlace de verificación. Haz clic en él para activar tu cuenta."
   },
   "Home": {
     "subtitle": "Recomendaciones de plantas compañeras para tus bancales.",

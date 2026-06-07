@@ -10,7 +10,9 @@
     "pleaseWait": "Bitte warten…",
     "noAccount": "Noch kein Konto? Registrieren",
     "haveAccount": "Schon ein Konto? Anmelden",
-    "cancel": "Abbrechen"
+    "cancel": "Abbrechen",
+    "checkYourEmail": "E-Mail prüfen",
+    "verifyEmailSent": "Wir haben einen Bestätigungslink an deine E-Mail-Adresse gesendet. Klicke ihn, um dein Konto zu aktivieren."
   },
   "Home": {
     "subtitle": "Mischkulturempfehlungen für deine Gartenbeete.",

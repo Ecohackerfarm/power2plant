@@ -19,6 +19,7 @@ export function AuthPanel() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [open, setOpen] = useState(false)
+  const [verifyEmailSent, setVerifyEmailSent] = useState(false)
 
   if (isPending) return null
 
@@ -41,6 +42,8 @@ export function AuthPanel() {
       if (mode === 'signup') {
         const result = await signUp.email({ name, email, password })
         if (result.error) throw new Error(result.error.message ?? 'Sign up failed')
+        setVerifyEmailSent(true)
+        return
       } else {
         const result = await signIn.email({ email, password })
         if (result.error) throw new Error(result.error.message ?? 'Sign in failed')
@@ -63,10 +66,18 @@ export function AuthPanel() {
           <Card className="w-80 shadow-lg">
             <CardHeader className="pb-3">
               <CardTitle className="text-base">
-                {mode === 'signin' ? t('signIn') : t('createAccount')}
+                {verifyEmailSent ? t('checkYourEmail') : mode === 'signin' ? t('signIn') : t('createAccount')}
               </CardTitle>
             </CardHeader>
             <CardContent>
+              {verifyEmailSent ? (
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground">{t('verifyEmailSent')}</p>
+                  <Button variant="outline" className="w-full" onClick={() => { setVerifyEmailSent(false); setMode('signin'); setOpen(false) }}>
+                    {t('cancel')}
+                  </Button>
+                </div>
+              ) : (
               <form onSubmit={handleSubmit} className="space-y-3">
                 {mode === 'signup' && (
                   <div className="space-y-1">
@@ -119,6 +130,7 @@ export function AuthPanel() {
                   {t('cancel')}
                 </button>
               </form>
+              )}
             </CardContent>
           </Card>
         </div>

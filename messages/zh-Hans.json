@@ -10,7 +10,9 @@
     "pleaseWait": "请稍候…",
     "noAccount": "没有账户？注册",
     "haveAccount": "已有账户？登录",
-    "cancel": "取消"
+    "cancel": "取消",
+    "checkYourEmail": "查看您的邮箱",
+    "verifyEmailSent": "我们已向您的邮箱发送了验证链接，请点击以激活您的账户。"
   },
   "Home": {
     "subtitle": "为您的花圃提供伴生种植建议。",

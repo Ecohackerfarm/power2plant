@@ -10,7 +10,9 @@
     "pleaseWait": "Veuillez patienter…",
     "noAccount": "Pas de compte ? S'inscrire",
     "haveAccount": "Déjà un compte ? Se connecter",
-    "cancel": "Annuler"
+    "cancel": "Annuler",
+    "checkYourEmail": "Vérifiez votre e-mail",
+    "verifyEmailSent": "Nous vous avons envoyé un lien de vérification. Cliquez dessus pour activer votre compte."
   },
   "Home": {
     "subtitle": "Recommandations de plantes compagnes pour vos planches de jardin.",

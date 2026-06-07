@@ -10,7 +10,9 @@
     "pleaseWait": "Please wait…",
     "noAccount": "No account? Sign up",
     "haveAccount": "Have an account? Sign in",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "checkYourEmail": "Check your email",
+    "verifyEmailSent": "We sent a verification link to your email. Click it to activate your account."
   },
   "Home": {
     "subtitle": "Companion planting recommendations for your garden beds.",
