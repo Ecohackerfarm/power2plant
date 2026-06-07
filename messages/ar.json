@@ -126,7 +126,13 @@
     "TRADITIONAL": "تقليدي",
     "OBSERVED": "ملاحَظ",
     "PEER_REVIEWED": "محكَّم",
-    "loadError": "فشل تحميل العلاقات. يرجى المحاولة مجدداً."
+    "loadError": "فشل تحميل العلاقات. يرجى المحاولة مجدداً.",
+    "noData": "No data yet",
+    "voteForResearch": "Vote for research",
+    "voted": "Voted",
+    "signInToVote": "Sign in to vote",
+    "noResults": "No plants found",
+    "plantHasNoData": "No companion data yet for this plant"
   },
   "Contribute": {
     "title": "إضافة ملاحظة",

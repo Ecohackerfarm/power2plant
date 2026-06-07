@@ -126,7 +126,13 @@
     "TRADITIONAL": "традиционное",
     "OBSERVED": "наблюдаемое",
     "PEER_REVIEWED": "рецензируемое",
-    "loadError": "Не удалось загрузить отношения. Попробуйте ещё раз."
+    "loadError": "Не удалось загрузить отношения. Попробуйте ещё раз.",
+    "noData": "No data yet",
+    "voteForResearch": "Vote for research",
+    "voted": "Voted",
+    "signInToVote": "Sign in to vote",
+    "noResults": "No plants found",
+    "plantHasNoData": "No companion data yet for this plant"
   },
   "Contribute": {
     "title": "Добавить наблюдение",

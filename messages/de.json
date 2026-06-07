@@ -128,7 +128,13 @@
     "TRADITIONAL": "traditionell",
     "OBSERVED": "beobachtet",
     "PEER_REVIEWED": "peer-reviewed",
-    "loadError": "Laden fehlgeschlagen. Bitte erneut versuchen."
+    "loadError": "Laden fehlgeschlagen. Bitte erneut versuchen.",
+    "noData": "No data yet",
+    "voteForResearch": "Vote for research",
+    "voted": "Voted",
+    "signInToVote": "Sign in to vote",
+    "noResults": "No plants found",
+    "plantHasNoData": "No companion data yet for this plant"
   },
   "Contribute": {
     "title": "Ergebnis beitragen",

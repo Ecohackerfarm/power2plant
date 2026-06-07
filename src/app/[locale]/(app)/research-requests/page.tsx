@@ -15,11 +15,11 @@ type Crop = { id: string; name: string; botanicalName: string; commonNames: stri
 type ResearchRequestItem = {
   id: string
   cropAId: string
-  cropBId: string
+  cropBId: string | null
   voteCount: number
   createdAt: string
   cropA: Crop
-  cropB: Crop
+  cropB: Crop | null
   hasVoted: boolean
 }
 
@@ -32,7 +32,7 @@ function PairCard({
 }: {
   item: ResearchRequestItem
   highlighted: boolean
-  onVote: (id: string, cropAId: string, cropBId: string) => void
+  onVote: (id: string, cropAId: string, cropBId: string | null) => void
   canVote: boolean
   t: ReturnType<typeof useTranslations>
 }) {
@@ -44,20 +44,29 @@ function PairCard({
     setVoting(false)
   }
 
+  const cardId = item.cropBId
+    ? `pair-${item.cropAId}-${item.cropBId}`
+    : `single-${item.cropAId}`
+
   return (
     <Card
-      id={`pair-${item.cropAId}-${item.cropBId}`}
+      id={cardId}
       className={highlighted ? 'border-primary ring-1 ring-primary' : ''}
     >
       <CardContent className="flex items-center justify-between gap-4 py-4">
         <div className="min-w-0">
           <p className="font-medium">
             {getDisplayName(item.cropA)}
-            <span className="text-muted-foreground mx-2">&amp;</span>
-            {getDisplayName(item.cropB)}
+            {item.cropB && (
+              <>
+                <span className="text-muted-foreground mx-2">&amp;</span>
+                {getDisplayName(item.cropB)}
+              </>
+            )}
           </p>
           <p className="text-xs text-muted-foreground italic">
-            {item.cropA.botanicalName} × {item.cropB.botanicalName}
+            {item.cropA.botanicalName}
+            {item.cropB && <> × {item.cropB.botanicalName}</>}
           </p>
         </div>
         <div className="flex items-center gap-3 shrink-0">
@@ -65,12 +74,14 @@ function PairCard({
             <ThumbsUp className="w-3 h-3 mr-1" />
             {item.voteCount}
           </Badge>
-          <ResearchFundButton
-            cropAName={getDisplayName(item.cropA)}
-            cropBName={getDisplayName(item.cropB)}
-            cropAId={item.cropAId}
-            cropBId={item.cropBId}
-          />
+          {item.cropB && (
+            <ResearchFundButton
+              cropAName={getDisplayName(item.cropA)}
+              cropBName={getDisplayName(item.cropB)}
+              cropAId={item.cropAId}
+              cropBId={item.cropBId!}
+            />
+          )}
           <Button
             size="sm"
             variant={item.hasVoted ? 'secondary' : 'default'}
@@ -130,12 +141,12 @@ export default function ResearchRequestsPage() {
     el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }, [deepA, deepB, loading])
 
-  async function handleVote(_id: string, cropAId: string, cropBId: string) {
+  async function handleVote(_id: string, cropAId: string, cropBId: string | null) {
     if (!session) return
     const res = await fetch('/api/research-requests', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cropAId, cropBId }),
+      body: JSON.stringify(cropBId ? { cropAId, cropBId } : { cropAId }),
     })
     if (res.ok) {
       await fetchItems()
@@ -143,10 +154,15 @@ export default function ResearchRequestsPage() {
   }
 
   function isHighlighted(item: ResearchRequestItem): boolean {
-    if (!deepA || !deepB) return false
-    const normalA = deepA < deepB ? deepA : deepB
-    const normalB = deepA < deepB ? deepB : deepA
-    return item.cropAId === normalA && item.cropBId === normalB
+    if (deepA && deepB && item.cropBId) {
+      const normalA = deepA < deepB ? deepA : deepB
+      const normalB = deepA < deepB ? deepB : deepA
+      return item.cropAId === normalA && item.cropBId === normalB
+    }
+    if (deepA && !deepB) {
+      return item.cropAId === deepA && item.cropBId === null
+    }
+    return false
   }
 
   return (

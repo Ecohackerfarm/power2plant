@@ -11,7 +11,7 @@ vi.mock('next/headers', () => ({
 
 vi.mock('@/lib/prisma', () => ({
   default: {
-    researchRequest: { findMany: vi.fn(), upsert: vi.fn(), update: vi.fn() },
+    researchRequest: { findMany: vi.fn(), findFirst: vi.fn(), create: vi.fn(), update: vi.fn() },
     researchRequestVote: { findUnique: vi.fn(), create: vi.fn() },
     crop: { findUnique: vi.fn() },
     $transaction: vi.fn(),
@@ -23,10 +23,17 @@ import { auth } from '@/lib/auth'
 
 const fakeSession = { user: { id: 'user-1', email: 'a@b.com' } }
 
-const fakeItem = {
+const fakePairItem = {
   id: 'rr-1', cropAId: 'crop-a', cropBId: 'crop-b', voteCount: 2, createdAt: new Date(),
   cropA: { id: 'crop-a', name: 'Tomato', botanicalName: 'Solanum lycopersicum', commonNames: [] },
   cropB: { id: 'crop-b', name: 'Basil', botanicalName: 'Ocimum basilicum', commonNames: [] },
+  votes: [],
+}
+
+const fakeSingleItem = {
+  id: 'rr-2', cropAId: 'crop-a', cropBId: null, voteCount: 1, createdAt: new Date(),
+  cropA: { id: 'crop-a', name: 'Tomato', botanicalName: 'Solanum lycopersicum', commonNames: [] },
+  cropB: null,
   votes: [],
 }
 
@@ -40,10 +47,12 @@ function makePost(body: object) {
 
 beforeEach(() => vi.clearAllMocks())
 
+// ── GET ──────────────────────────────────────────────────────────────────────
+
 describe('GET /api/research-requests', () => {
   it('returns list with hasVoted:false for unauthenticated user', async () => {
     vi.mocked(auth.api.getSession).mockResolvedValue(null)
-    vi.mocked(prisma.researchRequest.findMany).mockResolvedValue([fakeItem] as never)
+    vi.mocked(prisma.researchRequest.findMany).mockResolvedValue([fakePairItem] as never)
     const res = await GET()
     expect(res.status).toBe(200)
     const body = await res.json()
@@ -54,7 +63,7 @@ describe('GET /api/research-requests', () => {
   it('returns hasVoted:true when authenticated user has voted', async () => {
     vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as never)
     vi.mocked(prisma.researchRequest.findMany).mockResolvedValue([
-      { ...fakeItem, votes: [{ id: 'v-1' }] },
+      { ...fakePairItem, votes: [{ id: 'v-1' }] },
     ] as never)
     const res = await GET()
     const body = await res.json()
@@ -64,7 +73,7 @@ describe('GET /api/research-requests', () => {
   it('returns hasVoted:false when authenticated user has not voted', async () => {
     vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as never)
     vi.mocked(prisma.researchRequest.findMany).mockResolvedValue([
-      { ...fakeItem, votes: [] },
+      { ...fakePairItem, votes: [] },
     ] as never)
     const res = await GET()
     const body = await res.json()
@@ -73,14 +82,25 @@ describe('GET /api/research-requests', () => {
 
   it('does not expose votes array in response', async () => {
     vi.mocked(auth.api.getSession).mockResolvedValue(null)
-    vi.mocked(prisma.researchRequest.findMany).mockResolvedValue([fakeItem] as never)
+    vi.mocked(prisma.researchRequest.findMany).mockResolvedValue([fakePairItem] as never)
     const res = await GET()
     const body = await res.json()
     expect(body[0].votes).toBeUndefined()
   })
+
+  it('returns null cropB for single-plant requests', async () => {
+    vi.mocked(auth.api.getSession).mockResolvedValue(null)
+    vi.mocked(prisma.researchRequest.findMany).mockResolvedValue([fakeSingleItem] as never)
+    const res = await GET()
+    const body = await res.json()
+    expect(body[0].cropBId).toBeNull()
+    expect(body[0].cropB).toBeNull()
+  })
 })
 
-describe('POST /api/research-requests', () => {
+// ── POST pair ─────────────────────────────────────────────────────────────────
+
+describe('POST /api/research-requests — pair', () => {
   it('returns 401 for unauthenticated request', async () => {
     vi.mocked(auth.api.getSession).mockResolvedValue(null)
     const res = await POST(makePost({ cropAId: 'crop-a', cropBId: 'crop-b' }))
@@ -107,9 +127,7 @@ describe('POST /api/research-requests', () => {
 
   it('returns 404 when cropA not found', async () => {
     vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as never)
-    vi.mocked(prisma.crop.findUnique)
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce({ id: 'crop-b' } as never)
+    vi.mocked(prisma.crop.findUnique).mockResolvedValueOnce(null)
     const res = await POST(makePost({ cropAId: 'crop-a', cropBId: 'crop-b' }))
     expect(res.status).toBe(404)
   })
@@ -127,7 +145,7 @@ describe('POST /api/research-requests', () => {
     vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as never)
     vi.mocked(prisma.crop.findUnique).mockResolvedValue({ id: 'x' } as never)
     vi.mocked(prisma.$transaction).mockImplementation(fn => fn(prisma as never))
-    vi.mocked(prisma.researchRequest.upsert).mockResolvedValue({ id: 'rr-1', voteCount: 0 } as never)
+    vi.mocked(prisma.researchRequest.findFirst).mockResolvedValue({ id: 'rr-1', voteCount: 0 } as never)
     vi.mocked(prisma.researchRequestVote.findUnique).mockResolvedValue(null)
     vi.mocked(prisma.researchRequestVote.create).mockResolvedValue({} as never)
     vi.mocked(prisma.researchRequest.update).mockResolvedValue({ id: 'rr-1', voteCount: 1 } as never)
@@ -142,7 +160,7 @@ describe('POST /api/research-requests', () => {
     vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as never)
     vi.mocked(prisma.crop.findUnique).mockResolvedValue({ id: 'x' } as never)
     vi.mocked(prisma.$transaction).mockImplementation(fn => fn(prisma as never))
-    vi.mocked(prisma.researchRequest.upsert).mockResolvedValue({ id: 'rr-1', voteCount: 3 } as never)
+    vi.mocked(prisma.researchRequest.findFirst).mockResolvedValue({ id: 'rr-1', voteCount: 3 } as never)
     vi.mocked(prisma.researchRequestVote.findUnique).mockResolvedValue({ id: 'v-1' } as never)
     const res = await POST(makePost({ cropAId: 'crop-a', cropBId: 'crop-b' }))
     const body = await res.json()
@@ -156,15 +174,106 @@ describe('POST /api/research-requests', () => {
     vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as never)
     vi.mocked(prisma.crop.findUnique).mockResolvedValue({ id: 'x' } as never)
     vi.mocked(prisma.$transaction).mockImplementation(fn => fn(prisma as never))
-    vi.mocked(prisma.researchRequest.upsert).mockResolvedValue({ id: 'rr-1', voteCount: 0 } as never)
+    vi.mocked(prisma.researchRequest.findFirst).mockResolvedValue({ id: 'rr-1', voteCount: 0 } as never)
     vi.mocked(prisma.researchRequestVote.findUnique).mockResolvedValue(null)
     vi.mocked(prisma.researchRequestVote.create).mockResolvedValue({} as never)
     vi.mocked(prisma.researchRequest.update).mockResolvedValue({ id: 'rr-1', voteCount: 1 } as never)
-    // Post with Z before A — should be normalised
     await POST(makePost({ cropAId: 'zzz-crop', cropBId: 'aaa-crop' }))
-    const upsertCall = vi.mocked(prisma.researchRequest.upsert).mock.calls[0][0]
-    const key = upsertCall.where.cropAId_cropBId!
-    expect(key.cropAId).toBe('aaa-crop')
-    expect(key.cropBId).toBe('zzz-crop')
+    const findCall = vi.mocked(prisma.researchRequest.findFirst).mock.calls[0][0]
+    expect(findCall.where.cropAId).toBe('aaa-crop')
+    expect(findCall.where.cropBId).toBe('zzz-crop')
+  })
+
+  it('creates the request if none exists yet', async () => {
+    vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as never)
+    vi.mocked(prisma.crop.findUnique).mockResolvedValue({ id: 'x' } as never)
+    vi.mocked(prisma.$transaction).mockImplementation(fn => fn(prisma as never))
+    vi.mocked(prisma.researchRequest.findFirst).mockResolvedValue(null)
+    vi.mocked(prisma.researchRequest.create).mockResolvedValue({ id: 'rr-new', voteCount: 0 } as never)
+    vi.mocked(prisma.researchRequestVote.findUnique).mockResolvedValue(null)
+    vi.mocked(prisma.researchRequestVote.create).mockResolvedValue({} as never)
+    vi.mocked(prisma.researchRequest.update).mockResolvedValue({ id: 'rr-new', voteCount: 1 } as never)
+    const res = await POST(makePost({ cropAId: 'crop-a', cropBId: 'crop-b' }))
+    expect(res.status).toBe(200)
+    expect(prisma.researchRequest.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ cropAId: 'crop-a', cropBId: 'crop-b' }) })
+    )
+  })
+})
+
+// ── POST single-plant ─────────────────────────────────────────────────────────
+
+describe('POST /api/research-requests — single plant', () => {
+  it('accepts request without cropBId', async () => {
+    vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as never)
+    vi.mocked(prisma.crop.findUnique).mockResolvedValue({ id: 'crop-a' } as never)
+    vi.mocked(prisma.$transaction).mockImplementation(fn => fn(prisma as never))
+    vi.mocked(prisma.researchRequest.findFirst).mockResolvedValue({ id: 'rr-1', voteCount: 0 } as never)
+    vi.mocked(prisma.researchRequestVote.findUnique).mockResolvedValue(null)
+    vi.mocked(prisma.researchRequestVote.create).mockResolvedValue({} as never)
+    vi.mocked(prisma.researchRequest.update).mockResolvedValue({ id: 'rr-1', voteCount: 1 } as never)
+    const res = await POST(makePost({ cropAId: 'crop-a' }))
+    expect(res.status).toBe(200)
+  })
+
+  it('accepts request with explicit null cropBId', async () => {
+    vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as never)
+    vi.mocked(prisma.crop.findUnique).mockResolvedValue({ id: 'crop-a' } as never)
+    vi.mocked(prisma.$transaction).mockImplementation(fn => fn(prisma as never))
+    vi.mocked(prisma.researchRequest.findFirst).mockResolvedValue({ id: 'rr-1', voteCount: 0 } as never)
+    vi.mocked(prisma.researchRequestVote.findUnique).mockResolvedValue(null)
+    vi.mocked(prisma.researchRequestVote.create).mockResolvedValue({} as never)
+    vi.mocked(prisma.researchRequest.update).mockResolvedValue({ id: 'rr-1', voteCount: 1 } as never)
+    const res = await POST(makePost({ cropAId: 'crop-a', cropBId: null }))
+    expect(res.status).toBe(200)
+  })
+
+  it('queries findFirst with cropBId: null for single-plant', async () => {
+    vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as never)
+    vi.mocked(prisma.crop.findUnique).mockResolvedValue({ id: 'x' } as never)
+    vi.mocked(prisma.$transaction).mockImplementation(fn => fn(prisma as never))
+    vi.mocked(prisma.researchRequest.findFirst).mockResolvedValue({ id: 'rr-1', voteCount: 0 } as never)
+    vi.mocked(prisma.researchRequestVote.findUnique).mockResolvedValue(null)
+    vi.mocked(prisma.researchRequestVote.create).mockResolvedValue({} as never)
+    vi.mocked(prisma.researchRequest.update).mockResolvedValue({ id: 'rr-1', voteCount: 1 } as never)
+    await POST(makePost({ cropAId: 'crop-a' }))
+    const findCall = vi.mocked(prisma.researchRequest.findFirst).mock.calls[0][0]
+    expect(findCall.where.cropAId).toBe('crop-a')
+    expect(findCall.where.cropBId).toBeNull()
+  })
+
+  it('creates single-plant request with null cropBId', async () => {
+    vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as never)
+    vi.mocked(prisma.crop.findUnique).mockResolvedValue({ id: 'x' } as never)
+    vi.mocked(prisma.$transaction).mockImplementation(fn => fn(prisma as never))
+    vi.mocked(prisma.researchRequest.findFirst).mockResolvedValue(null)
+    vi.mocked(prisma.researchRequest.create).mockResolvedValue({ id: 'rr-new', voteCount: 0 } as never)
+    vi.mocked(prisma.researchRequestVote.findUnique).mockResolvedValue(null)
+    vi.mocked(prisma.researchRequestVote.create).mockResolvedValue({} as never)
+    vi.mocked(prisma.researchRequest.update).mockResolvedValue({ id: 'rr-new', voteCount: 1 } as never)
+    await POST(makePost({ cropAId: 'crop-a' }))
+    expect(prisma.researchRequest.create).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ cropAId: 'crop-a', cropBId: null }) })
+    )
+  })
+
+  it('returns 404 when cropA not found for single-plant request', async () => {
+    vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as never)
+    vi.mocked(prisma.crop.findUnique).mockResolvedValue(null)
+    const res = await POST(makePost({ cropAId: 'unknown' }))
+    expect(res.status).toBe(404)
+  })
+
+  it('does not lookup cropB when cropBId absent', async () => {
+    vi.mocked(auth.api.getSession).mockResolvedValue(fakeSession as never)
+    vi.mocked(prisma.crop.findUnique).mockResolvedValue({ id: 'x' } as never)
+    vi.mocked(prisma.$transaction).mockImplementation(fn => fn(prisma as never))
+    vi.mocked(prisma.researchRequest.findFirst).mockResolvedValue({ id: 'rr-1', voteCount: 0 } as never)
+    vi.mocked(prisma.researchRequestVote.findUnique).mockResolvedValue(null)
+    vi.mocked(prisma.researchRequestVote.create).mockResolvedValue({} as never)
+    vi.mocked(prisma.researchRequest.update).mockResolvedValue({ id: 'rr-1', voteCount: 1 } as never)
+    await POST(makePost({ cropAId: 'crop-a' }))
+    // Only one findUnique call (for cropA), not two
+    expect(prisma.crop.findUnique).toHaveBeenCalledTimes(1)
   })
 })
