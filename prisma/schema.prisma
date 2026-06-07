@@ -365,15 +365,16 @@ model RelationshipResearchAttempt {
 model ResearchRequest {
   id        String                @id @default(cuid())
   cropAId   String
-  cropBId   String
+  cropBId   String?
   voteCount Int                   @default(0)
   funded    Boolean               @default(false)
   createdAt DateTime              @default(now())
   cropA     Crop                  @relation("ResearchRequestCropA", fields: [cropAId], references: [id], onDelete: Cascade)
-  cropB     Crop                  @relation("ResearchRequestCropB", fields: [cropBId], references: [id], onDelete: Cascade)
+  cropB     Crop?                 @relation("ResearchRequestCropB", fields: [cropBId], references: [id], onDelete: Cascade)
   votes     ResearchRequestVote[]
 
-  @@unique([cropAId, cropBId])
+  // Uniqueness enforced by partial indexes in migration (Prisma can't express partial unique)
+  @@index([cropAId, cropBId])
   @@index([voteCount])
   @@index([funded])
 }

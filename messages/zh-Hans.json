@@ -126,7 +126,13 @@
     "TRADITIONAL": "传统",
     "OBSERVED": "观察",
     "PEER_REVIEWED": "同行评审",
-    "loadError": "加载关系失败，请重试。"
+    "loadError": "加载关系失败，请重试。",
+    "noData": "No data yet",
+    "voteForResearch": "Vote for research",
+    "voted": "Voted",
+    "signInToVote": "Sign in to vote",
+    "noResults": "No plants found",
+    "plantHasNoData": "No companion data yet for this plant"
   },
   "Contribute": {
     "title": "提交观察",

@@ -126,7 +126,13 @@
     "TRADITIONAL": "tradicional",
     "OBSERVED": "observado",
     "PEER_REVIEWED": "revisado por pares",
-    "loadError": "Error al cargar las relaciones. Inténtalo de nuevo."
+    "loadError": "Error al cargar las relaciones. Inténtalo de nuevo.",
+    "noData": "No data yet",
+    "voteForResearch": "Vote for research",
+    "voted": "Voted",
+    "signInToVote": "Sign in to vote",
+    "noResults": "No plants found",
+    "plantHasNoData": "No companion data yet for this plant"
   },
   "Contribute": {
     "title": "Contribuir una observación",

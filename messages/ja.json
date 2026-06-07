@@ -126,7 +126,13 @@
     "TRADITIONAL": "伝統的",
     "OBSERVED": "観察済み",
     "PEER_REVIEWED": "査読済み",
-    "loadError": "関係の読み込みに失敗しました。もう一度お試しください。"
+    "loadError": "関係の読み込みに失敗しました。もう一度お試しください。",
+    "noData": "No data yet",
+    "voteForResearch": "Vote for research",
+    "voted": "Voted",
+    "signInToVote": "Sign in to vote",
+    "noResults": "No plants found",
+    "plantHasNoData": "No companion data yet for this plant"
   },
   "Contribute": {
     "title": "観察を投稿する",

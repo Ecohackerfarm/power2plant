@@ -128,7 +128,13 @@
     "TRADITIONAL": "traditional",
     "OBSERVED": "observed",
     "PEER_REVIEWED": "peer-reviewed",
-    "loadError": "Failed to load relationships. Please try again."
+    "loadError": "Failed to load relationships. Please try again.",
+    "noData": "No data yet",
+    "voteForResearch": "Vote for research",
+    "voted": "Voted",
+    "signInToVote": "Sign in to vote",
+    "noResults": "No plants found",
+    "plantHasNoData": "No companion data yet for this plant"
   },
   "Contribute": {
     "title": "Contribute an observation",

@@ -126,7 +126,13 @@
     "TRADITIONAL": "पारंपरिक",
     "OBSERVED": "अवलोकित",
     "PEER_REVIEWED": "सहकर्मी-समीक्षित",
-    "loadError": "संबंध लोड करने में विफल। कृपया पुनः प्रयास करें।"
+    "loadError": "संबंध लोड करने में विफल। कृपया पुनः प्रयास करें।",
+    "noData": "No data yet",
+    "voteForResearch": "Vote for research",
+    "voted": "Voted",
+    "signInToVote": "Sign in to vote",
+    "noResults": "No plants found",
+    "plantHasNoData": "No companion data yet for this plant"
   },
   "Contribute": {
     "title": "अवलोकन साझा करें",
