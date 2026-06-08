@@ -134,7 +134,10 @@
     "voted": "Voted",
     "signInToVote": "Sign in to vote",
     "noResults": "No plants found",
-    "plantHasNoData": "No companion data yet for this plant"
+    "plantHasNoData": "No companion data yet for this plant",
+    "ATTRACTS": "Attracts",
+    "NURSE": "Nurse crop",
+    "TRAP_CROP": "Trap crop"
   },
   "Contribute": {
     "title": "Contribute a finding",

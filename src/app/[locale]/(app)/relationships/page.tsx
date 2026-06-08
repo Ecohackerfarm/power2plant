@@ -48,13 +48,14 @@ function CompanionRow({ rel, plantId, t }: {
 }) {
   // The other crop in the relationship (not the matched plant)
   const other = rel.cropA.id === plantId ? rel.cropB : rel.cropA
-  const label = COMPANION_TYPES.has(rel.type) ? t('companion') : t('avoid')
   const variant = COMPANION_TYPES.has(rel.type) ? 'default' : 'destructive'
   const clevel = confidenceLabel(rel.confidence)
 
   function tryT(key: string): string {
     try { return t(key as Parameters<typeof t>[0]) } catch { return key }
   }
+
+  const label = tryT(rel.type)
 
   return (
     <Link
