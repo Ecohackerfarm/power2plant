@@ -817,7 +817,7 @@ async function runLocale(locale: string, opts: {
       // Stage 3: botanical synonyms (only crops still unresolved, only those with synonyms)
       const stage3 = batch.filter(c => !found.has(c.id) && c.botanicalSynonyms.length > 0)
       if (stage3.length > 0) {
-        // Build synonym→crop map (first crop wins per synonym name)
+        // Build botanicalSynonym→crop map (first crop wins per synonym name)
         const synToCrop = new Map<string, typeof batch[number]>()
         for (const crop of stage3) {
           for (const s of crop.botanicalSynonyms) {
@@ -825,7 +825,7 @@ async function runLocale(locale: string, opts: {
           }
         }
         const synNames = [...synToCrop.keys()]
-        process.stdout.write(`    [3/3] synonyms (${synNames.length} names for ${stage3.length} crops)... `)
+        process.stdout.write(`    [3/3] botanicalSynonyms (${synNames.length} names for ${stage3.length} crops)... `)
         let s3found = 0
         for (let j = 0; j < synNames.length; j += WIKIDATA_BATCH) {
           const synBatch = synNames.slice(j, j + WIKIDATA_BATCH)
