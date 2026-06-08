@@ -179,9 +179,9 @@ describe('POST /api/research-requests — pair', () => {
     vi.mocked(prisma.researchRequestVote.create).mockResolvedValue({} as never)
     vi.mocked(prisma.researchRequest.update).mockResolvedValue({ id: 'rr-1', voteCount: 1 } as never)
     await POST(makePost({ cropAId: 'zzz-crop', cropBId: 'aaa-crop' }))
-    const findCall = vi.mocked(prisma.researchRequest.findFirst).mock.calls[0][0]
-    expect(findCall.where.cropAId).toBe('aaa-crop')
-    expect(findCall.where.cropBId).toBe('zzz-crop')
+    const findCall = vi.mocked(prisma.researchRequest.findFirst).mock.calls[0]![0]!
+    expect(findCall.where!.cropAId).toBe('aaa-crop')
+    expect(findCall.where!.cropBId).toBe('zzz-crop')
   })
 
   it('creates the request if none exists yet', async () => {
@@ -237,9 +237,9 @@ describe('POST /api/research-requests — single plant', () => {
     vi.mocked(prisma.researchRequestVote.create).mockResolvedValue({} as never)
     vi.mocked(prisma.researchRequest.update).mockResolvedValue({ id: 'rr-1', voteCount: 1 } as never)
     await POST(makePost({ cropAId: 'crop-a' }))
-    const findCall = vi.mocked(prisma.researchRequest.findFirst).mock.calls[0][0]
-    expect(findCall.where.cropAId).toBe('crop-a')
-    expect(findCall.where.cropBId).toBeNull()
+    const findCall = vi.mocked(prisma.researchRequest.findFirst).mock.calls[0]![0]!
+    expect(findCall.where!.cropAId).toBe('crop-a')
+    expect(findCall.where!.cropBId).toBeNull()
   })
 
   it('creates single-plant request with null cropBId', async () => {

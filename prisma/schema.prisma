@@ -29,6 +29,11 @@ model Crop {
   researchRequestsB    ResearchRequest[]              @relation("ResearchRequestCropB")
   researchAttemptsA    RelationshipResearchAttempt[]  @relation("ResearchAttemptCropA")
   researchAttemptsB    RelationshipResearchAttempt[]  @relation("ResearchAttemptCropB")
+  researchQueueA       ResearchQueue[]                @relation("ResearchQueueA")
+  researchQueueB       ResearchQueue[]                @relation("ResearchQueueB")
+  badgesCrop           UserBadge[]                    @relation("UserBadgeCrop")
+  badgesCropA          UserBadge[]                    @relation("UserBadgeCropA")
+  badgesCropB          UserBadge[]                    @relation("UserBadgeCropB")
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
 
@@ -245,6 +250,12 @@ model user {
   garden              UserGarden?
   gardenShares        GardenShare[]
   researchVotes       ResearchRequestVote[]
+  credit              UserCredit?
+  creditTransactions  CreditTransaction[]
+  researchFunding     ResearchFunder[]
+  badges              UserBadge[]
+  feedbackVotes       FeedbackVote[]
+  feedbackComments    FeedbackComment[]
 }
 
 model GardenShare {
@@ -332,6 +343,8 @@ model Feedback {
 
   @@index([status, createdAt])
   @@index([ipHash, createdAt])
+  votes    FeedbackVote[]
+  comments FeedbackComment[]
 }
 
 model AppConfig {
@@ -389,4 +402,208 @@ model ResearchRequestVote {
 
   @@unique([requestId, userId])
   @@index([userId])
+}
+
+// ─── Enums: Research Funding System ──────────────────────────────────────────
+
+enum CreditTransactionType {
+  TOP_UP
+  SPEND
+  REFUND
+}
+
+enum ResearchQueueStatus {
+  PENDING
+  IN_PROGRESS
+  DONE
+  FAILED
+}
+
+enum ResearchTrigger {
+  PERSONAL
+  POT
+  ADMIN
+}
+
+enum FundingSource {
+  PERSONAL
+  POT
+}
+
+enum PotTransactionType {
+  DONATION
+  SPEND
+}
+
+enum BadgeType {
+  INCREMENTAL
+  PLANT
+  PAIR
+}
+
+enum FeedbackVoteType {
+  AGREE
+  DISAGREE
+}
+
+// ─── Credit System ────────────────────────────────────────────────────────────
+
+model UserCredit {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         user     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balanceCents Int      @default(0)
+  updatedAt    DateTime @updatedAt
+}
+
+model CreditTransaction {
+  id                    String                @id @default(cuid())
+  userId                String
+  user                  user                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type                  CreditTransactionType
+  amountCents           Int                   // positive = add, negative = deduct
+  description           String?
+  researchQueueId       String?
+  researchQueue         ResearchQueue?        @relation(fields: [researchQueueId], references: [id])
+  stripePaymentIntentId String?
+  createdAt             DateTime              @default(now())
+
+  @@index([userId])
+  @@index([researchQueueId])
+}
+
+// ─── Research Execution Queue & Log ──────────────────────────────────────────
+
+// ResearchRequest (existing) = vote/demand queue
+// ResearchQueue (new)        = funded execution queue, FIFO on createdAt
+
+model ResearchQueue {
+  id          String              @id @default(cuid())
+  cropAId     String              // always < cropBId lexicographically (app-enforced)
+  cropA       Crop                @relation("ResearchQueueA", fields: [cropAId], references: [id])
+  cropBId     String
+  cropB       Crop                @relation("ResearchQueueB", fields: [cropBId], references: [id])
+  status      ResearchQueueStatus @default(PENDING)
+  triggeredBy ResearchTrigger
+  priceCents  Int
+  createdAt   DateTime            @default(now())
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  funders            ResearchFunder[]
+  log                ResearchLog?
+  creditTransactions CreditTransaction[]
+  potTransactions    PotTransaction[]
+
+  @@unique([cropAId, cropBId])
+  @@index([status, createdAt])
+}
+
+model ResearchLog {
+  id               String        @id @default(cuid())
+  researchQueueId  String        @unique
+  researchQueue    ResearchQueue @relation(fields: [researchQueueId], references: [id])
+  model            String
+  promptTokens     Int
+  completionTokens Int
+  costUsd          Decimal       @db.Decimal(10, 6)
+  requestJson      Json
+  responseJson     Json
+  createdAt        DateTime      @default(now())
+}
+
+// Stores historical prices; current price = latest effectiveFrom <= now()
+model ResearchPrice {
+  id                    String   @id @default(cuid())
+  pricePerResearchCents Int
+  effectiveFrom         DateTime @default(now())
+  notes                 String?
+
+  @@index([effectiveFrom])
+}
+
+// ─── Community Pot ────────────────────────────────────────────────────────────
+// Pot balance = SUM(amountCents WHERE type=DONATION) - SUM(amountCents WHERE type=SPEND)
+
+model PotTransaction {
+  id                String             @id @default(cuid())
+  type              PotTransactionType
+  amountCents       Int
+  currency          String             @default("EUR")
+  kofiTransactionId String?            @unique
+  researchQueueId   String?
+  researchQueue     ResearchQueue?     @relation(fields: [researchQueueId], references: [id])
+  createdAt         DateTime           @default(now())
+
+  @@index([type])
+  @@index([createdAt])
+}
+
+// ─── Research Funders (shown on companion/plant pages) ────────────────────────
+
+model ResearchFunder {
+  id              String        @id @default(cuid())
+  researchQueueId String
+  researchQueue   ResearchQueue @relation(fields: [researchQueueId], references: [id])
+  userId          String?       // null = community/pot funder
+  user            user?         @relation(fields: [userId], references: [id])
+  source          FundingSource
+  createdAt       DateTime      @default(now())
+
+  @@index([researchQueueId])
+  @@index([userId])
+}
+
+// ─── Badges ───────────────────────────────────────────────────────────────────
+
+model UserBadge {
+  id        String    @id @default(cuid())
+  userId    String
+  user      user      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      BadgeType
+  // slug encodes uniqueness: "INCREMENTAL:10" | "PLANT:<cropId>" | "PAIR:<cropAId>:<cropBId>"
+  slug      String
+  tier      Int?      // INCREMENTAL only: 1, 10, 30, 50, 100
+  cropId    String?   // PLANT only
+  crop      Crop?     @relation("UserBadgeCrop",  fields: [cropId],  references: [id])
+  cropAId   String?   // PAIR only (always < cropBId)
+  cropA     Crop?     @relation("UserBadgeCropA", fields: [cropAId], references: [id])
+  cropBId   String?   // PAIR only
+  cropB     Crop?     @relation("UserBadgeCropB", fields: [cropBId], references: [id])
+  awardedAt DateTime  @default(now())
+
+  @@unique([userId, slug])
+  @@index([userId, type])
+}
+
+// ─── Community Feedback Extensions ───────────────────────────────────────────
+
+model FeedbackVote {
+  id         String           @id @default(cuid())
+  feedbackId String
+  feedback   Feedback         @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  userId     String
+  user       user             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vote       FeedbackVoteType
+  createdAt  DateTime         @default(now())
+
+  @@unique([feedbackId, userId])
+  @@index([feedbackId])
+}
+
+model FeedbackComment {
+  id         String            @id @default(cuid())
+  feedbackId String
+  feedback   Feedback          @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  userId     String
+  user       user              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parentId   String?
+  parent     FeedbackComment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies    FeedbackComment[] @relation("CommentReplies")
+  body       String
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+
+  @@index([feedbackId])
+  @@index([parentId])
 }
