@@ -62,7 +62,7 @@ const LOCALE_MAP: Record<string, { wikidata: string; gbif: string }> = {
 
 // GBIF vernacular names have substantial crowd-sourced coverage only for these locales.
 // All others fall back to Wikidata/Wikipedia exclusively.
-const GBIF_SUPPORTED_LOCALES = new Set(['de', 'es', 'fr', 'pt'])
+const GBIF_SUPPORTED_LOCALES = new Set(['de', 'es', 'fr', 'pt', 'hi'])
 
 function sleep(ms: number): Promise<void> {
   return new Promise(r => setTimeout(r, ms))
