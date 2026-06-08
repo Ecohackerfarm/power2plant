@@ -564,7 +564,7 @@ async function runLocale(locale: string, opts: {
       console.log(`[AGROVOC] Index ready: ${index.size} en→ar mappings`)
 
       const crops = await prisma.crop.findMany({
-        select: { id: true, botanicalName: true, canonicalName: true, commonNames: true,
+        select: { id: true, botanicalName: true, canonicalName: true,
                   botanicalSynonyms: { select: { name: true } } },
         orderBy: { botanicalName: 'asc' },
       })
@@ -581,18 +581,19 @@ async function runLocale(locale: string, opts: {
         if (!crop.botanicalName) continue
         if (!force && existing.has(crop.id)) continue
 
-        // Try botanical name, canonical name, English common names, synonyms — first hit wins
+        // Match by botanical name, canonical name, or botanical synonyms only.
+        // English common names excluded — too broad (e.g. "onion" matches multiple species).
         const candidates = [
           crop.botanicalName,
           crop.canonicalName,
-          ...crop.commonNames,
           ...crop.botanicalSynonyms.map(s => s.name),
         ].filter((s): s is string => Boolean(s))
 
         let arName: string | undefined
         for (const term of candidates) {
-          arName = index.get(term.toLowerCase())
-          if (arName) break
+          const hit = index.get(term.toLowerCase())
+          // Reject results with no Arabic script — AGROVOC sometimes stores Latin names as Arabic labels
+          if (hit && /[؀-ۿ]/.test(hit)) { arName = hit; break }
         }
 
         await prisma.cropEnrichmentAttempt.upsert({
