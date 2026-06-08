@@ -40,10 +40,6 @@ async function findMatchingCropIds(term: string, locale: string): Promise<string
   return rows.map(r => r.id)
 }
 
-function applyTranslations<T extends CropRow>(crop: T, tMap: Map<string, string[]>): T {
-  const translated = tMap.get(crop.id)
-  return translated ? { ...crop, commonNames: translated } : crop
-}
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
@@ -75,18 +71,10 @@ export async function GET(req: Request) {
     select: cropSelect,
   })
 
-  // Build translation map
-  const tMap = new Map<string, string[]>()
-  if (locale !== 'en') {
-    for (const c of crops) {
-      const t = c.translations?.[0]
-      if (t?.commonNames?.length) tMap.set(c.id, t.commonNames)
-    }
-  }
-
   function localisedCrop(c: typeof crops[number]): CropRow {
     const { translations, ...rest } = c
-    return applyTranslations(rest, tMap)
+    const translated = translations?.[0]?.commonNames
+    return translated?.length ? { ...rest, commonNames: translated } : rest
   }
 
   // Fetch all relationships touching any matched crop

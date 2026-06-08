@@ -156,6 +156,22 @@ describe('GET /api/plants/search', () => {
     expect(body.plants[0].commonNames).toEqual(['Tomate'])
   })
 
+  it('applies locale translations to companion plant commonNames', async () => {
+    vi.mocked(auth.api.getSession).mockResolvedValue(null)
+    const basilDe = { ...basil, translations: [{ cropId: basil.id, commonNames: ['Basilikum'] }] }
+    vi.mocked(prisma.$queryRaw).mockResolvedValue([{ id: tomato.id }])
+    vi.mocked(prisma.crop.findMany).mockResolvedValue([{ ...tomato, translations: [] }] as never)
+    vi.mocked(prisma.cropRelationship.findMany).mockResolvedValue([
+      { id: 'r1', type: 'COMPANION', reason: null, confidence: 0.5, notes: null, cropA: tomato, cropB: basilDe },
+    ] as never)
+    vi.mocked(prisma.researchRequest.findMany).mockResolvedValue([])
+
+    const res = await GET(makeGet('tomate', 'de'))
+    const body = await res.json()
+    // companion (cropB) must use its own embedded translation
+    expect(body.plants[0].companions[0].cropB.commonNames).toEqual(['Basilikum'])
+  })
+
   it('ATTRACTS, NURSE, TRAP_CROP all go into companions bucket', async () => {
     vi.mocked(auth.api.getSession).mockResolvedValue(null)
     vi.mocked(prisma.$queryRaw).mockResolvedValue([{ id: tomato.id }])
