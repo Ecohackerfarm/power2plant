@@ -15,14 +15,16 @@
  *   pnpm enrich:translate-names --locale de --source wikipedia  # recover genus crops: wikidata-attempted but
  *                                                               #   no translation → retry via Wikipedia sitelink
  *   pnpm enrich:translate-names --locale ar --source agrovoc
+ *   pnpm enrich:translate-names --locale ru --source agrovoc
+ *   pnpm enrich:translate-names --locale ja --source agrovoc
  *   pnpm enrich:translate-names --locale ar --source agrovoc --agrovoc-dump ./agrovoc_core.nt  # skip download
  *
- * AGROVOC source (Arabic only):
+ * AGROVOC source (ar / ru / ja — ~41K ru, ~30K ja, full ar coverage):
  *   Auto-downloads agrovoc_core.nt.zip (~70 MB) from agrovoc.fao.org/latestAgrovoc, extracts,
- *   builds an in-memory English→Arabic index from skos:prefLabel/@ar triples, then matches
- *   each crop by botanical name, canonical name, or English common name. Temp files are deleted
- *   on completion. Pass --agrovoc-dump <path> to use a local NT file instead (skips download).
- *   Idempotent; skips crops with existing ar translation unless --force.
+ *   builds an in-memory English→{locale} index via SKOS-XL label parsing, then matches each
+ *   crop by botanical name, canonical name, or botanical synonyms. Temp files deleted on
+ *   completion. Pass --agrovoc-dump <path> to use a local NT file instead (skips download).
+ *   Idempotent; skips crops with existing translation unless --force.
  *
  * Run locales sequentially (not concurrently) to stay within Wikidata/GBIF rate limits.
  * Idempotent: skips crops that already have a translation for the locale.
@@ -81,6 +83,9 @@ const GBIF_SUPPORTED_LOCALES = new Set(['de', 'es', 'fr', 'pt', 'hi'])
 
 // Always resolves to the latest published release (FAO-maintained redirect)
 const AGROVOC_DUMP_URL = 'https://agrovoc.fao.org/latestAgrovoc/agrovoc_core.nt.zip'
+
+// Locales with sufficient AGROVOC coverage (~41K ru, ~30K ja, Arabic ar)
+const AGROVOC_SUPPORTED_LOCALES = new Set(['ar', 'ru', 'ja'])
 
 function sleep(ms: number): Promise<void> {
   return new Promise(r => setTimeout(r, ms))
@@ -426,20 +431,24 @@ async function downloadAndExtractNt(url: string): Promise<{ ntPath: string; clea
   }
 }
 
-// Parses an AGROVOC NT file and returns a map of lowercase(english label) → arabic prefLabel.
+// Parses an AGROVOC NT file and returns a map of lowercase(english label) → target-lang prefLabel.
 // AGROVOC uses SKOS-XL: labels are indirected through xl_lang_TIMESTAMP nodes.
 //   concept → skos-xl:prefLabel|altLabel → xl_lang_node
 //   xl_lang_node → skos-xl:literalForm → "text"@lang
-// Filters to xl_ar_ and xl_en_ URIs early to keep memory usage low.
-async function buildAgrovocIndex(ntPath: string): Promise<Map<string, string>> {
+// targetLang is the 2-letter BCP-47 code (e.g. 'ar', 'ru', 'ja').
+// Filters to xl_{targetLang}_ and xl_en_ URIs early to keep memory usage low.
+async function buildAgrovocIndex(ntPath: string, targetLang: string): Promise<Map<string, string>> {
   const SKOSX_PREF = 'http://www.w3.org/2008/05/skos-xl#prefLabel'
   const SKOSX_ALT  = 'http://www.w3.org/2008/05/skos-xl#altLabel'
   const SKOSX_LIT  = 'http://www.w3.org/2008/05/skos-xl#literalForm'
 
+  const tgtSeg = `/xl_${targetLang}_`
+  const enSeg  = '/xl_en_'
+
   const uriTriple  = /^<([^>]+)>\s+<([^>]+)>\s+<([^>]+)>\s+\.\s*$/
   const langTriple = /^<([^>]+)>\s+<([^>]+)>\s+"((?:[^"\\]|\\.)*)"\@\S+\s+\.\s*$/
 
-  // xl_labelUri → conceptUri (only en/ar label nodes stored)
+  // xl_labelUri → conceptUri (only en/target label nodes stored)
   const labelToConceptPref = new Map<string, string>()
   const labelToConceptAlt  = new Map<string, string>()
   // xl_labelUri → literal text
@@ -453,7 +462,7 @@ async function buildAgrovocIndex(ntPath: string): Promise<Map<string, string>> {
     if (um) {
       const [, subject, predicate, object] = um
       if ((predicate === SKOSX_PREF || predicate === SKOSX_ALT)
-          && (object.includes('/xl_ar_') || object.includes('/xl_en_'))) {
+          && (object.includes(tgtSeg) || object.includes(enSeg))) {
         const map = predicate === SKOSX_PREF ? labelToConceptPref : labelToConceptAlt
         map.set(object, subject)
       }
@@ -463,36 +472,35 @@ async function buildAgrovocIndex(ntPath: string): Promise<Map<string, string>> {
     const lm = langTriple.exec(line)
     if (lm) {
       const [, subject, predicate, value] = lm
-      if (predicate === SKOSX_LIT
-          && (subject.includes('/xl_ar_') || subject.includes('/xl_en_'))) {
+      if (predicate === SKOSX_LIT && (subject.includes(tgtSeg) || subject.includes(enSeg))) {
         labelToText.set(subject, value)
       }
     }
   }
 
-  // concept → arabic prefLabel text
-  const conceptToAr = new Map<string, string>()
+  // concept → target-lang prefLabel text
+  const conceptToTarget = new Map<string, string>()
   for (const [labelUri, conceptUri] of labelToConceptPref) {
-    if (!labelUri.includes('/xl_ar_')) continue
+    if (!labelUri.includes(tgtSeg)) continue
     const text = labelToText.get(labelUri)
-    if (text) conceptToAr.set(conceptUri, text)
+    if (text) conceptToTarget.set(conceptUri, text)
   }
 
-  // final index: lowercase(en text) → ar text
+  // final index: lowercase(en text) → target-lang text
   const index = new Map<string, string>()
   for (const [labelUri, conceptUri] of labelToConceptPref) {
-    if (!labelUri.includes('/xl_en_')) continue
-    const ar = conceptToAr.get(conceptUri)
-    if (!ar) continue
+    if (!labelUri.includes(enSeg)) continue
+    const tgt = conceptToTarget.get(conceptUri)
+    if (!tgt) continue
     const text = labelToText.get(labelUri)
-    if (text && !index.has(text.toLowerCase())) index.set(text.toLowerCase(), ar)
+    if (text && !index.has(text.toLowerCase())) index.set(text.toLowerCase(), tgt)
   }
   for (const [labelUri, conceptUri] of labelToConceptAlt) {
-    if (!labelUri.includes('/xl_en_')) continue
-    const ar = conceptToAr.get(conceptUri)
-    if (!ar) continue
+    if (!labelUri.includes(enSeg)) continue
+    const tgt = conceptToTarget.get(conceptUri)
+    if (!tgt) continue
     const text = labelToText.get(labelUri)
-    if (text && !index.has(text.toLowerCase())) index.set(text.toLowerCase(), ar)
+    if (text && !index.has(text.toLowerCase())) index.set(text.toLowerCase(), tgt)
   }
 
   return index
@@ -539,12 +547,14 @@ async function runLocale(locale: string, opts: {
     source = 'wikidata'
   }
 
-  // ── AGROVOC mode (Arabic only) ────────────────────────────────────────────
+  // ── AGROVOC mode (ar / ru / ja) ──────────────────────────────────────────
   if (source === 'agrovoc') {
-    if (locale !== 'ar') {
-      console.error(`--source agrovoc only supported for --locale ar (got "${locale}")`)
+    if (!AGROVOC_SUPPORTED_LOCALES.has(locale)) {
+      console.error(`--source agrovoc supported locales: ${[...AGROVOC_SUPPORTED_LOCALES].join(', ')} (got "${locale}")`)
       process.exit(1)
     }
+
+    const targetLang = langMap.wikidata  // 2-letter BCP-47 code: 'ar', 'ru', 'ja'
 
     // Use a local file if provided (useful for testing); otherwise auto-download.
     let ntPath: string
@@ -559,9 +569,9 @@ async function runLocale(locale: string, opts: {
     }
 
     try {
-      console.log(`[AGROVOC] Parsing NT dump...`)
-      const index = await buildAgrovocIndex(ntPath)
-      console.log(`[AGROVOC] Index ready: ${index.size} en→ar mappings`)
+      console.log(`[AGROVOC] Parsing NT dump for lang=${targetLang}...`)
+      const index = await buildAgrovocIndex(ntPath, targetLang)
+      console.log(`[AGROVOC] Index ready: ${index.size} en→${targetLang} mappings`)
 
       const crops = await prisma.crop.findMany({
         select: { id: true, botanicalName: true, canonicalName: true,
@@ -574,7 +584,7 @@ async function runLocale(locale: string, opts: {
           .map(t => t.cropId)
       )
 
-      console.log(`${crops.length} crops total, ${existing.size} already have ar translation`)
+      console.log(`${crops.length} crops total, ${existing.size} already have ${locale} translation`)
 
       let saved = 0, skipped = 0
       for (const crop of crops) {
@@ -589,11 +599,11 @@ async function runLocale(locale: string, opts: {
           ...crop.botanicalSynonyms.map(s => s.name),
         ].filter((s): s is string => Boolean(s))
 
-        let arName: string | undefined
+        let localName: string | undefined
         for (const term of candidates) {
           const hit = index.get(term.toLowerCase())
-          // Reject results with no Arabic script — AGROVOC sometimes stores Latin names as Arabic labels
-          if (hit && /[؀-ۿ]/.test(hit)) { arName = hit; break }
+          // Reject hits that are just the Latin botanical name (AGROVOC fallback for missing translations)
+          if (hit && !isBotanicalName(hit, term.split(' ')[0])) { localName = hit; break }
         }
 
         await prisma.cropEnrichmentAttempt.upsert({
@@ -602,13 +612,13 @@ async function runLocale(locale: string, opts: {
           update: { attemptedAt: new Date(), version: SCRIPT_VERSION },
         })
 
-        if (arName) {
+        if (localName) {
           await prisma.cropTranslation.upsert({
             where:  { cropId_locale: { cropId: crop.id, locale } },
-            create: { cropId: crop.id, locale, commonNames: [arName] },
-            update: { commonNames: [arName] },
+            create: { cropId: crop.id, locale, commonNames: [localName] },
+            update: { commonNames: [localName] },
           })
-          if (DEBUG) console.log(`  → ${crop.botanicalName}: ${arName}`)
+          if (DEBUG) console.log(`  → ${crop.botanicalName}: ${localName}`)
           saved++
         } else {
           skipped++
