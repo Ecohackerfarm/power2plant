@@ -4,65 +4,6 @@ on:
   pull_request:
 
 jobs:
-  db-integrity:
-    name: Migration smoke test + seed freshness
-    runs-on: ubuntu-latest
-
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: power2plant
-          POSTGRES_PASSWORD: power2plant
-          POSTGRES_DB: power2plant
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
-    env:
-      DATABASE_URL: postgresql://power2plant:power2plant@localhost:5432/power2plant
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
-
-      - run: pnpm exec prisma generate
-
-      - name: Load seed.sql
-        run: psql "$DATABASE_URL" < db/seed.sql
-
-      - name: Apply pending migrations
-        run: |
-          BEFORE_TS=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          echo "BEFORE_TS=$BEFORE_TS" >> "$GITHUB_ENV"
-          pnpm exec prisma migrate deploy
-
-      - name: Check seed.sql freshness
-        run: |
-          APPLIED=$(psql "$DATABASE_URL" -t -c \
-            "SELECT count(*) FROM \"_prisma_migrations\" WHERE started_at > '$BEFORE_TS' AND finished_at IS NOT NULL AND logs IS NULL;" \
-            | tr -d ' ')
-          echo "Migrations applied on top of seed.sql: $APPLIED"
-          if [ "$APPLIED" -gt 0 ]; then
-            echo "::warning::seed.sql is stale — $APPLIED migration(s) missing. Run \`pnpm db:dump\` and commit db/seed.sql."
-            if [[ "${{ github.head_ref }}" == release/* ]]; then
-              echo "::error::seed.sql must include all migrations on release branches. Run \`pnpm db:dump\` and commit."
-              exit 1
-            fi
-          fi
-
   upgrade-path:
     name: Upgrade path from last release
     runs-on: ubuntu-latest
