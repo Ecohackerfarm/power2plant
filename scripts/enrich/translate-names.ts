@@ -1,6 +1,6 @@
 /**
  * Enrich CropTranslation table with vernacular names from Wikidata (primary)
- * and GBIF (gap-fill).
+ * and GBIF (gap-fill for de/es/fr/pt only — other locales use Wikidata exclusively).
  *
  * Supported locales: de, es, fr, pt, zh-Hans, ar, hi, ru, ja
  *
@@ -59,6 +59,10 @@ const LOCALE_MAP: Record<string, { wikidata: string; gbif: string }> = {
   ru:        { wikidata: 'ru', gbif: 'rus' },
   ja:        { wikidata: 'ja', gbif: 'jpn' },
 }
+
+// GBIF vernacular names have substantial crowd-sourced coverage only for these locales.
+// All others fall back to Wikidata/Wikipedia exclusively.
+const GBIF_SUPPORTED_LOCALES = new Set(['de', 'es', 'fr', 'pt'])
 
 function sleep(ms: number): Promise<void> {
   return new Promise(r => setTimeout(r, ms))
@@ -353,7 +357,7 @@ async function runLocale(locale: string, opts: {
   dryRun: boolean,
   cleanEmpty: boolean,
 }) {
-  const { source, force, dryRun, cleanEmpty } = opts
+  let { source, force, dryRun, cleanEmpty } = opts
 
   const outFile = `data/intl/translations-${locale}.tsv`
 
@@ -379,6 +383,12 @@ async function runLocale(locale: string, opts: {
   if (!langMap) {
     console.error(`Unsupported locale "${locale}". Add it to LOCALE_MAP.`)
     process.exit(1)
+  }
+
+  if ((source === 'gbif' || source === 'both') && !GBIF_SUPPORTED_LOCALES.has(locale)) {
+    const effective = source === 'gbif' ? 'wikidata' : 'both'
+    console.log(`[GBIF] Locale "${locale}" not in GBIF_SUPPORTED_LOCALES — skipping GBIF, using source="${effective === 'both' ? 'wikidata' : effective}"`)
+    source = 'wikidata'
   }
 
   // ── Wikipedia sitelink recovery mode ─────────────────────────────────────
