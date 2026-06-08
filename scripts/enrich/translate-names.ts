@@ -1,6 +1,6 @@
 /**
- * Enrich CropTranslation table with vernacular names from Wikidata (primary)
- * and GBIF (gap-fill for de/es/fr/pt only — other locales use Wikidata exclusively).
+ * Enrich CropTranslation table with vernacular names from Wikidata (primary),
+ * GBIF (gap-fill for de/es/fr/pt/hi), and AGROVOC (Arabic ar).
  *
  * Supported locales: de, es, fr, pt, zh-Hans, ar, hi, ru, ja
  *
@@ -14,6 +14,13 @@
  *   pnpm enrich:translate-names --import data/intl/translations-ja.tsv
  *   pnpm enrich:translate-names --locale de --source wikipedia  # recover genus crops: wikidata-attempted but
  *                                                               #   no translation → retry via Wikipedia sitelink
+ *   pnpm enrich:translate-names --locale ar --source agrovoc --agrovoc-dump ./agrovoc_base.nt
+ *
+ * AGROVOC source (Arabic only):
+ *   Download the NT dump from https://www.fao.org/agrovoc/releases (choose NT format).
+ *   Pass the local path via --agrovoc-dump. Builds an in-memory English→Arabic index,
+ *   then matches each crop by botanical name, canonical name, or English common name.
+ *   No network calls after the initial file read. Idempotent; skips crops with existing ar translation.
  *
  * Run locales sequentially (not concurrently) to stay within Wikidata/GBIF rate limits.
  * Idempotent: skips crops that already have a translation for the locale.
@@ -29,7 +36,8 @@
  */
 
 import { PrismaClient } from '@prisma/client'
-import { readFileSync, writeFileSync, appendFileSync } from 'fs'
+import { readFileSync, writeFileSync, appendFileSync, createReadStream } from 'fs'
+import { createInterface } from 'readline'
 
 const prisma = new PrismaClient()
 
@@ -342,22 +350,61 @@ function parseArgs() {
   }
   return {
     locales:     (get('--locale') ?? 'de').split(',').map(s => s.trim()),
-    source:      (get('--source') ?? 'both') as 'wikidata' | 'gbif' | 'both' | 'wikipedia',
+    source:      (get('--source') ?? 'both') as 'wikidata' | 'gbif' | 'both' | 'wikipedia' | 'agrovoc',
     force:       args.includes('--force'),
     debug:       args.includes('--debug'),
     dryRun:      args.includes('--fetch'),
     importFile:  get('--import'),
     cleanEmpty:  args.includes('--clean-empty'),
+    agrovocDump: get('--agrovoc-dump'),
   }
 }
 
+// ── AGROVOC ───────────────────────────────────────────────────────────────────
+
+// Parses an AGROVOC NT dump and returns a map of lowercase(english label) → arabic prefLabel.
+// Streams line-by-line so RAM usage is O(unique concepts) not O(file size).
+async function buildAgrovocIndex(ntPath: string): Promise<Map<string, string>> {
+  const SKOS_PREF = 'http://www.w3.org/2004/02/skos/core#prefLabel'
+  const SKOS_ALT  = 'http://www.w3.org/2004/02/skos/core#altLabel'
+  // NT lang-tagged literal: <subject> <predicate> "value"@lang .
+  const langTriple = /^<([^>]+)>\s+<([^>]+)>\s+"((?:[^"\\]|\\.)*)"\@(\S+?)\s+\.\s*$/
+
+  const arLabels = new Map<string, { label: string; isPref: boolean }>()
+  const enToUri  = new Map<string, string>()
+
+  const rl = createInterface({ input: createReadStream(ntPath), crlfDelay: Infinity })
+  for await (const line of rl) {
+    if (!line || line.startsWith('#')) continue
+    const m = langTriple.exec(line)
+    if (!m) continue
+    const [, subject, predicate, value, lang] = m
+    if (predicate !== SKOS_PREF && predicate !== SKOS_ALT) continue
+    const isPref = predicate === SKOS_PREF
+    if (lang === 'ar') {
+      const ex = arLabels.get(subject)
+      if (!ex || (!ex.isPref && isPref)) arLabels.set(subject, { label: value, isPref })
+    } else if (lang === 'en') {
+      if (!enToUri.has(value.toLowerCase())) enToUri.set(value.toLowerCase(), subject)
+    }
+  }
+
+  const index = new Map<string, string>()
+  for (const [en, uri] of enToUri) {
+    const ar = arLabels.get(uri)
+    if (ar) index.set(en, ar.label)
+  }
+  return index
+}
+
 async function runLocale(locale: string, opts: {
-  source: 'wikidata' | 'gbif' | 'both' | 'wikipedia',
+  source: 'wikidata' | 'gbif' | 'both' | 'wikipedia' | 'agrovoc',
   force: boolean,
   dryRun: boolean,
   cleanEmpty: boolean,
+  agrovocDump?: string,
 }) {
-  let { source, force, dryRun, cleanEmpty } = opts
+  let { source, force, dryRun, cleanEmpty, agrovocDump } = opts
 
   const outFile = `data/intl/translations-${locale}.tsv`
 
@@ -389,6 +436,77 @@ async function runLocale(locale: string, opts: {
     const effective = source === 'gbif' ? 'wikidata' : 'both'
     console.log(`[GBIF] Locale "${locale}" not in GBIF_SUPPORTED_LOCALES — skipping GBIF, using source="${effective === 'both' ? 'wikidata' : effective}"`)
     source = 'wikidata'
+  }
+
+  // ── AGROVOC mode (Arabic only) ────────────────────────────────────────────
+  if (source === 'agrovoc') {
+    if (locale !== 'ar') {
+      console.error(`--source agrovoc only supported for --locale ar (got "${locale}")`)
+      process.exit(1)
+    }
+    if (!agrovocDump) {
+      console.error('--agrovoc-dump <path> required for --source agrovoc')
+      console.error('Download the NT dump from https://www.fao.org/agrovoc/releases')
+      process.exit(1)
+    }
+
+    console.log(`[AGROVOC] Parsing ${agrovocDump}...`)
+    const index = await buildAgrovocIndex(agrovocDump)
+    console.log(`[AGROVOC] Index ready: ${index.size} en→ar mappings`)
+
+    const crops = await prisma.crop.findMany({
+      select: { id: true, botanicalName: true, canonicalName: true, commonNames: true,
+                botanicalSynonyms: { select: { name: true } } },
+      orderBy: { botanicalName: 'asc' },
+    })
+
+    const existing = force ? new Set<string>() : new Set(
+      (await prisma.cropTranslation.findMany({ where: { locale }, select: { cropId: true } }))
+        .map(t => t.cropId)
+    )
+
+    console.log(`${crops.length} crops total, ${existing.size} already have ar translation`)
+
+    let saved = 0, skipped = 0
+    for (const crop of crops) {
+      if (!crop.botanicalName) continue
+      if (!force && existing.has(crop.id)) continue
+
+      // Try botanical name, canonical name, English common names, synonyms — first hit wins
+      const candidates = [
+        crop.botanicalName,
+        crop.canonicalName,
+        ...crop.commonNames,
+        ...crop.botanicalSynonyms.map(s => s.name),
+      ].filter((s): s is string => Boolean(s))
+
+      let arName: string | undefined
+      for (const term of candidates) {
+        arName = index.get(term.toLowerCase())
+        if (arName) break
+      }
+
+      await prisma.cropEnrichmentAttempt.upsert({
+        where:  { cropId_locale_source: { cropId: crop.id, locale, source: 'agrovoc' } },
+        create: { cropId: crop.id, locale, source: 'agrovoc', version: SCRIPT_VERSION },
+        update: { attemptedAt: new Date(), version: SCRIPT_VERSION },
+      })
+
+      if (arName) {
+        await prisma.cropTranslation.upsert({
+          where:  { cropId_locale: { cropId: crop.id, locale } },
+          create: { cropId: crop.id, locale, commonNames: [arName] },
+          update: { commonNames: [arName] },
+        })
+        if (DEBUG) console.log(`  → ${crop.botanicalName}: ${arName}`)
+        saved++
+      } else {
+        skipped++
+      }
+    }
+
+    console.log(`[AGROVOC] Done. ${saved} saved, ${skipped} no match.`)
+    return
   }
 
   // ── Wikipedia sitelink recovery mode ─────────────────────────────────────
@@ -678,7 +796,7 @@ async function runLocale(locale: string, opts: {
 }
 
 async function main() {
-  const { locales, source, force, debug, dryRun, importFile, cleanEmpty } = parseArgs()
+  const { locales, source, force, debug, dryRun, importFile, cleanEmpty, agrovocDump } = parseArgs()
   DEBUG = debug
 
   if (importFile) {
@@ -689,7 +807,7 @@ async function main() {
 
   for (const locale of locales) {
     if (locales.length > 1) console.log(`\n${'='.repeat(60)}\nLocale: ${locale}\n${'='.repeat(60)}`)
-    await runLocale(locale, { source, force, dryRun, cleanEmpty })
+    await runLocale(locale, { source, force, dryRun, cleanEmpty, agrovocDump })
   }
 
   await prisma.$disconnect()
