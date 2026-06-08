@@ -12,7 +12,20 @@
     "haveAccount": "Schon ein Konto? Anmelden",
     "cancel": "Abbrechen",
     "checkYourEmail": "E-Mail prüfen",
-    "verifyEmailSent": "Wir haben einen Bestätigungslink an deine E-Mail-Adresse gesendet. Klicke ihn, um dein Konto zu aktivieren."
+    "verifyEmailSent": "Wir haben einen Bestätigungslink an deine E-Mail-Adresse gesendet. Klicke ihn, um dein Konto zu aktivieren.",
+    "forgotPassword": "Passwort vergessen?",
+    "resetPasswordTitle": "Passwort zurücksetzen",
+    "sendResetLink": "Reset-Link senden",
+    "resetLinkSent": "Prüfe deine E-Mails für einen Link zum Zurücksetzen des Passworts.",
+    "resendVerification": "Bestätigungs-E-Mail erneut senden",
+    "verificationResent": "Bestätigungs-E-Mail gesendet!",
+    "newPassword": "Neues Passwort",
+    "confirmPassword": "Passwort bestätigen",
+    "setPassword": "Neues Passwort setzen",
+    "passwordResetSuccess": "Passwort zurückgesetzt! Du kannst dich jetzt anmelden.",
+    "passwordMismatch": "Passwörter stimmen nicht überein",
+    "invalidResetToken": "Dieser Link ist ungültig oder abgelaufen.",
+    "backToSignIn": "Zurück zur Anmeldung"
   },
   "Home": {
     "subtitle": "Mischkulturempfehlungen für deine Gartenbeete.",

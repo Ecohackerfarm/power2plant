@@ -10,11 +10,17 @@ interface KofiPayload {
   is_public?: boolean
 }
 
+// Currencies Ko-fi supports that use 2 decimal places (standard minor units)
+const TWO_DECIMAL_CURRENCIES = new Set([
+  'EUR', 'USD', 'GBP', 'CAD', 'AUD', 'CHF', 'SEK', 'NOK', 'DKK', 'PLN',
+  'CZK', 'HUF', 'RON', 'BGN', 'HRK', 'MXN', 'BRL', 'INR', 'SGD', 'HKD',
+  'NZD', 'ZAR',
+])
+
 function parseCents(amount: string, currency: string): number {
+  if (!TWO_DECIMAL_CURRENCIES.has(currency.toUpperCase())) return -1
   const value = parseFloat(amount)
   if (!Number.isFinite(value) || value <= 0) return 0
-  // All handled as minor units of base currency (EUR/USD both have 2 decimal places)
-  void currency
   return Math.round(value * 100)
 }
 
@@ -45,6 +51,9 @@ export async function POST(req: Request) {
   }
 
   const amountCents = parseCents(payload.amount, payload.currency)
+  if (amountCents === -1) {
+    return NextResponse.json({ error: `unsupported currency: ${payload.currency}` }, { status: 422 })
+  }
   if (amountCents <= 0) return NextResponse.json({ ok: true })
 
   const recorded = await recordKofiDonation(

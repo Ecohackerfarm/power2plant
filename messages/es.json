@@ -12,7 +12,20 @@
     "haveAccount": "¿Ya tienes cuenta? Inicia sesión",
     "cancel": "Cancelar",
     "checkYourEmail": "Revisa tu correo",
-    "verifyEmailSent": "Te enviamos un enlace de verificación. Haz clic en él para activar tu cuenta."
+    "verifyEmailSent": "Te enviamos un enlace de verificación. Haz clic en él para activar tu cuenta.",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "resetPasswordTitle": "Restablecer contraseña",
+    "sendResetLink": "Enviar enlace de restablecimiento",
+    "resetLinkSent": "Revisa tu correo electrónico para obtener un enlace de restablecimiento.",
+    "resendVerification": "Reenviar correo de verificación",
+    "verificationResent": "¡Correo de verificación enviado!",
+    "newPassword": "Nueva contraseña",
+    "confirmPassword": "Confirmar contraseña",
+    "setPassword": "Establecer nueva contraseña",
+    "passwordResetSuccess": "¡Contraseña restablecida! Ahora puedes iniciar sesión.",
+    "passwordMismatch": "Las contraseñas no coinciden",
+    "invalidResetToken": "Este enlace es inválido o ha expirado.",
+    "backToSignIn": "Volver al inicio de sesión"
   },
   "Home": {
     "subtitle": "Recomendaciones de plantas compañeras para tus bancales.",

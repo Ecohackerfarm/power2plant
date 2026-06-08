@@ -12,7 +12,20 @@
     "haveAccount": "Déjà un compte ? Se connecter",
     "cancel": "Annuler",
     "checkYourEmail": "Vérifiez votre e-mail",
-    "verifyEmailSent": "Nous vous avons envoyé un lien de vérification. Cliquez dessus pour activer votre compte."
+    "verifyEmailSent": "Nous vous avons envoyé un lien de vérification. Cliquez dessus pour activer votre compte.",
+    "forgotPassword": "Mot de passe oublié ?",
+    "resetPasswordTitle": "Réinitialiser le mot de passe",
+    "sendResetLink": "Envoyer le lien de réinitialisation",
+    "resetLinkSent": "Vérifiez votre e-mail pour un lien de réinitialisation.",
+    "resendVerification": "Renvoyer l'e-mail de vérification",
+    "verificationResent": "E-mail de vérification envoyé !",
+    "newPassword": "Nouveau mot de passe",
+    "confirmPassword": "Confirmer le mot de passe",
+    "setPassword": "Définir le nouveau mot de passe",
+    "passwordResetSuccess": "Mot de passe réinitialisé ! Vous pouvez maintenant vous connecter.",
+    "passwordMismatch": "Les mots de passe ne correspondent pas",
+    "invalidResetToken": "Ce lien est invalide ou a expiré.",
+    "backToSignIn": "Retour à la connexion"
   },
   "Home": {
     "subtitle": "Recommandations de plantes compagnes pour vos planches de jardin.",

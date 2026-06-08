@@ -12,7 +12,20 @@
     "haveAccount": "Já tem conta? Entre",
     "cancel": "Cancelar",
     "checkYourEmail": "Verifique seu e-mail",
-    "verifyEmailSent": "Enviamos um link de verificação para o seu e-mail. Clique nele para ativar sua conta."
+    "verifyEmailSent": "Enviamos um link de verificação para o seu e-mail. Clique nele para ativar sua conta.",
+    "forgotPassword": "Esqueceu a senha?",
+    "resetPasswordTitle": "Redefinir senha",
+    "sendResetLink": "Enviar link de redefinição",
+    "resetLinkSent": "Verifique seu e-mail para um link de redefinição.",
+    "resendVerification": "Reenviar e-mail de verificação",
+    "verificationResent": "E-mail de verificação enviado!",
+    "newPassword": "Nova senha",
+    "confirmPassword": "Confirmar senha",
+    "setPassword": "Definir nova senha",
+    "passwordResetSuccess": "Senha redefinida! Agora você pode fazer login.",
+    "passwordMismatch": "As senhas não coincidem",
+    "invalidResetToken": "Este link é inválido ou expirou.",
+    "backToSignIn": "Voltar ao login"
   },
   "Home": {
     "subtitle": "Recomendações de plantas companheiras para seus canteiros.",

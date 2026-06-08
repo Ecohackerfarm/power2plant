@@ -12,7 +12,20 @@
     "haveAccount": "Have an account? Sign in",
     "cancel": "Cancel",
     "checkYourEmail": "Check your email",
-    "verifyEmailSent": "We sent a verification link to your email. Click it to activate your account."
+    "verifyEmailSent": "We sent a verification link to your email. Click it to activate your account.",
+    "forgotPassword": "Forgot password?",
+    "resetPasswordTitle": "Reset password",
+    "sendResetLink": "Send reset link",
+    "resetLinkSent": "Check your email for a password reset link.",
+    "resendVerification": "Resend verification email",
+    "verificationResent": "Verification email sent!",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm password",
+    "setPassword": "Set new password",
+    "passwordResetSuccess": "Password reset! You can now sign in.",
+    "passwordMismatch": "Passwords do not match",
+    "invalidResetToken": "This reset link is invalid or has expired.",
+    "backToSignIn": "Back to sign in"
   },
   "Home": {
     "subtitle": "Companion planting recommendations for your garden beds.",
