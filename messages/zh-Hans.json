@@ -103,7 +103,7 @@
     "title": "社区观察",
     "backHome": "← 首页",
     "searchPlaceholder": "按作物名称搜索…",
-    "noObservations": "暂无观察",
+    "noObservations": "暂无发现",
     "loadMore": "加载更多",
     "loading": "加载中…",
     "companion": "伴生",
@@ -113,7 +113,7 @@
     "sourceCount": "{count, plural, other {# 个来源}}",
     "companions": "伴生植物",
     "antagonists": "相克植物",
-    "contributeObservation": "添加观察 →",
+    "contributeObservation": "添加发现 →",
     "COMPANION": "伴生",
     "AVOID": "避开",
     "PEST_CONTROL": "防虫",
@@ -143,7 +143,7 @@
     "success": "谢谢！您的观察已记录。",
     "rateLimit": "您今天已为这对植物提交过关系。",
     "error": "出现错误，请重试。",
-    "newObservation": "新观察",
+    "newObservation": "新发现",
     "plantA": "植物 A",
     "plantB": "植物 B",
     "relationship": "关系",
@@ -218,7 +218,7 @@
     "inheritedFrom": "来自 {genus}",
     "wikiReadMore": "维基百科 →",
     "wikiAttribution": "来源：维基百科（CC BY-SA）",
-    "contributeObservation": "添加观察 →"
+    "contributeObservation": "添加发现 →"
   },
   "RelationshipPage": {
     "back": "← 返回",

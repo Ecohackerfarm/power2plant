@@ -103,7 +103,7 @@
     "title": "समुदाय के अवलोकन",
     "backHome": "← होम",
     "searchPlaceholder": "फ़सल के नाम से खोजें…",
-    "noObservations": "अभी तक कोई अवलोकन नहीं",
+    "noObservations": "अभी तक कोई खोज नहीं",
     "loadMore": "और लोड करें",
     "loading": "लोड हो रहा है…",
     "companion": "साथी",
@@ -113,7 +113,7 @@
     "sourceCount": "{count, plural, one {# स्रोत} other {# स्रोत}}",
     "companions": "साथी पौधे",
     "antagonists": "प्रतिकूल पौधे",
-    "contributeObservation": "अवलोकन जोड़ें →",
+    "contributeObservation": "खोज जोड़ें →",
     "COMPANION": "साथी",
     "AVOID": "बचें",
     "PEST_CONTROL": "कीट नियंत्रण",
@@ -143,7 +143,7 @@
     "success": "धन्यवाद! आपका अवलोकन दर्ज कर लिया गया है।",
     "rateLimit": "आपने आज इस जोड़े के लिए पहले ही संबंध सबमिट कर दिया है।",
     "error": "कुछ गलत हुआ। कृपया पुनः प्रयास करें।",
-    "newObservation": "नया अवलोकन",
+    "newObservation": "नई खोज",
     "plantA": "पौधा A",
     "plantB": "पौधा B",
     "relationship": "संबंध",
@@ -218,7 +218,7 @@
     "inheritedFrom": "{genus} से",
     "wikiReadMore": "Wikipedia →",
     "wikiAttribution": "स्रोत: Wikipedia (CC BY-SA)",
-    "contributeObservation": "अवलोकन जोड़ें →"
+    "contributeObservation": "खोज जोड़ें →"
   },
   "RelationshipPage": {
     "back": "← वापस",

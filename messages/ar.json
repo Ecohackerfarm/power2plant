@@ -103,7 +103,7 @@
     "title": "ملاحظات المجتمع",
     "backHome": "→ الرئيسية",
     "searchPlaceholder": "ابحث باسم المحصول…",
-    "noObservations": "لا توجد ملاحظات بعد",
+    "noObservations": "لا توجد اكتشافات بعد",
     "loadMore": "تحميل المزيد",
     "loading": "جارٍ التحميل…",
     "companion": "مرافق",
@@ -113,7 +113,7 @@
     "sourceCount": "{count, plural, zero {لا مصادر} one {مصدر واحد} two {مصدران} few {# مصادر} many {# مصدراً} other {# مصدر}}",
     "companions": "النباتات المرافقة",
     "antagonists": "النباتات المتضادة",
-    "contributeObservation": "أضف ملاحظة ←",
+    "contributeObservation": "أضف اكتشافاً ←",
     "COMPANION": "مرافق",
     "AVOID": "تجنّب",
     "PEST_CONTROL": "مكافحة الآفات",
@@ -143,7 +143,7 @@
     "success": "شكراً! تم تسجيل ملاحظتك.",
     "rateLimit": "لقد أرسلت علاقة لهذا الزوج اليوم بالفعل.",
     "error": "حدث خطأ ما. يرجى المحاولة مجدداً.",
-    "newObservation": "ملاحظة جديدة",
+    "newObservation": "اكتشاف جديد",
     "plantA": "النبات A",
     "plantB": "النبات B",
     "relationship": "العلاقة",
@@ -218,7 +218,7 @@
     "inheritedFrom": "عبر {genus}",
     "wikiReadMore": "ويكيبيديا ←",
     "wikiAttribution": "المصدر: ويكيبيديا (CC BY-SA)",
-    "contributeObservation": "أضف ملاحظة ←"
+    "contributeObservation": "أضف اكتشافاً ←"
   },
   "RelationshipPage": {
     "back": "→ رجوع",

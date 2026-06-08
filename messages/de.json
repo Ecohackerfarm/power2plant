@@ -16,8 +16,8 @@
   },
   "Home": {
     "subtitle": "Mischkulturempfehlungen für deine Gartenbeete.",
-    "contributeLink": "Beobachtung beitragen →",
-    "browseLink": "Beobachtungen durchsuchen →",
+    "contributeLink": "Ergebnis beitragen →",
+    "browseLink": "Ergebnisse durchsuchen →",
     "myGarden": "Mein Garten →",
     "addingToGarden": "Wird zu deinem bestehenden Garten hinzugefügt.",
     "startFresh": "Neu beginnen",
@@ -102,10 +102,10 @@
     "requestResearch": "Forschung anfragen →"
   },
   "Relationships": {
-    "title": "Community-Beobachtungen",
+    "title": "Community-Ergebnisse",
     "backHome": "← Startseite",
     "searchPlaceholder": "Nach Pflanzenname suchen…",
-    "noObservations": "Noch keine Beobachtungen",
+    "noObservations": "Noch keine Ergebnisse",
     "loadMore": "Mehr laden",
     "loading": "Wird geladen…",
     "companion": "Gute Nachbarn",
@@ -115,7 +115,7 @@
     "sourceCount": "{count, plural, one {# Quelle} other {# Quellen}}",
     "companions": "Mischkulturpartner",
     "antagonists": "Schlechte Nachbarn",
-    "contributeObservation": "Beobachtung hinzufügen →",
+    "contributeObservation": "Ergebnis hinzufügen →",
     "COMPANION": "Mischkultur",
     "AVOID": "Schlechte Nachbarn",
     "PEST_CONTROL": "Schädlingsbekämpfung",
@@ -137,15 +137,15 @@
     "plantHasNoData": "No companion data yet for this plant"
   },
   "Contribute": {
-    "title": "Beobachtung beitragen",
+    "title": "Ergebnis beitragen",
     "back": "← Zurück",
-    "subtitle": "Teile, was du in deinem Garten beobachtet hast. Deine Beobachtungen helfen allen.",
-    "signInPrompt": "Anmelden, um Mischkultur-Beobachtungen beizutragen.",
+    "subtitle": "Teile, was du in deinem Garten entdeckt hast. Deine Ergebnisse helfen allen.",
+    "signInPrompt": "Anmelden, um Mischkultur-Ergebnisse beizutragen.",
     "signInLink": "Anmelden",
-    "success": "Danke! Deine Beobachtung wurde gespeichert.",
+    "success": "Danke! Dein Ergebnis wurde gespeichert.",
     "rateLimit": "Du hast heute bereits eine Beziehung für dieses Paar eingereicht.",
     "error": "Etwas ist schiefgelaufen. Bitte erneut versuchen.",
-    "newObservation": "Neue Beobachtung",
+    "newObservation": "Neues Ergebnis",
     "plantA": "Pflanze A",
     "plantB": "Pflanze B",
     "relationship": "Beziehung",
@@ -157,7 +157,7 @@
     "notesOptional": "(optional, max. 2000 Zeichen)",
     "notesPlaceholder": "z. B. Zusammen gepflanzt für 3 Saisons, weniger Blattläuse beobachtet…",
     "evidenceLevel": "Beweislage",
-    "evidenceLevelHint": "Wähle die beste verfügbare Beweislage für deine Beobachtung.",
+    "evidenceLevelHint": "Wähle die beste verfügbare Beweislage für dieses Ergebnis.",
     "sources": "Quellen",
     "sourcesHint": "doi.org- und PubMed-Links werden automatisch als wissenschaftliche Artikel erkannt.",
     "sourcesOptional": "(optional)",
@@ -165,7 +165,7 @@
     "remove": "entfernen",
     "autoDetected": "Automatisch erkannt",
     "submitting": "Wird eingereicht…",
-    "submit": "Beobachtung einreichen",
+    "submit": "Ergebnis einreichen",
     "genusHint": "Gattungseinträge (z. B. Ocimum L.) stehen für die gesamte Pflanzenfamilie — wähle eine Art für genauere Empfehlungen.",
     "change": "ändern",
     "searchFor": "Nach {label} suchen…",
@@ -185,7 +185,7 @@
     "BLOG_FORUM": "Blog / Forum",
     "PERSONAL_OBSERVATION": "Persönliche Beobachtung",
     "sourcePosition": "Was sagt deine Quelle?",
-    "sourcePositionHint": "Wähle, wenn deine Quelle zu einem anderen Schluss kommt als deine Beobachtung."
+    "sourcePositionHint": "Wähle, wenn deine Quelle zu einem anderen Schluss kommt als dein Ergebnis."
   },
   "PlantPage": {
     "backToPlan": "← Zurück zum Plan",
@@ -220,7 +220,7 @@
     "inheritedFrom": "über {genus}",
     "wikiReadMore": "Wikipedia →",
     "wikiAttribution": "Quelle: Wikipedia (CC BY-SA)",
-    "contributeObservation": "Beobachtung hinzufügen →"
+    "contributeObservation": "Ergebnis hinzufügen →"
   },
   "RelationshipPage": {
     "back": "← Zurück",
