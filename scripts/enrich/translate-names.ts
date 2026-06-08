@@ -393,11 +393,11 @@ function downloadFile(url: string, dest: string): Promise<void> {
           if (total > 0) {
             const mb  = (downloaded / 1024 / 1024).toFixed(1)
             const tot = (total     / 1024 / 1024).toFixed(1)
-            process.stdout.write(`\r  Downloading ${mb}/${tot} MB`)
+            process.stderr.write(`\r  ${mb}/${tot} MB`)
           }
         })
         res.pipe(file)
-        file.on('finish', () => { file.close(); process.stdout.write('\n'); resolve() })
+        file.on('finish', () => { file.close(); process.stderr.write('\n'); resolve() })
         file.on('error', reject)
       }).on('error', reject)
     }
@@ -427,36 +427,74 @@ async function downloadAndExtractNt(url: string): Promise<{ ntPath: string; clea
 }
 
 // Parses an AGROVOC NT file and returns a map of lowercase(english label) → arabic prefLabel.
-// Streams line-by-line so RAM usage is O(unique concepts) not O(file size).
+// AGROVOC uses SKOS-XL: labels are indirected through xl_lang_TIMESTAMP nodes.
+//   concept → skos-xl:prefLabel|altLabel → xl_lang_node
+//   xl_lang_node → skos-xl:literalForm → "text"@lang
+// Filters to xl_ar_ and xl_en_ URIs early to keep memory usage low.
 async function buildAgrovocIndex(ntPath: string): Promise<Map<string, string>> {
-  const SKOS_PREF = 'http://www.w3.org/2004/02/skos/core#prefLabel'
-  const SKOS_ALT  = 'http://www.w3.org/2004/02/skos/core#altLabel'
-  const langTriple = /^<([^>]+)>\s+<([^>]+)>\s+"((?:[^"\\]|\\.)*)"\@(\S+?)\s+\.\s*$/
+  const SKOSX_PREF = 'http://www.w3.org/2008/05/skos-xl#prefLabel'
+  const SKOSX_ALT  = 'http://www.w3.org/2008/05/skos-xl#altLabel'
+  const SKOSX_LIT  = 'http://www.w3.org/2008/05/skos-xl#literalForm'
 
-  const arLabels = new Map<string, { label: string; isPref: boolean }>()
-  const enToUri  = new Map<string, string>()
+  const uriTriple  = /^<([^>]+)>\s+<([^>]+)>\s+<([^>]+)>\s+\.\s*$/
+  const langTriple = /^<([^>]+)>\s+<([^>]+)>\s+"((?:[^"\\]|\\.)*)"\@\S+\s+\.\s*$/
+
+  // xl_labelUri → conceptUri (only en/ar label nodes stored)
+  const labelToConceptPref = new Map<string, string>()
+  const labelToConceptAlt  = new Map<string, string>()
+  // xl_labelUri → literal text
+  const labelToText = new Map<string, string>()
 
   const rl = createInterface({ input: createReadStream(ntPath), crlfDelay: Infinity })
   for await (const line of rl) {
     if (!line || line.startsWith('#')) continue
-    const m = langTriple.exec(line)
-    if (!m) continue
-    const [, subject, predicate, value, lang] = m
-    if (predicate !== SKOS_PREF && predicate !== SKOS_ALT) continue
-    const isPref = predicate === SKOS_PREF
-    if (lang === 'ar') {
-      const ex = arLabels.get(subject)
-      if (!ex || (!ex.isPref && isPref)) arLabels.set(subject, { label: value, isPref })
-    } else if (lang === 'en') {
-      if (!enToUri.has(value.toLowerCase())) enToUri.set(value.toLowerCase(), subject)
+
+    const um = uriTriple.exec(line)
+    if (um) {
+      const [, subject, predicate, object] = um
+      if ((predicate === SKOSX_PREF || predicate === SKOSX_ALT)
+          && (object.includes('/xl_ar_') || object.includes('/xl_en_'))) {
+        const map = predicate === SKOSX_PREF ? labelToConceptPref : labelToConceptAlt
+        map.set(object, subject)
+      }
+      continue
+    }
+
+    const lm = langTriple.exec(line)
+    if (lm) {
+      const [, subject, predicate, value] = lm
+      if (predicate === SKOSX_LIT
+          && (subject.includes('/xl_ar_') || subject.includes('/xl_en_'))) {
+        labelToText.set(subject, value)
+      }
     }
   }
 
-  const index = new Map<string, string>()
-  for (const [en, uri] of enToUri) {
-    const ar = arLabels.get(uri)
-    if (ar) index.set(en, ar.label)
+  // concept → arabic prefLabel text
+  const conceptToAr = new Map<string, string>()
+  for (const [labelUri, conceptUri] of labelToConceptPref) {
+    if (!labelUri.includes('/xl_ar_')) continue
+    const text = labelToText.get(labelUri)
+    if (text) conceptToAr.set(conceptUri, text)
   }
+
+  // final index: lowercase(en text) → ar text
+  const index = new Map<string, string>()
+  for (const [labelUri, conceptUri] of labelToConceptPref) {
+    if (!labelUri.includes('/xl_en_')) continue
+    const ar = conceptToAr.get(conceptUri)
+    if (!ar) continue
+    const text = labelToText.get(labelUri)
+    if (text && !index.has(text.toLowerCase())) index.set(text.toLowerCase(), ar)
+  }
+  for (const [labelUri, conceptUri] of labelToConceptAlt) {
+    if (!labelUri.includes('/xl_en_')) continue
+    const ar = conceptToAr.get(conceptUri)
+    if (!ar) continue
+    const text = labelToText.get(labelUri)
+    if (text && !index.has(text.toLowerCase())) index.set(text.toLowerCase(), ar)
+  }
+
   return index
 }
 
