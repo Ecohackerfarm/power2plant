@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import { LocaleSwitcher } from '@/components/locale-switcher'
 import { AuthPanel } from '@/components/auth-panel'
 import { FeedbackButton } from '@/components/feedback-button'
+import { UserBalance } from '@/components/user-balance'
 
 const NAV_ITEMS = [
   { key: 'lookup' as const, href: '/relationships' },
@@ -58,6 +59,7 @@ export function SiteHeader({ isAdmin = false }: { isAdmin?: boolean }) {
           )}
         </nav>
         <div className="flex items-center gap-3 shrink-0">
+          <UserBalance />
           <FeedbackButton />
           <LocaleSwitcher />
           <AuthPanel />

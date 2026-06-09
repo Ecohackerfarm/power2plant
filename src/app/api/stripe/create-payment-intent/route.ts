@@ -45,6 +45,7 @@ export async function POST(req: Request) {
     currency: 'eur',
     metadata: { userId: session.user.id },
     automatic_payment_methods: { enabled: true },
+    automatic_tax: { enabled: true },
   })
 
   return NextResponse.json({ clientSecret: intent.client_secret })
