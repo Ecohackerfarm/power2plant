@@ -1,6 +1,6 @@
 /**
- * Enrich CropTranslation table with vernacular names from Wikidata (primary)
- * and GBIF (gap-fill).
+ * Enrich CropTranslation table with vernacular names from Wikidata (primary),
+ * GBIF (gap-fill for de/es/fr/pt/hi), and AGROVOC (Arabic ar).
  *
  * Supported locales: de, es, fr, pt, zh-Hans, ar, hi, ru, ja
  *
@@ -14,6 +14,17 @@
  *   pnpm enrich:translate-names --import data/intl/translations-ja.tsv
  *   pnpm enrich:translate-names --locale de --source wikipedia  # recover genus crops: wikidata-attempted but
  *                                                               #   no translation → retry via Wikipedia sitelink
+ *   pnpm enrich:translate-names --locale ar --source agrovoc
+ *   pnpm enrich:translate-names --locale ru --source agrovoc
+ *   pnpm enrich:translate-names --locale ja --source agrovoc
+ *   pnpm enrich:translate-names --locale ar --source agrovoc --agrovoc-dump ./agrovoc_core.nt  # skip download
+ *
+ * AGROVOC source (ar / ru / ja — ~41K ru, ~30K ja, full ar coverage):
+ *   Auto-downloads agrovoc_core.nt.zip (~70 MB) from agrovoc.fao.org/latestAgrovoc, extracts,
+ *   builds an in-memory English→{locale} index via SKOS-XL label parsing, then matches each
+ *   crop by botanical name, canonical name, or botanical synonyms. Temp files deleted on
+ *   completion. Pass --agrovoc-dump <path> to use a local NT file instead (skips download).
+ *   Idempotent; skips crops with existing translation unless --force.
  *
  * Run locales sequentially (not concurrently) to stay within Wikidata/GBIF rate limits.
  * Idempotent: skips crops that already have a translation for the locale.
@@ -29,7 +40,13 @@
  */
 
 import { PrismaClient } from '@prisma/client'
-import { readFileSync, writeFileSync, appendFileSync } from 'fs'
+import { readFileSync, writeFileSync, appendFileSync, createReadStream, createWriteStream, mkdtempSync, readdirSync, unlinkSync, rmSync } from 'fs'
+import { createInterface } from 'readline'
+import { execSync } from 'child_process'
+import * as https from 'https'
+import * as http from 'http'
+import * as os from 'os'
+import * as path from 'path'
 
 const prisma = new PrismaClient()
 
@@ -59,6 +76,16 @@ const LOCALE_MAP: Record<string, { wikidata: string; gbif: string }> = {
   ru:        { wikidata: 'ru', gbif: 'rus' },
   ja:        { wikidata: 'ja', gbif: 'jpn' },
 }
+
+// GBIF vernacular names have substantial crowd-sourced coverage only for these locales.
+// All others fall back to Wikidata/Wikipedia exclusively.
+const GBIF_SUPPORTED_LOCALES = new Set(['de', 'es', 'fr', 'pt', 'hi'])
+
+// Always resolves to the latest published release (FAO-maintained redirect)
+const AGROVOC_DUMP_URL = 'https://agrovoc.fao.org/latestAgrovoc/agrovoc_core.nt.zip'
+
+// Locales with sufficient AGROVOC coverage (~41K ru, ~30K ja, Arabic ar)
+const AGROVOC_SUPPORTED_LOCALES = new Set(['ar', 'ru', 'ja'])
 
 function sleep(ms: number): Promise<void> {
   return new Promise(r => setTimeout(r, ms))
@@ -338,22 +365,155 @@ function parseArgs() {
   }
   return {
     locales:     (get('--locale') ?? 'de').split(',').map(s => s.trim()),
-    source:      (get('--source') ?? 'both') as 'wikidata' | 'gbif' | 'both' | 'wikipedia',
+    source:      (get('--source') ?? 'both') as 'wikidata' | 'gbif' | 'both' | 'wikipedia' | 'agrovoc',
     force:       args.includes('--force'),
     debug:       args.includes('--debug'),
     dryRun:      args.includes('--fetch'),
     importFile:  get('--import'),
     cleanEmpty:  args.includes('--clean-empty'),
+    agrovocDump: get('--agrovoc-dump'),
   }
 }
 
+// ── AGROVOC ───────────────────────────────────────────────────────────────────
+
+function downloadFile(url: string, dest: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const file = createWriteStream(dest)
+    const get = (u: string) => {
+      const mod = u.startsWith('https') ? https : http
+      mod.get(u, (res) => {
+        if (res.statusCode === 301 || res.statusCode === 302) {
+          file.close()
+          return get(res.headers.location!)
+        }
+        if (res.statusCode !== 200) {
+          file.close()
+          return reject(new Error(`HTTP ${res.statusCode} for ${u}`))
+        }
+        const total = parseInt(res.headers['content-length'] ?? '0')
+        let downloaded = 0
+        res.on('data', (chunk: Buffer) => {
+          downloaded += chunk.length
+          if (total > 0) {
+            const mb  = (downloaded / 1024 / 1024).toFixed(1)
+            const tot = (total     / 1024 / 1024).toFixed(1)
+            process.stderr.write(`\r  ${mb}/${tot} MB`)
+          }
+        })
+        res.pipe(file)
+        file.on('finish', () => { file.close(); process.stderr.write('\n'); resolve() })
+        file.on('error', reject)
+      }).on('error', reject)
+    }
+    get(url)
+  })
+}
+
+// Downloads AGROVOC_DUMP_URL zip to a temp dir, extracts the single .nt file,
+// returns its path and a cleanup function that removes the entire temp dir.
+async function downloadAndExtractNt(url: string): Promise<{ ntPath: string; cleanup: () => void }> {
+  const tmpDir  = mkdtempSync(path.join(os.tmpdir(), 'agrovoc-'))
+  const zipPath = path.join(tmpDir, 'agrovoc_core.nt.zip')
+
+  process.stdout.write(`[AGROVOC] Downloading dump (~70 MB)...\n`)
+  await downloadFile(url, zipPath)
+
+  execSync(`unzip -q "${zipPath}" -d "${tmpDir}"`)
+  unlinkSync(zipPath)
+
+  const ntFiles = readdirSync(tmpDir).filter(f => f.endsWith('.nt'))
+  if (ntFiles.length === 0) throw new Error('No .nt file found in AGROVOC zip')
+
+  return {
+    ntPath:  path.join(tmpDir, ntFiles[0]),
+    cleanup: () => rmSync(tmpDir, { recursive: true, force: true }),
+  }
+}
+
+// Parses an AGROVOC NT file and returns a map of lowercase(english label) → target-lang prefLabel.
+// AGROVOC uses SKOS-XL: labels are indirected through xl_lang_TIMESTAMP nodes.
+//   concept → skos-xl:prefLabel|altLabel → xl_lang_node
+//   xl_lang_node → skos-xl:literalForm → "text"@lang
+// targetLang is the 2-letter BCP-47 code (e.g. 'ar', 'ru', 'ja').
+// Filters to xl_{targetLang}_ and xl_en_ URIs early to keep memory usage low.
+async function buildAgrovocIndex(ntPath: string, targetLang: string): Promise<Map<string, string>> {
+  const SKOSX_PREF = 'http://www.w3.org/2008/05/skos-xl#prefLabel'
+  const SKOSX_ALT  = 'http://www.w3.org/2008/05/skos-xl#altLabel'
+  const SKOSX_LIT  = 'http://www.w3.org/2008/05/skos-xl#literalForm'
+
+  const tgtSeg = `/xl_${targetLang}_`
+  const enSeg  = '/xl_en_'
+
+  const uriTriple  = /^<([^>]+)>\s+<([^>]+)>\s+<([^>]+)>\s+\.\s*$/
+  const langTriple = /^<([^>]+)>\s+<([^>]+)>\s+"((?:[^"\\]|\\.)*)"\@\S+\s+\.\s*$/
+
+  // xl_labelUri → conceptUri (only en/target label nodes stored)
+  const labelToConceptPref = new Map<string, string>()
+  const labelToConceptAlt  = new Map<string, string>()
+  // xl_labelUri → literal text
+  const labelToText = new Map<string, string>()
+
+  const rl = createInterface({ input: createReadStream(ntPath), crlfDelay: Infinity })
+  for await (const line of rl) {
+    if (!line || line.startsWith('#')) continue
+
+    const um = uriTriple.exec(line)
+    if (um) {
+      const [, subject, predicate, object] = um
+      if ((predicate === SKOSX_PREF || predicate === SKOSX_ALT)
+          && (object.includes(tgtSeg) || object.includes(enSeg))) {
+        const map = predicate === SKOSX_PREF ? labelToConceptPref : labelToConceptAlt
+        map.set(object, subject)
+      }
+      continue
+    }
+
+    const lm = langTriple.exec(line)
+    if (lm) {
+      const [, subject, predicate, value] = lm
+      if (predicate === SKOSX_LIT && (subject.includes(tgtSeg) || subject.includes(enSeg))) {
+        labelToText.set(subject, value)
+      }
+    }
+  }
+
+  // concept → target-lang prefLabel text
+  const conceptToTarget = new Map<string, string>()
+  for (const [labelUri, conceptUri] of labelToConceptPref) {
+    if (!labelUri.includes(tgtSeg)) continue
+    const text = labelToText.get(labelUri)
+    if (text) conceptToTarget.set(conceptUri, text)
+  }
+
+  // final index: lowercase(en text) → target-lang text
+  const index = new Map<string, string>()
+  for (const [labelUri, conceptUri] of labelToConceptPref) {
+    if (!labelUri.includes(enSeg)) continue
+    const tgt = conceptToTarget.get(conceptUri)
+    if (!tgt) continue
+    const text = labelToText.get(labelUri)
+    if (text && !index.has(text.toLowerCase())) index.set(text.toLowerCase(), tgt)
+  }
+  for (const [labelUri, conceptUri] of labelToConceptAlt) {
+    if (!labelUri.includes(enSeg)) continue
+    const tgt = conceptToTarget.get(conceptUri)
+    if (!tgt) continue
+    const text = labelToText.get(labelUri)
+    if (text && !index.has(text.toLowerCase())) index.set(text.toLowerCase(), tgt)
+  }
+
+  return index
+}
+
 async function runLocale(locale: string, opts: {
-  source: 'wikidata' | 'gbif' | 'both' | 'wikipedia',
+  source: 'wikidata' | 'gbif' | 'both' | 'wikipedia' | 'agrovoc',
   force: boolean,
   dryRun: boolean,
   cleanEmpty: boolean,
+  agrovocDump?: string,
 }) {
-  const { source, force, dryRun, cleanEmpty } = opts
+  let { source, force, dryRun, cleanEmpty, agrovocDump } = opts
 
   const outFile = `data/intl/translations-${locale}.tsv`
 
@@ -379,6 +539,100 @@ async function runLocale(locale: string, opts: {
   if (!langMap) {
     console.error(`Unsupported locale "${locale}". Add it to LOCALE_MAP.`)
     process.exit(1)
+  }
+
+  if ((source === 'gbif' || source === 'both') && !GBIF_SUPPORTED_LOCALES.has(locale)) {
+    const effective = source === 'gbif' ? 'wikidata' : 'both'
+    console.log(`[GBIF] Locale "${locale}" not in GBIF_SUPPORTED_LOCALES — skipping GBIF, using source="${effective === 'both' ? 'wikidata' : effective}"`)
+    source = 'wikidata'
+  }
+
+  // ── AGROVOC mode (ar / ru / ja) ──────────────────────────────────────────
+  if (source === 'agrovoc') {
+    if (!AGROVOC_SUPPORTED_LOCALES.has(locale)) {
+      console.error(`--source agrovoc supported locales: ${[...AGROVOC_SUPPORTED_LOCALES].join(', ')} (got "${locale}")`)
+      process.exit(1)
+    }
+
+    const targetLang = langMap.wikidata  // 2-letter BCP-47 code: 'ar', 'ru', 'ja'
+
+    // Use a local file if provided (useful for testing); otherwise auto-download.
+    let ntPath: string
+    let cleanup: (() => void) | undefined
+
+    if (agrovocDump) {
+      ntPath = agrovocDump
+    } else {
+      const result = await downloadAndExtractNt(AGROVOC_DUMP_URL)
+      ntPath  = result.ntPath
+      cleanup = result.cleanup
+    }
+
+    try {
+      console.log(`[AGROVOC] Parsing NT dump for lang=${targetLang}...`)
+      const index = await buildAgrovocIndex(ntPath, targetLang)
+      console.log(`[AGROVOC] Index ready: ${index.size} en→${targetLang} mappings`)
+
+      const crops = await prisma.crop.findMany({
+        select: { id: true, botanicalName: true, canonicalName: true,
+                  botanicalSynonyms: { select: { name: true } } },
+        orderBy: { botanicalName: 'asc' },
+      })
+
+      const existing = force ? new Set<string>() : new Set(
+        (await prisma.cropTranslation.findMany({ where: { locale }, select: { cropId: true } }))
+          .map(t => t.cropId)
+      )
+
+      console.log(`${crops.length} crops total, ${existing.size} already have ${locale} translation`)
+
+      let saved = 0, skipped = 0
+      for (const crop of crops) {
+        if (!crop.botanicalName) continue
+        if (!force && existing.has(crop.id)) continue
+
+        // Match by botanical name, canonical name, or botanical synonyms only.
+        // English common names excluded — too broad (e.g. "onion" matches multiple species).
+        const candidates = [
+          crop.botanicalName,
+          crop.canonicalName,
+          ...crop.botanicalSynonyms.map(s => s.name),
+        ].filter((s): s is string => Boolean(s))
+
+        let localName: string | undefined
+        for (const term of candidates) {
+          const hit = index.get(term.toLowerCase())
+          // Reject hits that are just the Latin botanical name (AGROVOC fallback for missing translations)
+          if (hit && !isBotanicalName(hit, term.split(' ')[0])) { localName = hit; break }
+        }
+
+        await prisma.cropEnrichmentAttempt.upsert({
+          where:  { cropId_locale_source: { cropId: crop.id, locale, source: 'agrovoc' } },
+          create: { cropId: crop.id, locale, source: 'agrovoc', version: SCRIPT_VERSION },
+          update: { attemptedAt: new Date(), version: SCRIPT_VERSION },
+        })
+
+        if (localName) {
+          await prisma.cropTranslation.upsert({
+            where:  { cropId_locale: { cropId: crop.id, locale } },
+            create: { cropId: crop.id, locale, commonNames: [localName] },
+            update: { commonNames: [localName] },
+          })
+          if (DEBUG) console.log(`  → ${crop.botanicalName}: ${localName}`)
+          saved++
+        } else {
+          skipped++
+        }
+      }
+
+      console.log(`[AGROVOC] Done. ${saved} saved, ${skipped} no match.`)
+    } finally {
+      if (cleanup) {
+        cleanup()
+        console.log(`[AGROVOC] Temp files cleaned up.`)
+      }
+    }
+    return
   }
 
   // ── Wikipedia sitelink recovery mode ─────────────────────────────────────
@@ -573,7 +827,7 @@ async function runLocale(locale: string, opts: {
       // Stage 3: botanical synonyms (only crops still unresolved, only those with synonyms)
       const stage3 = batch.filter(c => !found.has(c.id) && c.botanicalSynonyms.length > 0)
       if (stage3.length > 0) {
-        // Build synonym→crop map (first crop wins per synonym name)
+        // Build botanicalSynonym→crop map (first crop wins per synonym name)
         const synToCrop = new Map<string, typeof batch[number]>()
         for (const crop of stage3) {
           for (const s of crop.botanicalSynonyms) {
@@ -581,7 +835,7 @@ async function runLocale(locale: string, opts: {
           }
         }
         const synNames = [...synToCrop.keys()]
-        process.stdout.write(`    [3/3] synonyms (${synNames.length} names for ${stage3.length} crops)... `)
+        process.stdout.write(`    [3/3] botanicalSynonyms (${synNames.length} names for ${stage3.length} crops)... `)
         let s3found = 0
         for (let j = 0; j < synNames.length; j += WIKIDATA_BATCH) {
           const synBatch = synNames.slice(j, j + WIKIDATA_BATCH)
@@ -668,7 +922,7 @@ async function runLocale(locale: string, opts: {
 }
 
 async function main() {
-  const { locales, source, force, debug, dryRun, importFile, cleanEmpty } = parseArgs()
+  const { locales, source, force, debug, dryRun, importFile, cleanEmpty, agrovocDump } = parseArgs()
   DEBUG = debug
 
   if (importFile) {
@@ -679,7 +933,7 @@ async function main() {
 
   for (const locale of locales) {
     if (locales.length > 1) console.log(`\n${'='.repeat(60)}\nLocale: ${locale}\n${'='.repeat(60)}`)
-    await runLocale(locale, { source, force, dryRun, cleanEmpty })
+    await runLocale(locale, { source, force, dryRun, cleanEmpty, agrovocDump })
   }
 
   await prisma.$disconnect()
