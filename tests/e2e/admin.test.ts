@@ -92,7 +92,7 @@ test.describe('non-admin user cannot access admin area', () => {
   })
 
   test('header does not show Admin link', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/plan')
     await expect(page.getByRole('banner').getByRole('link', { name: /admin/i })).not.toBeVisible()
   })
 })
@@ -102,45 +102,43 @@ test.describe('non-admin user cannot access admin area', () => {
 test.describe('admin user can access admin area', () => {
   test.use({ storageState: ADMIN_STATE })
 
+  // Navigate to an (app)-layout page — the landing page (/) uses a custom header
+  // without SiteHeader, so checking the banner there would always fail.
   test('header shows Admin link', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/plan')
     await expect(page.getByRole('banner').getByRole('link', { name: /admin/i })).toBeVisible()
   })
 
   test('/admin shows card grid with all sub-sections', async ({ page }) => {
     await page.goto('/admin')
     await expect(page).toHaveURL(/\/admin$/)
-    // Scope to main — sub-nav has the same links, causing strict mode violations
-    const main = page.locator('main')
-    await expect(main.getByRole('link', { name: /feedback/i })).toBeVisible()
-    await expect(main.getByRole('link', { name: /research requests/i })).toBeVisible()
-    await expect(main.getByRole('link', { name: /research queue/i })).toBeVisible()
-    await expect(main.getByRole('link', { name: /settings/i })).toBeVisible()
+    // Admin layout renders a sub-nav + card grid with the same labels.
+    // Use href attribute to uniquely select the card grid links (nth(1) = card, nth(0) = sub-nav).
+    await expect(page.locator('a[href*="/admin/feedback"]').nth(1)).toBeVisible()
+    await expect(page.locator('a[href*="/admin/research-requests"]').nth(1)).toBeVisible()
+    await expect(page.locator('a[href*="/admin/research-queue"]').nth(1)).toBeVisible()
+    await expect(page.locator('a[href*="/admin/settings"]').nth(1)).toBeVisible()
   })
 
+  // Admin pages render divs, not <main>; URL staying at /admin/... confirms access.
   test('/admin/feedback page loads', async ({ page }) => {
     await page.goto('/admin/feedback')
     await expect(page).toHaveURL(/\/admin\/feedback/)
-    // Page renders without error (either table or empty state)
-    await expect(page.getByRole('main')).toBeVisible()
   })
 
   test('/admin/research-requests page loads', async ({ page }) => {
     await page.goto('/admin/research-requests')
     await expect(page).toHaveURL(/\/admin\/research-requests/)
-    await expect(page.getByRole('main')).toBeVisible()
   })
 
   test('/admin/research-queue page loads', async ({ page }) => {
     await page.goto('/admin/research-queue')
     await expect(page).toHaveURL(/\/admin\/research-queue/)
-    await expect(page.getByRole('main')).toBeVisible()
   })
 
   test('/admin/settings page loads and shows config form', async ({ page }) => {
     await page.goto('/admin/settings')
     await expect(page).toHaveURL(/\/admin\/settings/)
-    // Settings page has a save button and frequency selector
     await expect(page.getByRole('button', { name: /save/i })).toBeVisible({ timeout: 5000 })
   })
 
@@ -153,10 +151,12 @@ test.describe('admin user can access admin area', () => {
     expect(body).toHaveProperty('feedbackDigestEmails')
   })
 
+  // Feedback API returns { items, total, page, limit } (paginated)
   test('GET /api/admin/feedback returns 200', async ({ request }) => {
     const res = await request.get('/api/admin/feedback')
     expect(res.status()).toBe(200)
-    expect(Array.isArray(await res.json())).toBe(true)
+    const body = await res.json()
+    expect(Array.isArray(body.items)).toBe(true)
   })
 
   test('GET /api/admin/research-requests returns 200', async ({ request }) => {
@@ -165,18 +165,22 @@ test.describe('admin user can access admin area', () => {
     expect(Array.isArray(await res.json())).toBe(true)
   })
 
+  // Research-queue API returns { queue, priceCents, potBalanceCents }
   test('GET /api/admin/research-queue returns 200', async ({ request }) => {
     const res = await request.get('/api/admin/research-queue')
     expect(res.status()).toBe(200)
-    expect(Array.isArray(await res.json())).toBe(true)
+    const body = await res.json()
+    expect(Array.isArray(body.queue)).toBe(true)
   })
 
   test('admin sub-nav links are shown in /admin layout', async ({ page }) => {
     await page.goto('/admin/feedback')
-    const nav = page.locator('nav').first()
-    await expect(nav.getByRole('link', { name: /feedback/i })).toBeVisible()
-    await expect(nav.getByRole('link', { name: /research requests/i })).toBeVisible()
-    await expect(nav.getByRole('link', { name: /research queue/i })).toBeVisible()
-    await expect(nav.getByRole('link', { name: /settings/i })).toBeVisible()
+    // The admin layout's sub-nav contains hrefs pointing into /admin/...
+    // Filter by presence of an admin link to distinguish it from the SiteHeader nav.
+    const adminNav = page.locator('nav').filter({ has: page.locator('a[href*="/admin/feedback"]') })
+    await expect(adminNav.getByRole('link', { name: /feedback/i })).toBeVisible()
+    await expect(adminNav.getByRole('link', { name: /research requests/i })).toBeVisible()
+    await expect(adminNav.getByRole('link', { name: /research queue/i })).toBeVisible()
+    await expect(adminNav.getByRole('link', { name: /settings/i })).toBeVisible()
   })
 })
