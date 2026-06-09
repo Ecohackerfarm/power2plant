@@ -16,9 +16,7 @@ export async function POST() {
     return NextResponse.json({ error: 'SMTP not configured' }, { status: 422 })
   }
 
-  // Resolve at runtime so nodemailer is not bundled unless SMTP is configured
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const nodemailer = require('nodemailer') as typeof import('nodemailer')
+  const { default: nodemailer } = await import('nodemailer')
 
   const transporter = nodemailer.createTransport({
     host: smtpHost,
