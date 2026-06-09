@@ -29,6 +29,7 @@ jobs:
       BETTER_AUTH_SECRET: ci-test-secret-at-least-32-characters-long
       BETTER_AUTH_URL: http://localhost:3000
       NEXT_PUBLIC_APP_URL: http://localhost:3000
+      ADMIN_EMAILS: e2e-admin@test.local
 
     steps:
       - uses: actions/checkout@v4
