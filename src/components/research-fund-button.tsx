@@ -18,9 +18,24 @@ type Props = {
 export function ResearchFundButton({ cropAName, cropBName, cropAId, cropBId }: Props) {
   const [modalOpen, setModalOpen] = useState(false)
 
-  if (STRIPE_PK) {
-    return (
-      <>
+  const pairKey = cropAId < cropBId ? `${cropAId}-${cropBId}` : `${cropBId}-${cropAId}`
+
+  return (
+    <>
+      {KOFI_BASE && (
+        <a
+          href={`${KOFI_BASE}?utm_campaign=research&utm_content=${pairKey}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`Publicly fund research for ${cropAName} & ${cropBName} via Ko-fi`}
+          className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs font-medium shadow-sm hover:bg-muted transition-colors"
+        >
+          Ko-fi
+          <ExternalLink className="w-3 h-3" />
+        </a>
+      )}
+
+      {STRIPE_PK ? (
         <Button
           size="sm"
           onClick={() => setModalOpen(true)}
@@ -28,33 +43,15 @@ export function ResearchFundButton({ cropAName, cropBName, cropAId, cropBId }: P
         >
           Fund research
         </Button>
-        {modalOpen && (
-          <TopUpModal onClose={() => setModalOpen(false)} />
-        )}
-      </>
-    )
-  }
+      ) : (
+        <Button variant="outline" size="sm" disabled title="Payment provider not yet configured">
+          Fund research
+        </Button>
+      )}
 
-  if (KOFI_BASE) {
-    const pairKey = cropAId < cropBId ? `${cropAId}-${cropBId}` : `${cropBId}-${cropAId}`
-    const url = `${KOFI_BASE}?utm_campaign=research&utm_content=${pairKey}`
-    return (
-      <a
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label={`Fund research for ${cropAName} & ${cropBName}`}
-        className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow hover:bg-primary/90"
-      >
-        Fund research
-        <ExternalLink className="w-3 h-3" />
-      </a>
-    )
-  }
-
-  return (
-    <Button variant="outline" size="sm" disabled title="Payment provider not yet configured">
-      Fund research
-    </Button>
+      {modalOpen && (
+        <TopUpModal onClose={() => setModalOpen(false)} />
+      )}
+    </>
   )
 }
