@@ -20,15 +20,21 @@ export async function spendCreditsForResearch(
   priceCents: number,
 ): Promise<string> {
   return prisma.$transaction(async (tx) => {
-    // Upsert credit row with pessimistic lock
-    const credit = await tx.userCredit.upsert({
+    // Ensure the row exists before locking
+    await tx.userCredit.upsert({
       where: { userId },
       create: { userId, balanceCents: 0 },
       update: {},
     })
 
-    if (credit.balanceCents < priceCents) {
-      throw new InsufficientCreditsError(credit.balanceCents, priceCents)
+    // Pessimistic row lock — prevents concurrent overdraw
+    const rows = await tx.$queryRaw<{ balanceCents: number }[]>`
+      SELECT "balanceCents" FROM "UserCredit" WHERE "userId" = ${userId} FOR UPDATE
+    `
+    const balance = rows[0]?.balanceCents ?? 0
+
+    if (balance < priceCents) {
+      throw new InsufficientCreditsError(balance, priceCents)
     }
 
     // Deduct balance
@@ -83,12 +89,19 @@ export async function spendCreditsForResearch(
   })
 }
 
-/** Records a confirmed Stripe top-up. */
+/** Records a confirmed Stripe top-up. Idempotent on stripePaymentIntentId. */
 export async function applyTopUp(
   userId: string,
   amountCents: number,
   stripePaymentIntentId: string,
 ): Promise<void> {
+  // Guard against duplicate Stripe webhook deliveries
+  const already = await prisma.creditTransaction.findFirst({
+    where: { stripePaymentIntentId },
+    select: { id: true },
+  })
+  if (already) return
+
   await prisma.$transaction([
     prisma.userCredit.upsert({
       where: { userId },

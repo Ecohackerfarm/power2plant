@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { isAdmin } from '@/lib/admin-auth'
 import { getCurrentPriceCents } from '@/lib/research-price'
 import { getPotBalanceCents } from '@/lib/pot'
+import { refundCredits } from '@/lib/credits'
 import prisma from '@/lib/prisma'
 
 /** GET /api/admin/research-queue — queue list + pot balance + current price */
@@ -61,12 +62,17 @@ export async function POST(req: Request) {
   })
 
   if (existing) {
-    // Already queued — just mark as admin-triggered if still pending
     if (existing.status === 'PENDING') {
+      // Mark as admin-triggered and refund any personal funders
       await prisma.researchQueue.update({
         where: { id: existing.id },
         data: { triggeredBy: 'ADMIN' },
       })
+      for (const funder of existing.funders) {
+        if (funder.userId) {
+          await refundCredits(funder.userId, existing.priceCents, existing.id)
+        }
+      }
     }
     return NextResponse.json({ queueId: existing.id, alreadyExisted: true })
   }

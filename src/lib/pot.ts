@@ -44,21 +44,24 @@ export async function tryFundFromPot(): Promise<string | null> {
   if (balance < price) return null
 
   return prisma.$transaction(async (tx) => {
-    // Top-voted pair not already queued and not already funded
-    const request = await tx.researchRequest.findFirst({
-      where: {
-        funded: false,
-        cropBId: { not: null },
-        // Exclude pairs already in execution queue
-        cropA: {
-          researchQueueA: { none: {} },
-        },
-      },
-      orderBy: { voteCount: 'desc' },
-      select: { id: true, cropAId: true, cropBId: true },
-    })
+    // Top-voted pair not already funded and not already in the execution queue.
+    // Uses raw SQL to check the exact (cropAId, cropBId) pair — a Prisma relation
+    // filter on cropA.researchQueueA would incorrectly exclude all pairs sharing cropA.
+    const candidates = await tx.$queryRaw<{ id: string; cropAId: string; cropBId: string }[]>`
+      SELECT rr.id, rr."cropAId", rr."cropBId"
+      FROM "ResearchRequest" rr
+      WHERE rr.funded = false
+        AND rr."cropBId" IS NOT NULL
+        AND NOT EXISTS (
+          SELECT 1 FROM "ResearchQueue" rq
+          WHERE rq."cropAId" = rr."cropAId" AND rq."cropBId" = rr."cropBId"
+        )
+      ORDER BY rr."voteCount" DESC
+      LIMIT 1
+    `
+    const request = candidates[0] ?? null
 
-    if (!request || !request.cropBId) return null
+    if (!request) return null
 
     // Re-check balance inside transaction
     const agg = await tx.potTransaction.groupBy({

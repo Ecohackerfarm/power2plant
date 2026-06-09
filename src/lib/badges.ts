@@ -13,28 +13,20 @@ export async function awardResearchBadges(
 ): Promise<void> {
   const [totalCount, cropA, cropB] = await Promise.all([
     prisma.researchFunder.count({ where: { userId, source: 'PERSONAL' } }),
-    prisma.crop.findUnique({ where: { id: cropAId }, select: { id: true } }),
-    prisma.crop.findUnique({ where: { id: cropBId }, select: { id: true } }),
+    prisma.crop.findUnique({ where: { id: cropAId }, select: { id: true, botanicalName: true } }),
+    prisma.crop.findUnique({ where: { id: cropBId }, select: { id: true, botanicalName: true } }),
   ])
 
   const badges: import('@prisma/client').Prisma.UserBadgeCreateManyInput[] = []
 
-  // PLANT badges (one per botanical name involved)
+  // PLANT badges — one per botanical name so two cultivars of the same species share a badge
   if (cropA) {
-    badges.push({
-      userId,
-      type: 'PLANT',
-      slug: `PLANT:${cropAId}`,
-      cropId: cropAId,
-    })
+    const slug = `PLANT:${cropA.botanicalName ?? cropAId}`
+    badges.push({ userId, type: 'PLANT', slug, cropId: cropAId })
   }
   if (cropB) {
-    badges.push({
-      userId,
-      type: 'PLANT',
-      slug: `PLANT:${cropBId}`,
-      cropId: cropBId,
-    })
+    const slug = `PLANT:${cropB.botanicalName ?? cropBId}`
+    badges.push({ userId, type: 'PLANT', slug, cropId: cropBId })
   }
 
   // PAIR badge

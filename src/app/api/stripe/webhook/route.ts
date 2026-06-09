@@ -2,8 +2,6 @@ import { NextResponse } from 'next/server'
 import { applyTopUp } from '@/lib/credits'
 import Stripe from 'stripe'
 
-export const config = { api: { bodyParser: false } }
-
 export async function POST(req: Request) {
   const secret = process.env.STRIPE_WEBHOOK_SECRET
   const stripeKey = process.env.STRIPE_SECRET_KEY

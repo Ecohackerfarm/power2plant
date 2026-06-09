@@ -12,7 +12,20 @@
     "haveAccount": "アカウントをお持ちの方はこちら",
     "cancel": "キャンセル",
     "checkYourEmail": "メールを確認してください",
-    "verifyEmailSent": "確認リンクをメールに送りました。アカウントを有効化するためにクリックしてください。"
+    "verifyEmailSent": "確認リンクをメールに送りました。アカウントを有効化するためにクリックしてください。",
+    "forgotPassword": "パスワードをお忘れですか？",
+    "resetPasswordTitle": "パスワードのリセット",
+    "sendResetLink": "リセットリンクを送信",
+    "resetLinkSent": "パスワードリセットリンクをメールで確認してください。",
+    "resendVerification": "確認メールを再送信",
+    "verificationResent": "確認メールを送信しました！",
+    "newPassword": "新しいパスワード",
+    "confirmPassword": "パスワードを確認",
+    "setPassword": "新しいパスワードを設定",
+    "passwordResetSuccess": "パスワードがリセットされました！サインインできます。",
+    "passwordMismatch": "パスワードが一致しません",
+    "invalidResetToken": "このリンクは無効または期限切れです。",
+    "backToSignIn": "サインインに戻る"
   },
   "Home": {
     "subtitle": "花壇のためのコンパニオンプランティング推薦。",
