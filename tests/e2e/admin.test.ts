@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { ADMIN_STATE, USER_STATE } from './auth.setup'
+import { ADMIN_STATE, USER_STATE } from './auth-constants'
 
 // ─── Unauthenticated: pages redirect ────────────────────────────────────────
 

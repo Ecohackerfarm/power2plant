@@ -1,13 +1,7 @@
 import { test as setup, expect } from '@playwright/test'
 import { PrismaClient } from '@prisma/client'
 import * as fs from 'fs'
-
-export const ADMIN_EMAIL = 'e2e-admin@test.local'
-export const ADMIN_PASSWORD = 'E2eAdmin1!'
-export const USER_EMAIL = 'e2e-user@test.local'
-export const USER_PASSWORD = 'E2eUser1!'
-export const ADMIN_STATE = 'tests/e2e/.auth/admin.json'
-export const USER_STATE = 'tests/e2e/.auth/user.json'
+import { ADMIN_EMAIL, ADMIN_PASSWORD, USER_EMAIL, USER_PASSWORD, ADMIN_STATE, USER_STATE } from './auth-constants'
 
 setup('create test users and save sessions', async ({ request }) => {
   fs.mkdirSync('tests/e2e/.auth', { recursive: true })

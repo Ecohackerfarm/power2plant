@@ -1,0 +1,6 @@
+export const ADMIN_EMAIL = 'e2e-admin@test.local'
+export const ADMIN_PASSWORD = 'E2eAdmin1!'
+export const USER_EMAIL = 'e2e-user@test.local'
+export const USER_PASSWORD = 'E2eUser1!'
+export const ADMIN_STATE = 'tests/e2e/.auth/admin.json'
+export const USER_STATE = 'tests/e2e/.auth/user.json'
