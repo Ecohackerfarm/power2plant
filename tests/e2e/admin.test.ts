@@ -16,7 +16,7 @@ test.describe('admin pages redirect unauthenticated users', () => {
     test(`GET ${path} redirects to home`, async ({ page }) => {
       await page.goto(path)
       await expect(page).not.toHaveURL(/\/admin/)
-      await expect(page).toHaveURL(/^\/(en|de|fr|es|pt|hi|ja|ru|zh-Hans)?\/?$/)
+      await expect(page).toHaveURL(/\/(en|de|fr|es|pt|hi|ja|ru|zh-Hans)?\/?$/)
     })
   }
 })
