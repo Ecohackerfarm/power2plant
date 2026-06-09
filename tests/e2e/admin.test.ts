@@ -110,10 +110,12 @@ test.describe('admin user can access admin area', () => {
   test('/admin shows card grid with all sub-sections', async ({ page }) => {
     await page.goto('/admin')
     await expect(page).toHaveURL(/\/admin$/)
-    await expect(page.getByRole('link', { name: /feedback/i })).toBeVisible()
-    await expect(page.getByRole('link', { name: /research requests/i })).toBeVisible()
-    await expect(page.getByRole('link', { name: /research queue/i })).toBeVisible()
-    await expect(page.getByRole('link', { name: /settings/i })).toBeVisible()
+    // Scope to main — sub-nav has the same links, causing strict mode violations
+    const main = page.locator('main')
+    await expect(main.getByRole('link', { name: /feedback/i })).toBeVisible()
+    await expect(main.getByRole('link', { name: /research requests/i })).toBeVisible()
+    await expect(main.getByRole('link', { name: /research queue/i })).toBeVisible()
+    await expect(main.getByRole('link', { name: /settings/i })).toBeVisible()
   })
 
   test('/admin/feedback page loads', async ({ page }) => {

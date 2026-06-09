@@ -30,7 +30,8 @@ setup('create test users and save sessions', async ({ request }) => {
     await prisma.$disconnect()
   }
 
-  // Save admin session
+  // Save admin session (sign in first; do NOT sign out — sign-out deletes the DB
+  // session record, making the saved cookies invalid for subsequent tests)
   const adminSignIn = await request.post('/api/auth/sign-in/email', {
     headers: AUTH_HEADERS,
     data: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD },
@@ -38,8 +39,7 @@ setup('create test users and save sessions', async ({ request }) => {
   expect(adminSignIn.ok(), `admin sign-in failed: ${await adminSignIn.text()}`).toBeTruthy()
   await request.storageState({ path: ADMIN_STATE })
 
-  // Sign out, then save user session
-  await request.post('/api/auth/sign-out', { headers: AUTH_HEADERS })
+  // Sign in as user (creates a new DB session; admin session stays alive)
   const userSignIn = await request.post('/api/auth/sign-in/email', {
     headers: AUTH_HEADERS,
     data: { email: USER_EMAIL, password: USER_PASSWORD },
