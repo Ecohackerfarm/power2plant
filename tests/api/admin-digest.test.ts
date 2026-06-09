@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { POST } from '@/app/api/admin/feedback/digest/route'
 
 vi.mock('@/lib/prisma', () => ({
@@ -108,5 +108,94 @@ describe('POST /api/admin/feedback/digest', () => {
     expect(body.sent).toBe(true)
     expect(body.count).toBe(2)
     expect(sendMailMock).toHaveBeenCalledOnce()
+  })
+
+  describe('weekly frequency', () => {
+    beforeEach(() => vi.useFakeTimers())
+    afterEach(() => vi.useRealTimers())
+
+    it('skips on non-Monday', async () => {
+      vi.setSystemTime(new Date('2025-01-07T10:00:00Z')) // Tuesday
+      vi.mocked(prisma.appConfig.findUnique).mockResolvedValue({ ...baseConfig, feedbackDigestFreq: 'weekly' } as never)
+      const res = await POST(makeReq())
+      const body = await res.json()
+      expect(body.skipped).toBe(true)
+      expect(body.reason).toBe('not-monday')
+    })
+
+    it('proceeds on Monday', async () => {
+      vi.setSystemTime(new Date('2025-01-06T10:00:00Z')) // Monday
+      vi.mocked(prisma.appConfig.findUnique).mockResolvedValue({ ...baseConfig, feedbackDigestFreq: 'weekly' } as never)
+      vi.mocked(prisma.feedback.findMany).mockResolvedValue([] as never)
+      const res = await POST(makeReq())
+      const body = await res.json()
+      expect(body.reason).not.toBe('not-monday')
+    })
+  })
+
+  describe('date window', () => {
+    beforeEach(() => vi.useFakeTimers())
+    afterEach(() => vi.useRealTimers())
+
+    it('queries last 24h for daily', async () => {
+      const now = new Date('2025-01-15T12:00:00Z')
+      vi.setSystemTime(now)
+      vi.mocked(prisma.appConfig.findUnique).mockResolvedValue(baseConfig as never)
+      vi.mocked(prisma.feedback.findMany).mockResolvedValue([] as never)
+      await POST(makeReq())
+      const call = vi.mocked(prisma.feedback.findMany).mock.calls[0]?.[0] as { where: { createdAt: { gte: Date } } }
+      expect(call.where.createdAt.gte.getTime()).toBe(now.getTime() - 24 * 60 * 60 * 1000)
+    })
+
+    it('queries last 7 days for weekly', async () => {
+      const now = new Date('2025-01-06T12:00:00Z') // Monday
+      vi.setSystemTime(now)
+      vi.mocked(prisma.appConfig.findUnique).mockResolvedValue({ ...baseConfig, feedbackDigestFreq: 'weekly' } as never)
+      vi.mocked(prisma.feedback.findMany).mockResolvedValue([] as never)
+      await POST(makeReq())
+      const call = vi.mocked(prisma.feedback.findMany).mock.calls[0]?.[0] as { where: { createdAt: { gte: Date } } }
+      expect(call.where.createdAt.gte.getTime()).toBe(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+    })
+  })
+
+  describe('email content', () => {
+    beforeEach(() => {
+      vi.mocked(prisma.appConfig.findUnique).mockResolvedValue(baseConfig as never)
+      vi.mocked(prisma.feedback.findMany).mockResolvedValue([sampleItem] as never)
+    })
+
+    it('sends from SMTP_FROM address', async () => {
+      await POST(makeReq())
+      expect(sendMailMock.mock.calls[0]?.[0].from).toBe('noreply@example.com')
+    })
+
+    it('sends to all configured recipients', async () => {
+      const emails = ['a@example.com', 'b@example.com']
+      vi.mocked(prisma.appConfig.findUnique).mockResolvedValue({ ...baseConfig, feedbackDigestEmails: emails } as never)
+      await POST(makeReq())
+      expect(sendMailMock.mock.calls[0]?.[0].to).toBe('a@example.com, b@example.com')
+    })
+
+    it('subject includes item count', async () => {
+      vi.mocked(prisma.feedback.findMany).mockResolvedValue([sampleItem, sampleItem, sampleItem] as never)
+      await POST(makeReq())
+      expect(sendMailMock.mock.calls[0]?.[0].subject).toContain('3')
+    })
+
+    it('includes both text and html body', async () => {
+      await POST(makeReq())
+      const mail = sendMailMock.mock.calls[0]?.[0]
+      expect(mail.text).toBeTruthy()
+      expect(mail.html).toBeTruthy()
+    })
+
+    it('html body contains table row per item', async () => {
+      vi.mocked(prisma.feedback.findMany).mockResolvedValue([sampleItem, sampleItem] as never)
+      await POST(makeReq())
+      const html: string = sendMailMock.mock.calls[0]?.[0].html
+      const rowCount = (html.match(/<tr>/g) ?? []).length
+      // thead row + 2 data rows
+      expect(rowCount).toBe(3)
+    })
   })
 })
