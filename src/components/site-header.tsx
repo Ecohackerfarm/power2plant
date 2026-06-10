@@ -1,18 +1,25 @@
 'use client'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
 import { Link, usePathname } from '@/i18n/navigation'
 import { useTranslations } from 'next-intl'
 import { LocaleSwitcher } from '@/components/locale-switcher'
 import { AuthPanel } from '@/components/auth-panel'
 import { FeedbackButton } from '@/components/feedback-button'
-import { Menu, X } from 'lucide-react'
+import { Menu, X, ChevronDown } from 'lucide-react'
 
 const NAV_ITEMS = [
   { key: 'lookup' as const, href: '/relationships' },
   { key: 'plan' as const, href: '/plan' },
   { key: 'garden' as const, href: '/garden' },
 ] satisfies { key: 'lookup' | 'plan' | 'garden'; href: string }[]
+
+const ADMIN_ITEMS = [
+  { href: '/admin/feedback', label: 'Feedback' },
+  { href: '/admin/research-requests', label: 'Research Requests' },
+  { href: '/admin/research-queue', label: 'Research Queue' },
+  { href: '/admin/settings', label: 'Settings' },
+]
 
 function isActive(pathname: string, href: string): boolean {
   if (href === '/relationships') {
@@ -21,76 +28,99 @@ function isActive(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(href + '/')
 }
 
-function navClass(active: boolean, mobile = false) {
-  const base = `text-sm transition-colors rounded ${mobile ? 'px-3 py-2' : 'px-3 py-1.5'}`
+function menuItemClass(active: boolean) {
+  const base = 'block px-4 py-2 text-sm rounded transition-colors'
   return active
-    ? `${base} font-semibold text-foreground ${mobile ? 'bg-accent' : 'underline decoration-primary decoration-2 underline-offset-4'}`
-    : `${base} text-muted-foreground hover:text-foreground ${mobile ? 'hover:bg-accent' : ''}`
+    ? `${base} font-semibold text-foreground bg-accent`
+    : `${base} text-muted-foreground hover:text-foreground hover:bg-muted`
 }
 
 export function SiteHeader({ isAdmin = false }: { isAdmin?: boolean }) {
   const t = useTranslations('Nav')
   const pathname = usePathname()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [adminOpen, setAdminOpen] = useState(() => pathname.startsWith('/admin'))
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!menuOpen) return
+    function onPointerDown(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false)
+      }
+    }
+    document.addEventListener('pointerdown', onPointerDown)
+    return () => document.removeEventListener('pointerdown', onPointerDown)
+  }, [menuOpen])
 
   return (
     <header className="border-b bg-background sticky top-0 z-40">
-      <div className="max-w-5xl mx-auto px-4 h-14 flex items-center gap-6">
-        <Link href="/" className="flex items-center gap-2 shrink-0">
-          <Image src="/logo.png" alt="" width={32} height={32} />
-          <span className="font-semibold text-sm">power2plant</span>
-        </Link>
+      <div className="max-w-5xl mx-auto px-4 h-14 flex items-center relative">
 
-        <nav className="hidden md:flex items-center gap-1 flex-1 flex-wrap">
-          {NAV_ITEMS.map(({ key, href }) => (
-            <Link key={key} href={href} className={navClass(isActive(pathname, href))}>
-              {t(key)}
-            </Link>
-          ))}
-          {isAdmin && (
-            <Link href="/admin" className={navClass(isActive(pathname, '/admin'))}>
-              {t('admin')}
-            </Link>
-          )}
-        </nav>
-
-        <div className="flex items-center gap-3 ml-auto md:ml-0 shrink-0">
-          <FeedbackButton />
-          <LocaleSwitcher />
-          <AuthPanel />
+        {/* Left: hamburger + dropdown */}
+        <div ref={menuRef} className="relative">
           <button
-            className="md:hidden p-1.5 rounded text-muted-foreground hover:text-foreground"
             onClick={() => setMenuOpen(o => !o)}
+            className="p-1.5 rounded text-muted-foreground hover:text-foreground transition-colors"
             aria-label="Toggle menu"
           >
             {menuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
+
+          {menuOpen && (
+            <div className="absolute left-0 top-full mt-1 z-50 w-56 bg-background border rounded-xl shadow-lg py-1 overflow-hidden">
+              {NAV_ITEMS.map(({ key, href }) => (
+                <Link
+                  key={key}
+                  href={href}
+                  onClick={() => setMenuOpen(false)}
+                  className={menuItemClass(isActive(pathname, href))}
+                >
+                  {t(key)}
+                </Link>
+              ))}
+
+              {isAdmin && (
+                <>
+                  <div className="border-t my-1" />
+                  <button
+                    onClick={() => setAdminOpen(o => !o)}
+                    className="flex w-full items-center justify-between px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors rounded"
+                  >
+                    {t('admin')}
+                    <ChevronDown size={14} className={`transition-transform ${adminOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  {adminOpen && ADMIN_ITEMS.map(({ href, label }) => (
+                    <Link
+                      key={href}
+                      href={href}
+                      onClick={() => setMenuOpen(false)}
+                      className={`pl-8 ${menuItemClass(isActive(pathname, href))}`}
+                    >
+                      {label}
+                    </Link>
+                  ))}
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Center: logo + name — absolute for true centering */}
+        <div className="absolute left-1/2 -translate-x-1/2 pointer-events-none">
+          <Link href="/" className="flex items-center gap-2 pointer-events-auto" onClick={() => setMenuOpen(false)}>
+            <Image src="/logo.png" alt="" width={32} height={32} />
+            <span className="font-semibold text-sm">power2plant</span>
+          </Link>
+        </div>
+
+        {/* Right: actions */}
+        <div className="flex items-center gap-3 ml-auto">
+          <FeedbackButton />
+          <LocaleSwitcher />
+          <AuthPanel />
         </div>
       </div>
-
-      {menuOpen && (
-        <nav className="md:hidden border-t px-4 py-3 flex flex-col gap-1 bg-background">
-          {NAV_ITEMS.map(({ key, href }) => (
-            <Link
-              key={key}
-              href={href}
-              onClick={() => setMenuOpen(false)}
-              className={navClass(isActive(pathname, href), true)}
-            >
-              {t(key)}
-            </Link>
-          ))}
-          {isAdmin && (
-            <Link
-              href="/admin"
-              onClick={() => setMenuOpen(false)}
-              className={navClass(isActive(pathname, '/admin'), true)}
-            >
-              {t('admin')}
-            </Link>
-          )}
-        </nav>
-      )}
     </header>
   )
 }

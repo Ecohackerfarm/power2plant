@@ -1,7 +1,6 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { useTranslations } from 'next-intl'
-import { Link } from '@/i18n/navigation'
 import { useGarden } from '@/hooks/use-garden'
 import { useInspirations } from '@/hooks/use-inspirations'
 import { ZoneDetector } from '@/components/zone-detector'
@@ -9,14 +8,13 @@ import { BedConfig } from '@/components/bed-config'
 import { RecommendationDisplay } from '@/components/recommendation-display'
 import { Button } from '@/components/ui/button'
 import { PlantSearch } from '@/components/plant-search'
-import { useSession } from '@/lib/auth-client'
 import type { RecommendResult } from '@/lib/recommend'
 
 type RecommendResponse = RecommendResult & { alternatives: RecommendResult[] }
 
 export default function PlanPage() {
   const t = useTranslations('Home')
-  const { data: session } = useSession()
+  const tNav = useTranslations('Nav')
   const { state, hydrated, setZone, addToWishlist, removeFromWishlist, clearWishlist, setBeds } = useGarden()
   const { inspirationIds, add: addInspiration, remove: removeInspiration } = useInspirations()
   const [result, setResult] = useState<RecommendResponse | null>(null)
@@ -73,14 +71,7 @@ export default function PlanPage() {
 
   return (
     <main className="max-w-3xl mx-auto px-4 py-8 space-y-6">
-      <div className="flex justify-center">
-        <Link
-          href="/garden"
-          className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground px-8 h-9 text-sm font-medium hover:bg-primary/80 transition-colors"
-        >
-          {t('myGarden')}
-        </Link>
-      </div>
+      <h1 className="text-2xl font-bold">{tNav('plan')}</h1>
 
       {lockedBeds && (
         <div className="flex items-center gap-3 rounded-md border border-blue-200 bg-blue-50 px-4 py-2 text-sm text-blue-800">
