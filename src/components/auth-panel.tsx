@@ -29,7 +29,7 @@ export function AuthPanel() {
   if (session) {
     return (
       <div className="flex items-center gap-3 text-sm">
-        <span className="text-muted-foreground">{session.user.email ?? ''}</span>
+        <span className="text-foreground">{session.user.name ?? session.user.email ?? ''}</span>
         <Button variant="outline" size="sm" onClick={() => signOut()}>
           {t('signOut')}
         </Button>
