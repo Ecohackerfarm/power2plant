@@ -24,6 +24,8 @@ services:
         BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
         BETTER_AUTH_URL: ${BETTER_AUTH_URL}
         NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
+        NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}
+        NEXT_PUBLIC_KOFI_URL: ${NEXT_PUBLIC_KOFI_URL}
     restart: unless-stopped
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgresql://power2plant:power2plant@db:5432/power2plant}
@@ -38,6 +40,8 @@ services:
       ADMIN_EMAILS: ${ADMIN_EMAILS}
       CRON_SECRET: ${CRON_SECRET}
       FEEDBACK_IP_SALT: ${FEEDBACK_IP_SALT}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
     healthcheck:
       test: ["CMD-SHELL", "wget -qO /dev/null http://127.0.0.1:3000/ || exit 1"]
       interval: 30s
@@ -79,6 +83,7 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgresql://power2plant:power2plant@db:5432/power2plant}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
       LLM_API_KEY: ${OPENROUTER_API_KEY}
+      TREFLE_TOKEN: ${TREFLE_TOKEN}
     volumes:
       - ${VOLUME_DATA_DIR:-./data}/research:/app/data/research
     profiles:
