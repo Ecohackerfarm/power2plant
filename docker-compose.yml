@@ -36,6 +36,8 @@ services:
       SMTP_PASS: ${SMTP_PASS}
       SMTP_FROM: ${SMTP_FROM}
       ADMIN_EMAILS: ${ADMIN_EMAILS}
+      CRON_SECRET: ${CRON_SECRET}
+      FEEDBACK_IP_SALT: ${FEEDBACK_IP_SALT}
     healthcheck:
       test: ["CMD-SHELL", "wget -qO /dev/null http://127.0.0.1:3000/ || exit 1"]
       interval: 30s
