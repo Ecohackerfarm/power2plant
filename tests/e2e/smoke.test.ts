@@ -3,14 +3,18 @@ import { test, expect } from '@playwright/test'
 test('landing page shows 3 use-case cards', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByRole('heading', { name: 'power2plant' })).toBeVisible()
-  await expect(page.getByRole('link', { name: /find companion plant/i })).toBeVisible()
-  await expect(page.getByRole('link', { name: /plan beds/i })).toBeVisible()
+  // Landing page has both hero CTA buttons and card links pointing to the same destinations.
+  // Use .first() to avoid strict-mode violations from duplicate role+name matches.
+  await expect(page.getByRole('link', { name: /find companion plant/i }).first()).toBeVisible()
+  await expect(page.getByRole('link', { name: /plan beds/i }).first()).toBeVisible()
   await expect(page.getByRole('link', { name: /my garden/i })).toBeVisible()
 })
 
 test('plan page has site header with nav', async ({ page }) => {
   await page.goto('/plan')
   await expect(page.getByRole('banner')).toBeVisible()
+  // Nav links are inside the hamburger dropdown; open it before asserting.
+  await page.getByRole('button', { name: /toggle menu/i }).click()
   await expect(page.getByRole('link', { name: /find companion plant/i })).toBeVisible()
 })
 

@@ -106,7 +106,9 @@ test.describe('admin user can access admin area', () => {
   // without SiteHeader, so checking the banner there would always fail.
   test('header shows Admin link', async ({ page }) => {
     await page.goto('/plan')
-    await expect(page.getByRole('banner').getByRole('link', { name: /admin/i })).toBeVisible()
+    // Admin entry is a collapsible button in the hamburger dropdown, not a direct link.
+    await page.getByRole('button', { name: /toggle menu/i }).click()
+    await expect(page.getByRole('button', { name: 'Admin' })).toBeVisible()
   })
 
   test('/admin shows card grid with all sub-sections', async ({ page }) => {
