@@ -376,5 +376,23 @@
     "error": "حدث خطأ ما. يرجى المحاولة مجدداً.",
     "drawAnnotation": "اسحب لتحديد منطقة المشكلة.",
     "screenshotCapturing": "جارٍ التقاط لقطة الشاشة…"
+  },
+  "Plan": {
+    "step": "الخطوة {n} من 4",
+    "back": "→ رجوع",
+    "continue": "متابعة ←",
+    "skip": "تخطي",
+    "getRecommendations": "احصل على توصيات",
+    "recompute": "إعادة الحساب",
+    "calculating": "جارٍ الحساب…",
+    "detectZoneFirst": "حدد منطقتك أولاً.",
+    "addAtLeast2": "أضف نباتَين على الأقل.",
+    "addingToGarden": "إضافة إلى حديقتك الحالية.",
+    "startFresh": "ابدأ من جديد"
+  },
+  "PaidFeatures": {
+    "title": "افتح المزيد بإضافة رصيد",
+    "moreBeds": "حتى 100 سرير (مجاناً: حتى 20)",
+    "topUp": "إضافة رصيد ←"
   }
 }

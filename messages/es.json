@@ -376,5 +376,23 @@
     "error": "Algo salió mal. Inténtalo de nuevo.",
     "drawAnnotation": "Arrastra para resaltar el área problemática.",
     "screenshotCapturing": "Capturando pantalla…"
+  },
+  "Plan": {
+    "step": "Paso {n} de 4",
+    "back": "← Atrás",
+    "continue": "Continuar →",
+    "skip": "Omitir",
+    "getRecommendations": "Obtener recomendaciones",
+    "recompute": "Recalcular",
+    "calculating": "Calculando…",
+    "detectZoneFirst": "Detecta tu zona primero.",
+    "addAtLeast2": "Añade al menos 2 plantas.",
+    "addingToGarden": "Añadiendo a tu jardín existente.",
+    "startFresh": "Empezar de nuevo"
+  },
+  "PaidFeatures": {
+    "title": "Desbloquea más con una recarga",
+    "moreBeds": "Hasta 100 bancales (gratuito: hasta 20)",
+    "topUp": "Recargar →"
   }
 }

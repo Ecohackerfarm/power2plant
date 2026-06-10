@@ -376,5 +376,23 @@
     "error": "Une erreur s'est produite. Réessayez.",
     "drawAnnotation": "Faites glisser pour surligner la zone problématique.",
     "screenshotCapturing": "Capture d'écran en cours…"
+  },
+  "Plan": {
+    "step": "Étape {n} sur 4",
+    "back": "← Retour",
+    "continue": "Continuer →",
+    "skip": "Passer",
+    "getRecommendations": "Obtenir des recommandations",
+    "recompute": "Recalculer",
+    "calculating": "Calcul en cours…",
+    "detectZoneFirst": "Détectez votre zone d'abord.",
+    "addAtLeast2": "Ajoutez au moins 2 plantes.",
+    "addingToGarden": "Ajout à votre jardin existant.",
+    "startFresh": "Recommencer"
+  },
+  "PaidFeatures": {
+    "title": "Débloquez plus avec une recharge",
+    "moreBeds": "Jusqu'à 100 carrés (gratuit : jusqu'à 20)",
+    "topUp": "Recharger →"
   }
 }

@@ -418,5 +418,23 @@
     "error": "Etwas ist schiefgelaufen. Bitte erneut versuchen.",
     "drawAnnotation": "Ziehe, um den Problembereich zu markieren.",
     "screenshotCapturing": "Screenshot wird erstellt…"
+  },
+  "Plan": {
+    "step": "Schritt {n} von 4",
+    "back": "← Zurück",
+    "continue": "Weiter →",
+    "skip": "Überspringen",
+    "getRecommendations": "Empfehlungen erhalten",
+    "recompute": "Neu berechnen",
+    "calculating": "Berechne…",
+    "detectZoneFirst": "Bitte zuerst Zone ermitteln.",
+    "addAtLeast2": "Mindestens 2 Pflanzen hinzufügen.",
+    "addingToGarden": "Zum bestehenden Garten hinzufügen.",
+    "startFresh": "Neu starten"
+  },
+  "PaidFeatures": {
+    "title": "Mehr mit Guthaben freischalten",
+    "moreBeds": "Bis zu 100 Beete (kostenlos: bis zu 20)",
+    "topUp": "Aufladen →"
   }
 }

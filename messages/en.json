@@ -418,5 +418,23 @@
     "error": "Something went wrong. Please try again.",
     "drawAnnotation": "Drag to highlight the problem area.",
     "screenshotCapturing": "Capturing screenshot…"
+  },
+  "Plan": {
+    "step": "Step {n} of 4",
+    "back": "← Back",
+    "continue": "Continue →",
+    "skip": "Skip",
+    "getRecommendations": "Get Recommendations",
+    "recompute": "Recalculate",
+    "calculating": "Calculating…",
+    "detectZoneFirst": "Detect your zone first.",
+    "addAtLeast2": "Add at least 2 plants.",
+    "addingToGarden": "Adding to your existing garden.",
+    "startFresh": "Start fresh"
+  },
+  "PaidFeatures": {
+    "title": "Unlock more with a top-up",
+    "moreBeds": "Up to 100 beds (free accounts: up to 20)",
+    "topUp": "Top up →"
   }
 }

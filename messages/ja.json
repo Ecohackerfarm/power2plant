@@ -376,5 +376,23 @@
     "error": "エラーが発生しました。もう一度お試しください。",
     "drawAnnotation": "問題のある領域をハイライトするにはドラッグしてください。",
     "screenshotCapturing": "スクリーンショットを撮影中…"
+  },
+  "Plan": {
+    "step": "ステップ {n} / 4",
+    "back": "← 戻る",
+    "continue": "続ける →",
+    "skip": "スキップ",
+    "getRecommendations": "おすすめを取得",
+    "recompute": "再計算",
+    "calculating": "計算中…",
+    "detectZoneFirst": "まずゾーンを検出してください。",
+    "addAtLeast2": "植物を2つ以上追加してください。",
+    "addingToGarden": "既存のガーデンに追加中。",
+    "startFresh": "最初からやり直す"
+  },
+  "PaidFeatures": {
+    "title": "チャージでさらに機能を解放",
+    "moreBeds": "最大100区画（無料: 最大20）",
+    "topUp": "チャージする →"
   }
 }
