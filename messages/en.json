@@ -50,9 +50,9 @@
     "gardenDesc": "See how the plants in your beds get along"
   },
   "Nav": {
-    "lookup": "Find companion plant",
-    "plan": "Plan beds",
-    "garden": "My garden",
+    "lookup": "Find Companions",
+    "plan": "Plan Beds",
+    "garden": "My Garden",
     "admin": "Admin"
   },
   "ZoneDetector": {
