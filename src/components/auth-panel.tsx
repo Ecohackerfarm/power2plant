@@ -76,7 +76,7 @@ export function AuthPanel() {
         {menuOpen && (
           <div className="absolute right-0 top-full mt-1 z-50 w-64 bg-background border rounded-xl shadow-lg overflow-hidden">
             <div className="px-4 py-3 border-b">
-              <p className="text-sm font-medium truncate">{session.user.name}</p>
+              <p className="text-sm font-medium text-foreground truncate">{session.user.name ?? session.user.email}</p>
               <p className="text-xs text-muted-foreground truncate">{session.user.email}</p>
             </div>
 
@@ -97,13 +97,13 @@ export function AuthPanel() {
               <Link
                 href="/account"
                 onClick={() => setMenuOpen(false)}
-                className="block px-4 py-2 text-sm hover:bg-muted transition-colors"
+                className="block px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
               >
                 Account settings
               </Link>
               <button
                 onClick={() => { setMenuOpen(false); signOut() }}
-                className="block w-full text-left px-4 py-2 text-sm hover:bg-muted transition-colors"
+                className="block w-full text-left px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
               >
                 {t('signOut')}
               </button>
