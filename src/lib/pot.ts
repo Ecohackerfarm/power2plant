@@ -33,6 +33,26 @@ export async function recordKofiDonation(
 }
 
 /**
+ * Records a Mollie donation into the pot.
+ * Idempotent via molliePaymentId unique constraint.
+ * Returns false if already recorded (duplicate webhook).
+ */
+export async function recordMollieDonation(
+  amountCents: number,
+  currency: string,
+  molliePaymentId: string,
+): Promise<boolean> {
+  try {
+    await prisma.potTransaction.create({
+      data: { type: 'DONATION', amountCents, currency, molliePaymentId },
+    })
+    return true
+  } catch {
+    return false // duplicate
+  }
+}
+
+/**
  * Checks if pot balance covers current price; if so, picks top-voted unfunded
  * ResearchRequest not already in queue, creates a ResearchQueue entry, records
  * a SPEND pot transaction, and marks the ResearchRequest as funded.

@@ -12,15 +12,70 @@ import { ThumbsUp } from 'lucide-react'
 
 type Crop = { id: string; name: string; botanicalName: string; commonNames: string[] }
 
+type QueueStatus = 'PENDING' | 'IN_PROGRESS' | 'DONE' | 'FAILED'
+
+type QueueStatusInfo = {
+  status: QueueStatus
+  position: number
+  estimatedMinutes: number | null
+  startedAt: string | null
+  completedAt: string | null
+}
+
 type ResearchRequestItem = {
   id: string
   cropAId: string
   cropBId: string | null
   voteCount: number
+  funded: boolean
   createdAt: string
   cropA: Crop
   cropB: Crop | null
   hasVoted: boolean
+  queueId: string | null
+  queueStatus: QueueStatus | null
+}
+
+function QueueBadge({ queueId, initialStatus }: { queueId: string; initialStatus: QueueStatus | null }) {
+  const [info, setInfo] = useState<QueueStatusInfo | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    async function poll() {
+      while (!cancelled) {
+        try {
+          const res = await fetch(`/api/research-queue/${queueId}/status`)
+          if (res.ok) {
+            const data = await res.json() as QueueStatusInfo
+            if (!cancelled) setInfo(data)
+            if (data.status === 'DONE' || data.status === 'FAILED') break
+          }
+        } catch { /* ignore */ }
+        await new Promise(r => setTimeout(r, 30_000))
+      }
+    }
+    // Only poll for non-terminal initial states
+    if (initialStatus !== 'DONE' && initialStatus !== 'FAILED') {
+      void poll()
+    }
+    return () => { cancelled = true }
+  }, [queueId, initialStatus])
+
+  const status = info?.status ?? initialStatus
+  if (!status) return null
+
+  if (status === 'DONE') return <Badge variant="secondary" className="text-green-600">Researched</Badge>
+  if (status === 'FAILED') return <Badge variant="destructive">Research failed</Badge>
+  if (status === 'IN_PROGRESS') return <Badge variant="secondary" className="animate-pulse">Researching…</Badge>
+
+  // PENDING
+  const pos = info?.position ?? 0
+  const eta = info?.estimatedMinutes
+  return (
+    <Badge variant="outline" className="tabular-nums text-xs">
+      #{pos + 1} in queue{eta ? ` · ~${eta}m` : ''}
+    </Badge>
+  )
 }
 
 function PairCard({
@@ -74,7 +129,10 @@ function PairCard({
             <ThumbsUp className="w-3 h-3 mr-1" />
             {item.voteCount}
           </Badge>
-          {item.cropB && (
+          {item.queueId && (
+            <QueueBadge queueId={item.queueId} initialStatus={item.queueStatus} />
+          )}
+          {item.cropB && !item.funded && (
             <ResearchFundButton
               cropAName={getDisplayName(item.cropA)}
               cropBName={getDisplayName(item.cropB)}

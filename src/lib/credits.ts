@@ -89,19 +89,24 @@ export async function spendCreditsForResearch(
   })
 }
 
-/** Records a confirmed Stripe top-up. Idempotent on stripePaymentIntentId. */
+/** Records a confirmed top-up (Stripe or Mollie). Idempotent on payment ID. */
 export async function applyTopUp(
   userId: string,
   amountCents: number,
-  stripePaymentIntentId: string,
+  stripePaymentIntentId?: string,
+  molliePaymentId?: string,
 ): Promise<void> {
-  // Guard against duplicate Stripe webhook deliveries
+  const idFilter = stripePaymentIntentId
+    ? { stripePaymentIntentId }
+    : { molliePaymentId: molliePaymentId! }
+
   const already = await prisma.creditTransaction.findFirst({
-    where: { stripePaymentIntentId },
+    where: idFilter,
     select: { id: true },
   })
   if (already) return
 
+  const source = stripePaymentIntentId ? 'Stripe' : 'Mollie'
   await prisma.$transaction([
     prisma.userCredit.upsert({
       where: { userId },
@@ -114,7 +119,8 @@ export async function applyTopUp(
         type: 'TOP_UP',
         amountCents,
         stripePaymentIntentId,
-        description: 'Stripe top-up',
+        molliePaymentId,
+        description: `${source} top-up`,
       },
     }),
   ])

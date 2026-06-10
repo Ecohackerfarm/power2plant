@@ -6,6 +6,15 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 const MIN_TOPUP_CENTS = 200
 
+function isEuTimezone(): boolean {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+    return tz.startsWith('Europe/')
+  } catch {
+    return false
+  }
+}
+
 const STRIPE_PK = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
 
 const stripePromise = STRIPE_PK ? loadStripe(STRIPE_PK) : null
@@ -122,6 +131,18 @@ function ModalContent({ onClose, onBalanceUpdate }: Props) {
     setLoadingIntent(true)
     setIntentError(null)
     try {
+      if (isEuTimezone()) {
+        // Mollie redirect flow for EU
+        const res = await fetch('/api/mollie/create-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amountCents: effectiveCents }),
+        })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error ?? 'Failed to create payment')
+        window.location.href = data.checkoutUrl
+        return
+      }
       const res = await fetch('/api/stripe/create-payment-intent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

@@ -466,6 +466,7 @@ model CreditTransaction {
   researchQueueId       String?
   researchQueue         ResearchQueue?        @relation(fields: [researchQueueId], references: [id])
   stripePaymentIntentId String?
+  molliePaymentId       String?
   createdAt             DateTime              @default(now())
 
   @@index([userId])
@@ -531,6 +532,7 @@ model PotTransaction {
   amountCents       Int
   currency          String             @default("EUR")
   kofiTransactionId String?            @unique
+  molliePaymentId   String?            @unique
   researchQueueId   String?
   researchQueue     ResearchQueue?     @relation(fields: [researchQueueId], references: [id])
   createdAt         DateTime           @default(now())
