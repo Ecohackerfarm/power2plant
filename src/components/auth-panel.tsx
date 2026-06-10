@@ -86,7 +86,6 @@ export function AuthPanel() {
               </span>
               <Button
                 size="sm"
-                variant="outline"
                 onClick={() => { setMenuOpen(false); setTopUpOpen(true) }}
               >
                 Top up

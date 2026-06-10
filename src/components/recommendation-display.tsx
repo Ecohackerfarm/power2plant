@@ -260,20 +260,20 @@ export function RecommendationDisplay({ result, alternatives = [], onAccepted }:
                         {bed.hints.length > 0 && (
                           <ul className="mt-2 space-y-1 border-t pt-2">
                             {bed.hints.map((hint, i) => (
-                              <li key={i}>
-                                <Link
-                                  href={`/plants/${hint.cropAId}/companions/${hint.cropBId}`}
-                                  className="flex items-center justify-between gap-2 text-xs rounded px-1 py-0.5 -mx-1 hover:bg-muted group"
-                                >
-                                  <span>
-                                    <span className="font-medium">{hint.pairLabel}</span>
-                                    <span className="text-muted-foreground ml-1">
-                                      —{hint.details && ` ${hint.details} ·`}{' '}
-                                      <ConfidenceBadge level={hint.confidenceLevel} />
-                                    </span>
+                              <li key={i} className="relative flex items-center justify-between gap-2 text-xs rounded px-1 py-0.5 -mx-1 hover:bg-muted group">
+                                <span>
+                                  <Link
+                                    href={`/plants/${hint.cropAId}/companions/${hint.cropBId}`}
+                                    className="font-medium hover:underline after:absolute after:inset-0 after:rounded"
+                                  >
+                                    {hint.pairLabel}
+                                  </Link>
+                                  <span className="relative z-10 text-muted-foreground ml-1">
+                                    —{hint.details && ` ${hint.details} ·`}{' '}
+                                    <ConfidenceBadge level={hint.confidenceLevel} />
                                   </span>
-                                  <ArrowRight className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-                                </Link>
+                                </span>
+                                <ArrowRight className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                               </li>
                             ))}
                           </ul>
