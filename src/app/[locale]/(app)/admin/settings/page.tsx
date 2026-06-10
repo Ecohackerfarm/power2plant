@@ -16,7 +16,11 @@ export default function AdminSettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [testingEmail, setTestingEmail] = useState(false)
-  const [testEmailResult, setTestEmailResult] = useState<'ok' | 'error' | null>(null)
+  const [testEmailResult, setTestEmailResult] = useState<{
+    ok: true; to: string[]
+  } | {
+    ok: false; error: string; missing?: string[]; set?: string[]; message?: string
+  } | null>(null)
   const [emailInput, setEmailInput] = useState('')
   const [dirty, setDirty] = useState(false)
 
@@ -50,7 +54,8 @@ export default function AdminSettingsPage() {
     setTestingEmail(true)
     setTestEmailResult(null)
     const res = await fetch('/api/admin/config/test-email', { method: 'POST' })
-    setTestEmailResult(res.ok ? 'ok' : 'error')
+    const data = await res.json().catch(() => ({}))
+    setTestEmailResult(res.ok ? { ok: true, to: data.to ?? [] } : { ok: false, ...data })
     setTestingEmail(false)
   }
 
@@ -155,12 +160,40 @@ export default function AdminSettingsPage() {
             <code key={v} className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono">{v}</code>
           ))}
         </div>
-        <div className="flex items-center gap-3">
+        <div className="space-y-2">
           <Button variant="outline" size="sm" disabled={testingEmail} onClick={sendTestEmail}>
             {testingEmail ? 'Sending…' : 'Send test email'}
           </Button>
-          {testEmailResult === 'ok' && <span className="text-sm text-green-600">Sent successfully.</span>}
-          {testEmailResult === 'error' && <span className="text-sm text-destructive">Failed — check SMTP env vars.</span>}
+          {testEmailResult?.ok === true && (
+            <p className="text-sm text-green-600">
+              Sent successfully to {testEmailResult.to.join(', ')}.
+            </p>
+          )}
+          {testEmailResult?.ok === false && (
+            <div className="text-sm text-destructive space-y-1">
+              {testEmailResult.error === 'missing_vars' && (
+                <>
+                  <p>Missing env vars: {testEmailResult.missing?.join(', ')}</p>
+                  <p className="text-muted-foreground">Set: {testEmailResult.set?.length ? testEmailResult.set.join(', ') : 'none'}</p>
+                </>
+              )}
+              {testEmailResult.error === 'no_recipients' && (
+                <>
+                  <p>ADMIN_EMAILS is not set — no recipients to send to.</p>
+                  <p className="text-muted-foreground">SMTP vars set: {testEmailResult.set?.join(', ')}</p>
+                </>
+              )}
+              {testEmailResult.error === 'send_failed' && (
+                <>
+                  <p>SMTP send failed: {testEmailResult.message}</p>
+                  <p className="text-muted-foreground">Vars set: {testEmailResult.set?.join(', ')}</p>
+                </>
+              )}
+              {!['missing_vars', 'no_recipients', 'send_failed'].includes(testEmailResult.error) && (
+                <p>Failed — {testEmailResult.error}</p>
+              )}
+            </div>
+          )}
         </div>
         <p className="text-xs text-muted-foreground">
           Test email sends to all addresses in <code className="font-mono">ADMIN_EMAILS</code>.
