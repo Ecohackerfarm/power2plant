@@ -192,6 +192,7 @@ function NoDataCard({ plant, t, onVoted }: {
 
 function RelationshipsInner() {
   const t = useTranslations('Relationships')
+  const tNav = useTranslations('Nav')
   const locale = useLocale()
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -254,8 +255,9 @@ function RelationshipsInner() {
 
   return (
     <main className="max-w-3xl mx-auto px-4 py-8 space-y-6">
-      <div className="flex items-start justify-end gap-4">
-        <Link href="/contribute" className="text-sm text-primary hover:underline shrink-0">
+      <div className="flex items-start justify-between gap-4">
+        <h1 className="text-3xl font-bold">{tNav('lookup')}</h1>
+        <Link href="/contribute" className="text-sm text-primary hover:underline shrink-0 mt-2">
           {t('contributeObservation')}
         </Link>
       </div>
