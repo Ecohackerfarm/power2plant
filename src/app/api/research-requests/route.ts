@@ -21,17 +21,36 @@ export async function GET() {
     },
   })
 
+  // Attach queue entry info for funded pairs
+  const fundedPairs = requests.filter(r => r.funded && r.cropBId)
+  const queueEntries = fundedPairs.length > 0
+    ? await prisma.researchQueue.findMany({
+        where: {
+          OR: fundedPairs.map(r => ({ cropAId: r.cropAId, cropBId: r.cropBId! })),
+        },
+        select: { id: true, status: true, cropAId: true, cropBId: true },
+      })
+    : []
+
   return NextResponse.json(
-    requests.map(r => ({
-      id: r.id,
-      cropAId: r.cropAId,
-      cropBId: r.cropBId,
-      voteCount: r.voteCount,
-      createdAt: r.createdAt,
-      cropA: r.cropA,
-      cropB: r.cropB,
-      hasVoted: session ? (r.votes?.length ?? 0) > 0 : false,
-    }))
+    requests.map(r => {
+      const queueEntry = r.cropBId
+        ? queueEntries.find(q => q.cropAId === r.cropAId && q.cropBId === r.cropBId)
+        : undefined
+      return {
+        id: r.id,
+        cropAId: r.cropAId,
+        cropBId: r.cropBId,
+        voteCount: r.voteCount,
+        funded: r.funded,
+        createdAt: r.createdAt,
+        cropA: r.cropA,
+        cropB: r.cropB,
+        hasVoted: session ? (r.votes?.length ?? 0) > 0 : false,
+        queueId: queueEntry?.id ?? null,
+        queueStatus: queueEntry?.status ?? null,
+      }
+    })
   )
 }
 
