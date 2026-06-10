@@ -104,6 +104,7 @@
     "acceptSaving": "Wird gespeichert…",
     "planSaved": "Plan im Garten gespeichert!",
     "bedSaved": "\"{name}\" im Garten gespeichert!",
+    "viewGarden": "Zum Garten →",
     "noBeds": "Keine Beete mit Pflanzen zum Speichern.",
     "gardenFull": "Garten voll — max. 20 Beete.",
     "overflow": "Überlauf — kein Beetplatz ({count} Pflanzen)",

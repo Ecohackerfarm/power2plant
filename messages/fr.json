@@ -102,6 +102,7 @@
     "acceptSaving": "Sauvegarde…",
     "planSaved": "Plan sauvegardé dans le jardin !",
     "bedSaved": "« {name} » sauvegardée dans le jardin !",
+    "viewGarden": "Voir le jardin →",
     "noBeds": "Aucune planche avec des plantes à sauvegarder.",
     "gardenFull": "Jardin plein — maximum 20 planches.",
     "overflow": "Débordement — pas de place dans les planches ({count} {count, plural, one {plante} other {plantes}})",

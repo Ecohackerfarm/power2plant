@@ -102,6 +102,7 @@
     "acceptSaving": "保存中…",
     "planSaved": "方案已保存到花园！",
     "bedSaved": "「{name}」已保存到花园！",
+    "viewGarden": "查看花园 →",
     "noBeds": "没有需要保存的花圃。",
     "gardenFull": "花园已满——最多 20 个花圃。",
     "overflow": "超出容量——没有足够床位（{count} 种植物）",

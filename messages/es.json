@@ -102,6 +102,7 @@
     "acceptSaving": "Guardando…",
     "planSaved": "¡Plan guardado en el huerto!",
     "bedSaved": "¡\"{name}\" guardado en el huerto!",
+    "viewGarden": "Ver jardín →",
     "noBeds": "No hay bancales con plantas que guardar.",
     "gardenFull": "Huerto lleno — máximo 20 bancales.",
     "overflow": "Desbordamiento — sin espacio en bancales ({count} {count, plural, one {planta} other {plantas}})",
