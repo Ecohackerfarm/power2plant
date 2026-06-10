@@ -6,7 +6,6 @@ import { useTranslations } from 'next-intl'
 import { LocaleSwitcher } from '@/components/locale-switcher'
 import { AuthPanel } from '@/components/auth-panel'
 import { FeedbackButton } from '@/components/feedback-button'
-import { UserBalance } from '@/components/user-balance'
 import { Menu, X } from 'lucide-react'
 
 const NAV_ITEMS = [
@@ -56,7 +55,6 @@ export function SiteHeader({ isAdmin = false }: { isAdmin?: boolean }) {
         </nav>
 
         <div className="flex items-center gap-3 ml-auto md:ml-0 shrink-0">
-          <UserBalance />
           <FeedbackButton />
           <LocaleSwitcher />
           <AuthPanel />
