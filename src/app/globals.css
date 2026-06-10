@@ -5,8 +5,8 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-    --font-heading: var(--font-sans);
-    --font-sans: var(--font-sans);
+    --font-heading: var(--font-fraunces);
+    --font-sans: var(--font-dm-sans);
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -48,94 +48,105 @@
 }
 
 :root {
-  /* Base */
-  --background: oklch(0.97 0.01 95);            /* warm off-white */
-  --foreground: oklch(0.32 0.02 145);           /* dark desaturated green-gray */
+  /* Design palette tokens */
+  --color-deep-moss: #2D4A3E;
+  --color-sage: #7BAE7F;
+  --color-warm-cream: #F7F3E8;
+  --color-soil: #C96A3A;
+  --color-sky-mist: #D6EAF0;
+  --color-linen: #EDE8DC;
 
-  --card: oklch(0.985 0.005 95);
-  --card-foreground: oklch(0.32 0.02 145);
+  /* Semantic mapping */
+  --background: var(--color-warm-cream);
+  --foreground: var(--color-deep-moss);
 
-  --popover: oklch(0.985 0.005 95);
-  --popover-foreground: oklch(0.32 0.02 145);
+  --card: #FFFFFF;
+  --card-foreground: var(--color-deep-moss);
 
-  /* Primary (main sage green) */
-  --primary: oklch(0.55 0.08 150);              /* muted sage */
-  --primary-foreground: oklch(0.98 0.01 95);
+  --popover: #FFFFFF;
+  --popover-foreground: var(--color-deep-moss);
 
-  /* Secondary (lighter botanical tint) */
-  --secondary: oklch(0.9 0.03 140);
-  --secondary-foreground: oklch(0.35 0.02 145);
+  /* Primary = Soil (CTA buttons) */
+  --primary: var(--color-soil);
+  --primary-foreground: #FFFFFF;
 
-  /* Muted surfaces */
-  --muted: oklch(0.93 0.02 95);
-  --muted-foreground: oklch(0.55 0.015 120);
+  /* Secondary = Sky Mist (hover backgrounds, quiet surfaces) */
+  --secondary: var(--color-sky-mist);
+  --secondary-foreground: var(--color-deep-moss);
 
-  /* Accent (slightly richer green for highlights) */
-  --accent: oklch(0.65 0.1 145);
-  --accent-foreground: oklch(0.98 0.01 95);
+  /* Muted = Linen */
+  --muted: var(--color-linen);
+  --muted-foreground: #5A6E60;
+
+  /* Accent = Sage (interactive highlights, icons) */
+  --accent: var(--color-sage);
+  --accent-foreground: #FFFFFF;
 
   /* Borders / inputs */
-  --border: oklch(0.88 0.015 95);
-  --input: oklch(0.9 0.015 95);
-  --ring: oklch(0.6 0.08 150);
+  --border: var(--color-linen);
+  --input: var(--color-linen);
+  --ring: var(--color-sage);
 
-  /* Destructive (kept neutral, not part of theme) */
-  --destructive: oklch(0.58 0.22 25);
+  /* Destructive */
+  --destructive: #D64A2A;
 
-  /* Charts (derived from greens) */
-  --chart-1: oklch(0.75 0.08 140);
-  --chart-2: oklch(0.65 0.09 145);
-  --chart-3: oklch(0.55 0.08 150);
-  --chart-4: oklch(0.45 0.07 150);
-  --chart-5: oklch(0.35 0.05 150);
+  /* Charts */
+  --chart-1: #7BAE7F;
+  --chart-2: #5A9B5E;
+  --chart-3: #2D4A3E;
+  --chart-4: #C96A3A;
+  --chart-5: #D6EAF0;
 
-  /* Sidebar */
-  --sidebar: oklch(0.96 0.01 95);
-  --sidebar-foreground: oklch(0.32 0.02 145);
-  --sidebar-primary: oklch(0.55 0.08 150);
-  --sidebar-primary-foreground: oklch(0.98 0.01 95);
-  --sidebar-accent: oklch(0.9 0.03 140);
-  --sidebar-accent-foreground: oklch(0.35 0.02 145);
-  --sidebar-border: oklch(0.88 0.015 95);
-  --sidebar-ring: oklch(0.6 0.08 150);
+  /* Sidebar (Deep Moss) */
+  --sidebar: var(--color-deep-moss);
+  --sidebar-foreground: var(--color-warm-cream);
+  --sidebar-primary: var(--color-sage);
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #3D6455;
+  --sidebar-accent-foreground: var(--color-warm-cream);
+  --sidebar-border: #3D6455;
+  --sidebar-ring: var(--color-sage);
+
+  /* Border radius — cards 16px, rest scaled from base 8px */
+  --radius: 0.5rem;
 }
 
 .dark {
-  --background: oklch(0.22 0.02 150);           /* deep green-gray */
-  --foreground: oklch(0.92 0.01 95);
+  --background: #1C2E28;
+  --foreground: #F7F3E8;
 
-  --card: oklch(0.26 0.02 150);
-  --card-foreground: oklch(0.92 0.01 95);
+  --card: #243B34;
+  --card-foreground: #F7F3E8;
 
-  --popover: oklch(0.26 0.02 150);
-  --popover-foreground: oklch(0.92 0.01 95);
+  --popover: #243B34;
+  --popover-foreground: #F7F3E8;
 
-  --primary: oklch(0.7 0.1 145);                /* lifted sage */
-  --primary-foreground: oklch(0.22 0.02 150);
+  --primary: #D4784A;
+  --primary-foreground: #FFFFFF;
 
-  --secondary: oklch(0.32 0.02 150);
-  --secondary-foreground: oklch(0.9 0.01 95);
+  --secondary: #2D4A3E;
+  --secondary-foreground: #F7F3E8;
 
-  --muted: oklch(0.3 0.02 150);
-  --muted-foreground: oklch(0.7 0.015 120);
+  --muted: #2D4A3E;
+  --muted-foreground: #9EC4A0;
 
-  --accent: oklch(0.75 0.11 145);
-  --accent-foreground: oklch(0.22 0.02 150);
+  --accent: #7BAE7F;
+  --accent-foreground: #1C2E28;
 
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.7 0.1 145);
+  --ring: #7BAE7F;
 
-  --destructive: oklch(0.7 0.2 25);
+  --destructive: #E05A3A;
 
-  --sidebar: oklch(0.24 0.02 150);
-  --sidebar-foreground: oklch(0.92 0.01 95);
-  --sidebar-primary: oklch(0.7 0.1 145);
-  --sidebar-primary-foreground: oklch(0.22 0.02 150);
-  --sidebar-accent: oklch(0.32 0.02 150);
-  --sidebar-accent-foreground: oklch(0.92 0.01 95);
+  --sidebar: #1C2E28;
+  --sidebar-foreground: #F7F3E8;
+  --sidebar-primary: #7BAE7F;
+  --sidebar-primary-foreground: #1C2E28;
+  --sidebar-accent: #2D4A3E;
+  --sidebar-accent-foreground: #F7F3E8;
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.7 0.1 145);
+  --sidebar-ring: #7BAE7F;
 }
 
 /* Plan-switching slide animations for RecommendationDisplay */
@@ -157,13 +168,23 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
-    }
+  }
   body {
     @apply bg-background text-foreground;
-    }
+    font-family: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+  }
   html {
     @apply font-sans;
-    }
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-fraunces), ui-serif, Georgia, serif;
+    line-height: 1.2;
+  }
+  h1 { font-size: 2rem; font-weight: 700; }
+  h2 { font-size: 1.5rem; font-weight: 300; }
+  h3 { font-size: 1.125rem; font-weight: 600; font-family: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif; }
 }
 
 /* Feedback element selection mode */
