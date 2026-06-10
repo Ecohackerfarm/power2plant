@@ -102,6 +102,7 @@
     "acceptSaving": "Salvando…",
     "planSaved": "Plano salvo na horta!",
     "bedSaved": "\"{name}\" salvo na horta!",
+    "viewGarden": "Ver horta →",
     "noBeds": "Nenhum canteiro com plantas para salvar.",
     "gardenFull": "Horta cheia — máximo 20 canteiros.",
     "overflow": "Excesso — sem espaço nos canteiros ({count} {count, plural, one {planta} other {plantas}})",

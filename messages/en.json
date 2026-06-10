@@ -104,6 +104,7 @@
     "acceptSaving": "Saving…",
     "planSaved": "Plan saved to garden!",
     "bedSaved": "\"{name}\" saved to garden!",
+    "viewGarden": "View garden →",
     "noBeds": "No beds with plants to save.",
     "gardenFull": "Garden full — max 20 beds.",
     "overflow": "Overflow — no bed space ({count} plants)",

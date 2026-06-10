@@ -102,6 +102,7 @@
     "acceptSaving": "保存中…",
     "planSaved": "プランをガーデンに保存しました！",
     "bedSaved": "「{name}」をガーデンに保存しました！",
+    "viewGarden": "ガーデンを見る →",
     "noBeds": "保存する植物のある花壇がありません。",
     "gardenFull": "ガーデンが満杯です——最大20花壇。",
     "overflow": "オーバーフロー——花壇スペースが足りません（{count}種）",
