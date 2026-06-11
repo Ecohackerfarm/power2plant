@@ -153,9 +153,9 @@ model RelationshipClaim {
 model ReviewCheck {
   id        String              @id @default(cuid())
   sourceId  String?
-  source    RelationshipSource? @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  source    RelationshipSource? @relation(fields: [sourceId], references: [id], onDelete: SetNull)
   claimId   String?
-  claim     RelationshipClaim?  @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  claim     RelationshipClaim?  @relation(fields: [claimId], references: [id], onDelete: SetNull)
   checkedBy String
   checkedAt DateTime            @default(now())
   correct   Boolean

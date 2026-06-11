@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma'
 import { isTrustedResearcher, getSessionUser } from '@/lib/admin-auth'
 import { RelationshipType, Direction, RelationshipReasonType } from '@prisma/client'
 import { validateReasons } from '@/lib/research/helpers'
+import { processReview, type ReviewSubmission } from '@/lib/research/review'
 
 /** Collapse a submitted (possibly legacy) relationship type to a polarity. */
 function toPolarity(t: string): RelationshipType {
@@ -45,6 +46,22 @@ export async function POST(
   }
   if (task.status !== 'CLAIMED') {
     return NextResponse.json({ error: 'Task is not in CLAIMED state' }, { status: 409 })
+  }
+
+  // REVIEW tasks settle a prior submission (apply verdicts + recompute) rather
+  // than importing new data. Four-eyes was enforced at claim time.
+  if (task.type === 'REVIEW') {
+    let reviewBody: ReviewSubmission
+    try {
+      reviewBody = await req.json()
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
+    }
+    if (reviewBody.decision !== 'APPROVE' && reviewBody.decision !== 'REJECT') {
+      return NextResponse.json({ error: 'decision must be APPROVE or REJECT' }, { status: 422 })
+    }
+    await prisma.$transaction((tx) => processReview(tx, task, reviewBody, user.id))
+    return NextResponse.json({ ok: true })
   }
 
   let body: SubmitResult
