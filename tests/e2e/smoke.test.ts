@@ -61,12 +61,8 @@ test('recommendation flow: zone + 2 plants → beds render', async ({ page, requ
     },
     { ids: [cropA.id, cropB.id], zone: minTempC },
   )
-  await page.goto('/plan')
-
-  // Button should be enabled now
-  const btn = page.getByRole('button', { name: /get recommendations/i })
-  await expect(btn).toBeEnabled()
-  await btn.click()
+  // Navigate directly to results with compute flag — wizard skips to compute when state pre-seeded
+  await page.goto('/plan/results?compute=1')
 
   // At least one bed card should render
   await expect(page.getByText(/bed 1/i)).toBeVisible({ timeout: 10000 })
@@ -116,7 +112,7 @@ test('map picker: stays visible during zone fetch, hides after success', async (
 })
 
 test('plan page shows plant search', async ({ page }) => {
-  await page.goto('/plan')
+  await page.goto('/plan/plants')
   await expect(page.getByRole('textbox', { name: /search/i })).toBeVisible()
 })
 
