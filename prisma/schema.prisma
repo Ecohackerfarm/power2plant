@@ -104,7 +104,7 @@ model CropRelationship {
   cropA      Crop                 @relation("CropA", fields: [cropAId], references: [id], onDelete: Cascade)
   cropB      Crop                 @relation("CropB", fields: [cropBId], references: [id], onDelete: Cascade)
   sources    RelationshipSource[]
-  reasons    RelationshipReason[]
+  claims     RelationshipClaim[]
   externalResearchTasks ExternalResearchTask[]
   createdAt  DateTime             @default(now())
   updatedAt  DateTime             @updatedAt
@@ -118,8 +118,6 @@ model RelationshipSource {
   source          SourceType
   sourceType      SourceClassification?
   confidence      ConfidenceLevel       @default(ANECDOTAL)
-  position        RelationshipType?
-  sourceDirection Direction?
   url             String?
   notes           String?
   agentModel      String?
@@ -128,36 +126,36 @@ model RelationshipSource {
   relationship    CropRelationship      @relation(fields: [relationshipId], references: [id], onDelete: Cascade)
   userId          String?
   rejectedAt      DateTime?
-  checks          SourceCheck[]
-  reasons         RelationshipReason[]
+  checks          ReviewCheck[]
+  claims          RelationshipClaim[]
 
   @@index([relationshipId])
   @@index([userId])
 }
 
-model RelationshipReason {
-  id                   String              @id @default(cuid())
-  type                 RelationshipReasonType
-  explanation          String
-  relationshipType     RelationshipType?
-  direction            Direction?
-  rejectedAt           DateTime?
-  cropRelationshipId   String?
-  cropRelationship     CropRelationship?   @relation(fields: [cropRelationshipId], references: [id], onDelete: Cascade)
-  sourceId             String?
-  source               RelationshipSource? @relation(fields: [sourceId], references: [id], onDelete: Cascade)
-  checks               SourceCheck[]
+model RelationshipClaim {
+  id               String              @id @default(cuid())
+  mechanism        RelationshipReasonType
+  explanation      String
+  relationshipType RelationshipType
+  direction        Direction           @default(UNKNOWN)
+  rejectedAt       DateTime?
+  relationshipId   String
+  relationship     CropRelationship    @relation(fields: [relationshipId], references: [id], onDelete: Cascade)
+  sourceId         String
+  source           RelationshipSource  @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  checks           ReviewCheck[]
 
-  @@index([cropRelationshipId])
+  @@index([relationshipId])
   @@index([sourceId])
 }
 
-model SourceCheck {
+model ReviewCheck {
   id        String              @id @default(cuid())
   sourceId  String?
   source    RelationshipSource? @relation(fields: [sourceId], references: [id], onDelete: Cascade)
   claimId   String?
-  claim     RelationshipReason? @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  claim     RelationshipClaim?  @relation(fields: [claimId], references: [id], onDelete: Cascade)
   checkedBy String
   checkedAt DateTime            @default(now())
   correct   Boolean
@@ -216,10 +214,6 @@ enum RelationshipType {
   COMPANION
   AVOID
   NEUTRAL
-  ATTRACTS
-  REPELS
-  NURSE
-  TRAP_CROP
   UNCERTAIN
 }
 
