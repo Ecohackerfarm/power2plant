@@ -45,6 +45,25 @@ WHERE NOT EXISTS (
   WHERE rr."sourceId" = s."id" AND rr."relationshipType" IS NOT NULL
 );
 
+-- 2b. Pre-existing relationship-level reasons (sourceId NULL) carried from older
+--     data (e.g. the scalar CropRelationship.reason migrated by #277) have no
+--     provenance. The new model requires source-backed claims, so attach each to
+--     a per-relationship legacy source, preserving the mechanism + explanation.
+INSERT INTO "RelationshipSource" ("id", "source", "confidence", "relationshipId", "notes", "fetchedAt")
+SELECT DISTINCT 'legacy-' || rr."cropRelationshipId", 'MANUAL'::"SourceType",
+       'ANECDOTAL'::"ConfidenceLevel", rr."cropRelationshipId",
+       'Legacy relationship-level annotation', CURRENT_TIMESTAMP
+FROM "RelationshipReason" rr
+WHERE rr."sourceId" IS NULL AND rr."cropRelationshipId" IS NOT NULL
+ON CONFLICT ("id") DO NOTHING;
+
+UPDATE "RelationshipReason" rr
+SET "sourceId" = 'legacy-' || rr."cropRelationshipId",
+    "relationshipType" = COALESCE(rr."relationshipType", cr."type"),
+    "direction" = COALESCE(rr."direction", cr."direction", 'UNKNOWN'::"Direction")
+FROM "CropRelationship" cr
+WHERE rr."sourceId" IS NULL AND rr."cropRelationshipId" IS NOT NULL AND cr."id" = rr."cropRelationshipId";
+
 -- 3. Recompute CropRelationship.mechanisms = distinct set of non-rejected claims'
 --    mechanism. Reset first so the recompute is fully idempotent.
 UPDATE "CropRelationship" SET "mechanisms" = ARRAY[]::"RelationshipReasonType"[];
