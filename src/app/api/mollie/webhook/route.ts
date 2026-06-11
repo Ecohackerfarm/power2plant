@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getMollieClient } from '@/lib/mollie'
 import { applyTopUp } from '@/lib/credits'
+import { triggerInvoice } from '@/lib/invoiceService'
 import { recordMollieDonation, tryFundFromPot } from '@/lib/pot'
 
 export async function POST(req: Request) {
@@ -29,6 +30,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'invalid metadata' }, { status: 400 })
     }
     await applyTopUp(userId, amountCents, undefined, id)
+    await triggerInvoice({
+      userId,
+      paymentId: id,
+      paymentProvider: 'mollie',
+      paidAt: payment.paidAt ?? new Date().toISOString(),
+      amountCents,
+    })
   } else if (type === 'donation') {
     if (amountCents <= 0) {
       return NextResponse.json({ error: 'invalid metadata' }, { status: 400 })
