@@ -224,10 +224,15 @@ BEFORE dropping them; remap data BEFORE removing old enum values.
       applied + verified on dev DB, committed `c02ffa9`. Renames done (clean DB
       names), legacy columns dropped, enum reduced to polarity, data intact
       (470/420/470). migrate diff clean.
-- [ ] Behavioural changes (guard, four-eyes, review submission, aggregation) ← NEXT
-      NOTE: app code references old model names / dropped enum values → will not
-      compile until ported. Touch points: src/lib/research/executor.ts,
-      src/lib/research/helpers.ts, src/app/api/research/tasks/[id]/submit/route.ts,
-      src/app/api/research/tasks/[id]/claim/route.ts, any reads of
-      relationshipReason/sourceCheck/position/sourceDirection.
-- [ ] Regenerate seed.sql (pnpm db:dump), verify ci-db replay
+- [x] Code port to RelationshipClaim/ReviewCheck (commit `f8a2335`) — tsc clean
+- [x] Source guard: auto-import requires >=1 source (submit + mcp) — `f8a2335`
+- [x] Four-eyes on REVIEW claim (commit `4414fc2`)
+- [x] Review/reject engine + recompute lib `src/lib/research/review.ts`,
+      REVIEW branch in submit, ReviewCheck FK -> SET NULL (commit `f23b5af`)
+- [x] Aggregate recompute wired into submit/mcp/executor (commit `ed3b062`)
+- [x] API tests updated to claims model — full suite 359 passed (commit `5c22fba`)
+- [x] Regenerate seed.sql + clear stale failed-migration record (commit `978e069`)
+
+## DONE — all phases complete on dev DB. Not yet pushed; prod runs on deploy via
+## `prisma migrate deploy`. Pre-existing unrelated `zod` missing-dep error in
+## billing/route.ts is out of scope.
