@@ -24,6 +24,10 @@ ADD COLUMN     "agentModel" TEXT;
 -- AlterTable
 ALTER TABLE "user" ADD COLUMN     "trustedResearcher" BOOLEAN NOT NULL DEFAULT false;
 
+-- Rename the old scalar enum out of the way so the new table can take its name
+-- and the backfill can cast across enums (both share the same labels).
+ALTER TYPE "RelationshipReason" RENAME TO "RelationshipReason_old";
+
 -- CreateTable: RelationshipReason (replaces scalar reason column on CropRelationship)
 CREATE TABLE "RelationshipReason" (
     "id" TEXT NOT NULL,
@@ -43,7 +47,7 @@ CREATE TABLE "RelationshipReason" (
 INSERT INTO "RelationshipReason" ("id", "type", "explanation", "cropRelationshipId")
 SELECT
     gen_random_uuid()::text,
-    cr.reason,
+    cr.reason::text::"RelationshipReasonType",
     COALESCE(cr.notes, cr.reason::text),
     cr.id
 FROM "CropRelationship" cr
@@ -53,8 +57,8 @@ WHERE cr.reason IS NOT NULL;
 ALTER TABLE "CropRelationship" DROP COLUMN "reason",
 DROP COLUMN "reasons";
 
--- DropEnum (old scalar)
-DROP TYPE "RelationshipReason";
+-- DropEnum (old scalar, renamed above)
+DROP TYPE "RelationshipReason_old";
 
 -- CreateTable: ExternalResearchTask
 CREATE TABLE "ExternalResearchTask" (
