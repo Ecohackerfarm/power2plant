@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import { auth } from '@/lib/auth'
 import { MIN_TOPUP_CENTS } from '@/lib/credits'
-import { mollieClient, centsToCurrencyString } from '@/lib/mollie'
+import { getMollieClient, centsToCurrencyString } from '@/lib/mollie'
 
 export async function POST(req: Request) {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -30,12 +30,12 @@ export async function POST(req: Request) {
   const base = process.env.MOLLIE_REDIRECT_URL_BASE
   if (!base) return NextResponse.json({ error: 'payment provider not configured' }, { status: 503 })
 
-  const payment = await mollieClient.payments.create({
+  const payment = await getMollieClient().payments.create({
     amount: { currency: 'EUR', value: centsToCurrencyString(amountCents) },
     description: 'Power2Plant credit top-up',
     redirectUrl: `${base}/credits?mollie=success`,
     webhookUrl: `${base}/api/mollie/webhook`,
-    metadata: { userId: session.user.id, type: 'topup', amountCents },
+    metadata: { userId: session.user.id, type: 'topup' },
   })
 
   return NextResponse.json({ checkoutUrl: payment._links.checkout?.href })

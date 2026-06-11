@@ -377,5 +377,23 @@
     "error": "Algo deu errado. Tente novamente.",
     "drawAnnotation": "Arraste para destacar a área problemática.",
     "screenshotCapturing": "Capturando tela…"
+  },
+  "Plan": {
+    "step": "Passo {n} de 4",
+    "back": "← Voltar",
+    "continue": "Continuar →",
+    "skip": "Pular",
+    "getRecommendations": "Obter recomendações",
+    "recompute": "Recalcular",
+    "calculating": "Calculando…",
+    "detectZoneFirst": "Detecte sua zona primeiro.",
+    "addAtLeast2": "Adicione pelo menos 2 plantas.",
+    "addingToGarden": "Adicionando à sua horta existente.",
+    "startFresh": "Começar do zero"
+  },
+  "PaidFeatures": {
+    "title": "Desbloqueie mais com recarga",
+    "moreBeds": "Até 100 canteiros (gratuito: até 20)",
+    "topUp": "Recarregar →"
   }
 }

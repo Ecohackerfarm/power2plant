@@ -274,8 +274,24 @@ model user {
   badges                UserBadge[]
   feedbackVotes         FeedbackVote[]
   feedbackComments      FeedbackComment[]
+  billingInfo           UserBillingInfo?
   externalResearchTasks ExternalResearchTask[]  @relation("TaskClaimer")
   apiTokens             UserApiToken[]
+}
+
+model UserBillingInfo {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        user     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyName String?
+  street      String
+  city        String
+  zip         String
+  country     String
+  vatId       String?
+  updatedAt   DateTime @updatedAt
+
+  @@map("user_billing_info")
 }
 
 model GardenShare {

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
-import { mollieClient } from '@/lib/mollie'
+import { getMollieClient } from '@/lib/mollie'
 import { applyTopUp } from '@/lib/credits'
+import { triggerInvoice } from '@/lib/invoiceService'
 import { recordMollieDonation, tryFundFromPot } from '@/lib/pot'
 
 export async function POST(req: Request) {
@@ -10,7 +11,7 @@ export async function POST(req: Request) {
   if (!id) return NextResponse.json({ error: 'missing id' }, { status: 400 })
 
   // Verify by fetching from Mollie — this is Mollie's recommended auth approach
-  const payment = await mollieClient.payments.get(id)
+  const payment = await getMollieClient().payments.get(id)
   if (payment.status !== 'paid') {
     return NextResponse.json({ ok: true }) // not paid yet, ignore
   }
@@ -18,16 +19,25 @@ export async function POST(req: Request) {
   const meta = payment.metadata as Record<string, unknown> | null
   const type = meta?.type
 
+  // Derive amount from the actual charged amount, not metadata, to prevent
+  // attackers from inflating credits by crafting payments with manipulated metadata.
+  const amountCents = Math.round(parseFloat(payment.amount.value) * 100)
+  const currency = (payment.amount.currency as string) ?? 'EUR'
+
   if (type === 'topup') {
     const userId = meta?.userId
-    const amountCents = Number(meta?.amountCents ?? 0)
     if (typeof userId !== 'string' || !userId || amountCents <= 0) {
       return NextResponse.json({ error: 'invalid metadata' }, { status: 400 })
     }
     await applyTopUp(userId, amountCents, undefined, id)
+    await triggerInvoice({
+      userId,
+      paymentId: id,
+      paymentProvider: 'mollie',
+      paidAt: payment.paidAt ?? new Date().toISOString(),
+      amountCents,
+    })
   } else if (type === 'donation') {
-    const amountCents = Number(meta?.amountCents ?? 0)
-    const currency = (payment.amount.currency as string) ?? 'EUR'
     if (amountCents <= 0) {
       return NextResponse.json({ error: 'invalid metadata' }, { status: 400 })
     }

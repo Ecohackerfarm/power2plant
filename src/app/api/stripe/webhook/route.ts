@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { applyTopUp } from '@/lib/credits'
+import { triggerInvoice } from '@/lib/invoiceService'
 import Stripe from 'stripe'
 
 export async function POST(req: Request) {
@@ -27,6 +28,13 @@ export async function POST(req: Request) {
     const userId = intent.metadata?.userId
     if (userId && intent.amount > 0) {
       await applyTopUp(userId, intent.amount, intent.id)
+      await triggerInvoice({
+        userId,
+        paymentId: intent.id,
+        paymentProvider: 'stripe',
+        paidAt: new Date(intent.created * 1000).toISOString(),
+        amountCents: intent.amount,
+      })
     }
   }
 
