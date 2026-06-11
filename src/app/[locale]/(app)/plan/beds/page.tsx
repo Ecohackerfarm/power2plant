@@ -8,9 +8,9 @@ import { BedConfig } from '@/components/bed-config'
 import { PaidFeatures } from '@/components/paid-features'
 import { Button } from '@/components/ui/button'
 
-export const FREE_BED_MAX = 20
-export const PAID_BED_MAX = 100
-export const PLANTS_PER_BED_MAX = 5
+const FREE_BED_MAX = 20
+const PAID_BED_MAX = 100
+const PLANTS_PER_BED_MAX = 5
 
 export default function PlanBedsPage() {
   const t = useTranslations('Plan')
