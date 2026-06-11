@@ -115,10 +115,8 @@ async function upsertRelationship(importer: Importer, raw: RawRelationship, stat
       cropBId,
       type: raw.type,
       direction: raw.direction,
-      reason: raw.reason ?? null,
       confidence: 0.5,
     },
-    // First source wins for type/direction/reason — subsequent sources only add provenance
     update: {},
     include: { sources: true },
   })

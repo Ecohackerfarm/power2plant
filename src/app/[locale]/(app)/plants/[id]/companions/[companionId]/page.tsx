@@ -10,7 +10,7 @@ import { getDisplayName, confidenceLabel } from '@/lib/recommend'
 import { detectRank } from '@/lib/crop-rank'
 
 type RelationshipRow = {
-  relId: string; type: string; reason: string | null; reasons: string[]; confidence: number
+  relId: string; type: string; reasons: Array<{ type: string; explanation: string }>; confidence: number
   notes: string | null; direction: string
   cropAId: string; cropAName: string; cropABotanical: string; cropACommonNames: string[]
   cropANitrogen: boolean
@@ -146,16 +146,19 @@ export default function RelationshipPage() {
           <dt className="w-32 text-muted-foreground shrink-0">{t('relationship')}</dt>
           <dd className="font-medium">{translateKey(rel.type, rel.type)}</dd>
         </div>
-        {(rel.reasons?.length > 0 || rel.reason) && (
+        {rel.reasons?.length > 0 && (
           <div className="flex gap-3" data-feedback-target="relationship:reason">
             <dt className="w-32 text-muted-foreground shrink-0">
-              {(rel.reasons?.length ?? 0) > 1 ? t('reasons') : t('reason')}
+              {rel.reasons.length > 1 ? t('reasons') : t('reason')}
             </dt>
-            <dd className="flex flex-wrap gap-1">
-              {(rel.reasons?.length > 0 ? rel.reasons : [rel.reason!]).map(r => (
-                <span key={r} className="inline-block bg-muted rounded px-2 py-0.5 text-xs">
-                  {translateKey(r, r)}
-                </span>
+            <dd className="space-y-1">
+              {rel.reasons.map((r: { type: string; explanation: string }) => (
+                <div key={r.type}>
+                  <span className="inline-block bg-muted rounded px-2 py-0.5 text-xs mr-2">
+                    {translateKey(r.type, r.type)}
+                  </span>
+                  <span className="text-xs text-muted-foreground">{r.explanation}</span>
+                </div>
               ))}
             </dd>
           </div>

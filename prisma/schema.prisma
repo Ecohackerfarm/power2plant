@@ -34,6 +34,8 @@ model Crop {
   badgesCrop           UserBadge[]                    @relation("UserBadgeCrop")
   badgesCropA          UserBadge[]                    @relation("UserBadgeCropA")
   badgesCropB          UserBadge[]                    @relation("UserBadgeCropB")
+  externalTasksA       ExternalResearchTask[]         @relation("ExternalTaskCropA")
+  externalTasksB       ExternalResearchTask[]         @relation("ExternalTaskCropB")
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
 
@@ -92,7 +94,6 @@ model CropRelationship {
   id         String               @id @default(cuid())
   type       RelationshipType
   direction  Direction            @default(MUTUAL)
-  reason     RelationshipReason?
   confidence Float                @default(0.5)
   notes      String?
   cropAId    String
@@ -100,6 +101,8 @@ model CropRelationship {
   cropA      Crop                 @relation("CropA", fields: [cropAId], references: [id], onDelete: Cascade)
   cropB      Crop                 @relation("CropB", fields: [cropBId], references: [id], onDelete: Cascade)
   sources    RelationshipSource[]
+  reasons    RelationshipReason[]
+  externalResearchTasks ExternalResearchTask[]
   createdAt  DateTime             @default(now())
   updatedAt  DateTime             @updatedAt
 
@@ -113,18 +116,32 @@ model RelationshipSource {
   sourceType      SourceClassification?
   confidence      ConfidenceLevel       @default(ANECDOTAL)
   position        RelationshipType?
-  reason          RelationshipReason?
   sourceDirection Direction?
   url             String?
   notes           String?
+  agentModel      String?
   fetchedAt       DateTime              @default(now())
   relationshipId  String
   relationship    CropRelationship      @relation(fields: [relationshipId], references: [id], onDelete: Cascade)
   userId          String?
   checks          SourceCheck[]
+  reasons         RelationshipReason[]
 
   @@index([relationshipId])
   @@index([userId])
+}
+
+model RelationshipReason {
+  id                   String              @id @default(cuid())
+  type                 RelationshipReasonType
+  explanation          String
+  cropRelationshipId   String?
+  cropRelationship     CropRelationship?   @relation(fields: [cropRelationshipId], references: [id], onDelete: Cascade)
+  sourceId             String?
+  source               RelationshipSource? @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  @@index([cropRelationshipId])
+  @@index([sourceId])
 }
 
 model SourceCheck {
@@ -199,7 +216,7 @@ enum Direction {
   UNKNOWN
 }
 
-enum RelationshipReason {
+enum RelationshipReasonType {
   PEST_CONTROL
   POLLINATION
   NUTRIENT
@@ -237,26 +254,29 @@ enum SourceClassification {
 }
 
 model user {
-  id                  String                @id @default(cuid())
-  name                String
-  email               String                @unique
-  emailVerified       Boolean               @default(false)
-  image               String?
-  trustScore          Float                 @default(1.0)
-  createdAt           DateTime              @default(now())
-  updatedAt           DateTime              @updatedAt
-  sessions            session[]
-  accounts            account[]
-  garden              UserGarden?
-  gardenShares        GardenShare[]
-  researchVotes       ResearchRequestVote[]
-  credit              UserCredit?
-  creditTransactions  CreditTransaction[]
-  researchFunding     ResearchFunder[]
-  badges              UserBadge[]
-  feedbackVotes       FeedbackVote[]
-  feedbackComments    FeedbackComment[]
-  billingInfo         UserBillingInfo?
+  id                    String                  @id @default(cuid())
+  name                  String
+  email                 String                  @unique
+  emailVerified         Boolean                 @default(false)
+  image                 String?
+  trustScore            Float                   @default(1.0)
+  trustedResearcher     Boolean                 @default(false)
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+  sessions              session[]
+  accounts              account[]
+  garden                UserGarden?
+  gardenShares          GardenShare[]
+  researchVotes         ResearchRequestVote[]
+  credit                UserCredit?
+  creditTransactions    CreditTransaction[]
+  researchFunding       ResearchFunder[]
+  badges                UserBadge[]
+  feedbackVotes         FeedbackVote[]
+  feedbackComments      FeedbackComment[]
+  billingInfo           UserBillingInfo?
+  externalResearchTasks ExternalResearchTask[]  @relation("TaskClaimer")
+  apiTokens             UserApiToken[]
 }
 
 model UserBillingInfo {
@@ -624,4 +644,73 @@ model FeedbackComment {
 
   @@index([feedbackId])
   @@index([parentId])
+}
+
+// ─── Distributed Research (External / Trusted Researcher) ────────────────────
+
+enum ExternalResearchTaskStatus {
+  OPEN
+  CLAIMED
+  SUBMITTED
+  REVIEW_PENDING
+  REVIEW_CLAIMED
+  REVIEWED
+  REJECTED
+}
+
+enum ExternalResearchTaskType {
+  RESEARCH
+  REVIEW
+}
+
+model ExternalResearchTask {
+  id                      String                      @id @default(cuid())
+  type                    ExternalResearchTaskType    @default(RESEARCH)
+  cropAId                 String?
+  cropA                   Crop?                       @relation("ExternalTaskCropA", fields: [cropAId], references: [id])
+  cropBId                 String?
+  cropB                   Crop?                       @relation("ExternalTaskCropB", fields: [cropBId], references: [id])
+  prompt                  String
+  context                 Json?
+  deadline                DateTime?
+  status                  ExternalResearchTaskStatus  @default(OPEN)
+  claimedById             String?
+  claimedBy               user?                       @relation("TaskClaimer", fields: [claimedById], references: [id])
+  claimedAt               DateTime?
+  result                  Json?
+  submittedAt             DateTime?
+  agentModel              String?
+  importedRelationshipId  String?
+  importedRelationship    CropRelationship?           @relation(fields: [importedRelationshipId], references: [id])
+  reviewTaskId            String?                     @unique
+  reviewTask              ExternalResearchTask?       @relation("ReviewOf", fields: [reviewTaskId], references: [id])
+  parentTask              ExternalResearchTask?       @relation("ReviewOf")
+  reviewNote              String?
+  reviewedAt              DateTime?
+  createdAt               DateTime                    @default(now())
+  updatedAt               DateTime                    @updatedAt
+
+  @@index([status, type, createdAt])
+  @@index([claimedById])
+  @@index([importedRelationshipId])
+}
+
+model ResearchModel {
+  id      String  @id
+  label   String
+  score   Int
+  allowed Boolean @default(true)
+  notes   String?
+}
+
+model UserApiToken {
+  id         String    @id @default(cuid())
+  userId     String
+  user       user      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token      String    @unique
+  label      String?
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
+
+  @@index([userId])
 }

@@ -1,12 +1,17 @@
-import { RelationshipReason, ConfidenceLevel } from '@prisma/client'
+import { RelationshipReasonType, ConfidenceLevel } from '@prisma/client'
 
 export type RawDirection = 'A_TO_B' | 'B_TO_A' | 'MUTUAL' | 'UNKNOWN'
+
+export interface ReasonEntry {
+  type: RelationshipReasonType
+  explanation: string
+}
 
 export interface ExtractedEntry {
   cropA: string
   cropB: string
   type: 'COMPANION' | 'AVOID' | 'NEUTRAL' | 'UNKNOWN'
-  reason: string | null
+  reasons: ReasonEntry[]
   direction: string
   confidence: number
   notes: string
@@ -24,7 +29,7 @@ export interface AggregatedPair {
   cropA: string
   cropB: string
   type: 'COMPANION' | 'AVOID' | 'NEUTRAL'
-  reason: string | null
+  reasons: ReasonEntry[]
   notes: string
   genusWide: boolean
   papers: Array<{
@@ -33,7 +38,7 @@ export interface AggregatedPair {
     title: string
     year: number
     position: 'COMPANION' | 'AVOID' | 'NEUTRAL'
-    reason: string | null
+    reasons: ReasonEntry[]
     direction?: RawDirection
     extractedCropA: string
   }>
@@ -57,7 +62,12 @@ export function buildPrompt(cropA: string, cropB: string): string {
 Respond ONLY with a JSON object — no markdown, no explanation:
 {
   "type": "COMPANION" | "AVOID" | "NEUTRAL" | "UNKNOWN",
-  "reason": "PEST_CONTROL" | "POLLINATION" | "NUTRIENT" | "SHADE" | "ALLELOPATHY" | "OTHER" | null,
+  "reasons": [
+    {
+      "type": "PEST_CONTROL" | "POLLINATION" | "NUTRIENT" | "SHADE" | "ALLELOPATHY" | "OTHER",
+      "explanation": "<one sentence specific to ${cropA} and ${cropB}>"
+    }
+  ],
   "direction": "A_TO_B" | "B_TO_A" | "MUTUAL" | "UNKNOWN",
   "confidence": <float 0.0–1.0>,
   "notes": "<one sentence ≤200 chars summarising the scientific finding>",
@@ -69,6 +79,7 @@ Respond ONLY with a JSON object — no markdown, no explanation:
   "actualSpeciesB": "<if genusWide true: exact botanical name of the ${cropB}-side species actually studied — null otherwise>"
 }
 
+reasons: array of all mechanisms this interaction involves (can be multiple). Each explanation must be specific to ${cropA} and ${cropB}, not generic.
 direction: A_TO_B = ${cropA} benefits ${cropB}; B_TO_A = ${cropB} benefits ${cropA}; MUTUAL = both benefit.
 confidence: 0.9+ multiple peer-reviewed studies confirming; 0.7 one solid study; 0.5 limited evidence; 0.3 observational only; 0.1 no evidence found.
 genusWide example: asked for Allium cepa, best evidence is for Allium fistulosum via sulfur volatiles → genusWide: true, actualSpeciesA: "Allium fistulosum".`
@@ -86,12 +97,23 @@ export function mapDirection(
   return effectiveDir === 'A_TO_B' || effectiveDir === 'B_TO_A' ? 'ONE_WAY' : null
 }
 
-const VALID_REASONS = new Set<string>(Object.values(RelationshipReason))
+const VALID_REASON_TYPES = new Set<string>(Object.values(RelationshipReasonType))
 
-export function validateReason(value: string | null | undefined): RelationshipReason | null {
+export function validateReasonType(value: string | null | undefined): RelationshipReasonType | null {
   if (value == null) return null
-  if (VALID_REASONS.has(value)) return value as RelationshipReason
+  if (VALID_REASON_TYPES.has(value)) return value as RelationshipReasonType
   return null
+}
+
+export function validateReasons(raw: unknown): ReasonEntry[] {
+  if (!Array.isArray(raw)) return []
+  return raw.flatMap(item => {
+    if (typeof item !== 'object' || item === null) return []
+    const t = validateReasonType((item as Record<string, unknown>).type as string)
+    if (!t) return []
+    const explanation = String((item as Record<string, unknown>).explanation ?? t)
+    return [{ type: t, explanation }]
+  })
 }
 
 export function aggregateByPair(relationships: ExtractedEntry[]): AggregatedPair[] {
@@ -117,7 +139,7 @@ export function aggregateByPair(relationships: ExtractedEntry[]): AggregatedPair
       cropA: agg.entries[0].cropA,
       cropB: agg.entries[0].cropB,
       type: winningType,
-      reason: best.reason,
+      reasons: best.reasons,
       notes: best.notes,
       genusWide: agg.entries.some(e => e.genusWide),
       papers: agg.entries.map(e => ({
@@ -126,7 +148,7 @@ export function aggregateByPair(relationships: ExtractedEntry[]): AggregatedPair
         title: e.title,
         year: e.year,
         position: e.type as 'COMPANION' | 'AVOID' | 'NEUTRAL',
-        reason: e.reason,
+        reasons: e.reasons,
         direction: e.direction as RawDirection,
         extractedCropA: e.cropA,
       })),

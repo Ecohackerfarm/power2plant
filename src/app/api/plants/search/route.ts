@@ -12,10 +12,12 @@ type CropRow = {
   commonNames: string[]
 }
 
+type ReasonRow = { type: string; explanation: string }
+
 type RelationshipRow = {
   id: string
   type: string
-  reason: string | null
+  reasons: ReasonRow[]
   confidence: number
   notes: string | null
   cropA: CropRow
@@ -83,7 +85,8 @@ export async function GET(req: Request) {
       OR: [{ cropAId: { in: cropIds } }, { cropBId: { in: cropIds } }],
     },
     select: {
-      id: true, type: true, reason: true, confidence: true, notes: true,
+      id: true, type: true, confidence: true, notes: true,
+      reasons: { select: { type: true, explanation: true } },
       cropA: { select: cropSelect },
       cropB: { select: cropSelect },
     },
@@ -108,7 +111,7 @@ export async function GET(req: Request) {
       const serialised: RelationshipRow = {
         id: rel.id,
         type: rel.type,
-        reason: rel.reason,
+        reasons: rel.reasons,
         confidence: rel.confidence,
         notes: rel.notes,
         cropA: localisedCrop(rel.cropA),

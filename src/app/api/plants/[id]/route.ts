@@ -11,10 +11,12 @@ type CropRow = {
   isNitrogenFixer: boolean
 }
 
+type ReasonRow = { type: string; explanation: string }
+
 type CompanionRow = CropRow & {
   relationshipId: string
   type: string
-  reason: string | null
+  reasons: ReasonRow[]
   confidence: number
   notes: string | null
   direction: string
@@ -44,7 +46,11 @@ export async function GET(
   const directCompanions = await prisma.$queryRaw<CompanionRow[]>`
     SELECT
       c.id, c.name, c."botanicalName", c."commonNames", c."minTempC", c."isNitrogenFixer",
-      cr.id AS "relationshipId", cr.type, cr.reason, cr.confidence, cr.notes, cr.direction
+      cr.id AS "relationshipId", cr.type, cr.confidence, cr.notes, cr.direction,
+      COALESCE((
+        SELECT json_agg(json_build_object('type', rr.type, 'explanation', rr.explanation))
+        FROM "RelationshipReason" rr WHERE rr."cropRelationshipId" = cr.id
+      ), '[]'::json) AS reasons
     FROM "CropRelationship" cr
     JOIN "Crop" c ON (
       CASE WHEN cr."cropAId" = ${id} THEN cr."cropBId" ELSE cr."cropAId" END = c.id
@@ -74,7 +80,11 @@ export async function GET(
       const genusCompanions = await prisma.$queryRaw<CompanionRow[]>`
         SELECT
           c.id, c.name, c."botanicalName", c."commonNames", c."minTempC", c."isNitrogenFixer",
-          cr.id AS "relationshipId", cr.type, cr.reason, cr.confidence, cr.notes, cr.direction
+          cr.id AS "relationshipId", cr.type, cr.confidence, cr.notes, cr.direction,
+          COALESCE((
+            SELECT json_agg(json_build_object('type', rr.type, 'explanation', rr.explanation))
+            FROM "RelationshipReason" rr WHERE rr."cropRelationshipId" = cr.id
+          ), '[]'::json) AS reasons
         FROM "CropRelationship" cr
         JOIN "Crop" c ON (
           CASE WHEN cr."cropAId" = ${genusId} THEN cr."cropBId" ELSE cr."cropAId" END = c.id

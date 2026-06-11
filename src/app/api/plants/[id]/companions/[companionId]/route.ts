@@ -2,8 +2,10 @@ import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { detectRank, extractGenusWord } from '@/lib/crop-rank'
 
+type ReasonRow = { type: string; explanation: string }
+
 type RelRow = {
-  relId: string; type: string; reason: string | null; reasons: string[]; confidence: number
+  relId: string; type: string; reasons: ReasonRow[]; confidence: number
   notes: string | null; direction: string
   cropAId: string; cropAName: string; cropABotanical: string; cropACommonNames: string[]
   cropANitrogen: boolean
@@ -17,7 +19,11 @@ async function findRelationship(cropAId: string, cropBId: string): Promise<RelRo
   const [a, b] = cropAId < cropBId ? [cropAId, cropBId] : [cropBId, cropAId]
   const rows = await prisma.$queryRaw<RelRow[]>`
     SELECT
-      cr.id AS "relId", cr.type, cr.reason, cr.reasons, cr.confidence, cr.notes, cr.direction,
+      cr.id AS "relId", cr.type, cr.confidence, cr.notes, cr.direction,
+      COALESCE((
+        SELECT json_agg(json_build_object('type', rr.type, 'explanation', rr.explanation))
+        FROM "RelationshipReason" rr WHERE rr."cropRelationshipId" = cr.id
+      ), '[]'::json) AS reasons,
       ca.id AS "cropAId", ca.name AS "cropAName", ca."botanicalName" AS "cropABotanical",
       ca."commonNames" AS "cropACommonNames", ca."isNitrogenFixer" AS "cropANitrogen",
       cb.id AS "cropBId", cb.name AS "cropBName", cb."botanicalName" AS "cropBBotanical",
