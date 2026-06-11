@@ -79,13 +79,22 @@ POST ${baseUrl}/api/research/tasks/:id/submit
 
 ${modelList}
 
+All non-Perplexity models end in :online — this is the OpenRouter web search suffix.
+You MUST call OpenRouter with the exact model ID listed (including :online) so that
+web search is active and citations are real, not hallucinated from training data.
+
+Example OpenRouter call:
+  POST https://openrouter.ai/api/v1/chat/completions
+  { "model": "google/gemini-2.5-pro:online", "messages": [...] }
+
 ## Workflow
 
 1. GET /tasks — find an open task
 2. POST /tasks/:id/claim — claim it
-3. Research the crop pair using your web search or deep research tools
-4. POST /tasks/:id/submit — submit findings
-5. A second reviewer will validate your submission
+3. Call OpenRouter with your chosen :online model and research the crop pair
+4. Only cite sources you can verify resolve (DOIs, direct links)
+5. POST /tasks/:id/submit — include the exact model ID you used
+6. A second reviewer will validate your submission
 `
 
   return new Response(instructions, {
