@@ -214,10 +214,9 @@ BEFORE dropping them; remap data BEFORE removing old enum values.
 - [x] Design agreed
 - [x] Investigate Open #1 (stray `reason` column) — RESOLVED (already dropped by #277)
 - [x] Resolve Open #2 (REPELS remap), #3 (NULL position fallback) — RESOLVED via data
-- [ ] Author migration #1 additive (in dev container) ← NEXT
-- [ ] Resolve Open #2, #3
-- [ ] Migration #1 additive
-- [ ] Migration #2 backfill
+- [x] Migration #1 additive — `20260611100000_relationship_claim_additive`,
+      applied + verified on dev DB, committed `1844d59`
+- [ ] Migration #2 backfill ← NEXT
 - [ ] Migration #3 cleanup
 - [ ] Behavioural changes (guard, four-eyes, review submission, aggregation)
 - [ ] Regenerate seed.sql, verify ci-db replay
