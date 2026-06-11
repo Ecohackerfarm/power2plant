@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { mollieClient, centsToCurrencyString } from '@/lib/mollie'
+import { getMollieClient, centsToCurrencyString } from '@/lib/mollie'
 
 const MIN_DONATION_CENTS = 100 // €1.00
 
@@ -26,7 +26,7 @@ export async function POST(req: Request) {
   const base = process.env.MOLLIE_REDIRECT_URL_BASE
   if (!base) return NextResponse.json({ error: 'payment provider not configured' }, { status: 503 })
 
-  const payment = await mollieClient.payments.create({
+  const payment = await getMollieClient().payments.create({
     amount: { currency: 'EUR', value: centsToCurrencyString(amountCents) },
     description: 'Power2Plant research pot donation',
     redirectUrl: `${base}/donate?mollie=success`,
