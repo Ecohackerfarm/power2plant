@@ -66,7 +66,7 @@ const allIds = [...new Set([...cropIds, ...(existingBeds ?? []).flat()])]
           { cropBId: { in: allIds } },
         ],
       },
-      select: { cropAId: true, cropBId: true, type: true, confidence: true, reason: true, notes: true },
+      select: { cropAId: true, cropBId: true, type: true, confidence: true, reasons: { select: { type: true, explanation: true } }, notes: true },
     }),
   ])
 

@@ -20,7 +20,7 @@ export type RelationshipInput = {
   cropBId: string
   type: 'COMPANION' | 'AVOID' | 'ATTRACTS' | 'REPELS' | 'NURSE' | 'TRAP_CROP'
   confidence: number
-  reason?: string | null
+  reasons?: Array<{ type: string; explanation: string }>
   notes?: string | null
 }
 
@@ -89,8 +89,10 @@ function buildHint(rel: RelationshipInput): { details: string; confidenceLevel: 
   const parts: string[] = []
   const typeLabel = TYPE_LABELS[rel.type]
   if (typeLabel) parts.push(typeLabel)
-  const reasonLabel = rel.reason ? REASON_LABELS[rel.reason] : null
-  if (reasonLabel) parts.push(reasonLabel)
+  for (const r of rel.reasons ?? []) {
+    const label = REASON_LABELS[r.type]
+    if (label) { parts.push(label); break }
+  }
   return { details: parts.join(' · '), confidenceLevel: confidenceLabel(rel.confidence) }
 }
 

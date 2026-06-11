@@ -112,6 +112,7 @@ export async function GET(request: Request) {
       include: {
         cropA: { select: cropSelect },
         cropB: { select: cropSelect },
+        reasons: { select: { type: true, explanation: true } },
         _count: { select: { sources: true } },
       },
     })
@@ -129,7 +130,7 @@ export async function GET(request: Request) {
       relationships: results.map((r) => ({
         id: r.id,
         type: r.type,
-        reason: r.reason,
+        reasons: r.reasons,
         confidence: getConfidenceLabel(r.confidence),
         notes: r.notes,
         cropA: localisedCrop(r.cropA),
@@ -255,12 +256,22 @@ export async function POST(request: Request) {
         cropBId: canonB,
         type: type as (typeof VALID_TYPES)[number],
         direction: 'MUTUAL',
-        reason: reason as (typeof VALID_REASONS)[number] | undefined ?? null,
         notes: notes as string | undefined ?? null,
         confidence: 0.25,
       },
       update: {},
     })
+
+    // Create relationship-level reason if provided
+    if (reason && VALID_REASONS.includes(reason as (typeof VALID_REASONS)[number])) {
+      await tx.relationshipReason.create({
+        data: {
+          type: reason as (typeof VALID_REASONS)[number],
+          explanation: notes as string ?? (reason as string),
+          cropRelationshipId: rel.id,
+        },
+      })
+    }
 
     let sourceId: string
 
