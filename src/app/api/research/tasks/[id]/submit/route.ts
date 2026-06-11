@@ -3,7 +3,7 @@ import prisma from '@/lib/prisma'
 import { isTrustedResearcher, getSessionUser } from '@/lib/admin-auth'
 import { RelationshipType, Direction, RelationshipReasonType } from '@prisma/client'
 import { validateReasons } from '@/lib/research/helpers'
-import { processReview, type ReviewSubmission } from '@/lib/research/review'
+import { processReview, recomputeRelationship, type ReviewSubmission } from '@/lib/research/review'
 
 /** Collapse a submitted (possibly legacy) relationship type to a polarity. */
 function toPolarity(t: string): RelationshipType {
@@ -166,6 +166,9 @@ export async function POST(
           })),
         })
       }
+
+      // Recompute aggregates (type vote, direction, confidence, conflict, mechanisms)
+      await recomputeRelationship(tx, rel.id)
 
       // Link imported relationship and trigger review task
       const reviewTask = await tx.externalResearchTask.create({

@@ -241,6 +241,7 @@ async function handleMethod(
       if (task.status !== 'CLAIMED') return err(rpcId, { ...E.CONFLICT, message: 'Task is not CLAIMED' })
 
       const { validateReasons } = await import('@/lib/research/helpers')
+      const { recomputeRelationship } = await import('@/lib/research/review')
       const { RelationshipType, Direction, RelationshipReasonType } = await import('@prisma/client')
 
       const confidence = typeof result.confidence === 'number' ? result.confidence : 0
@@ -306,6 +307,8 @@ async function handleMethod(
               })),
             })
           }
+
+          await recomputeRelationship(tx, rel.id)
 
           const reviewTask = await tx.externalResearchTask.create({
             data: {

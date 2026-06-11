@@ -7,10 +7,10 @@ import {
   aggregateByPair,
   mapDirection,
   validateReasons,
-  computeRelationshipConfidence,
   type ReasonEntry,
   type ExtractedEntry,
 } from './helpers'
+import { recomputeRelationship } from './review'
 
 const BASE_URL = process.env.LLM_BASE_URL ?? 'https://openrouter.ai/api/v1'
 const MODEL = process.env.LLM_MODEL ?? 'perplexity/sonar-deep-research'
@@ -230,8 +230,7 @@ export async function importEntries(entries: ExtractedEntry[]): Promise<void> {
         await writeClaims(relationship.id, src.id, paper.position as RelationshipType, dir, paper.reasons.length ? paper.reasons : pair.reasons)
       }
 
-      const allSources = await prisma.relationshipSource.findMany({ where: { relationshipId: relationship.id }, select: { confidence: true } })
-      await prisma.cropRelationship.update({ where: { id: relationship.id }, data: { confidence: computeRelationshipConfidence(allSources.map(s => s.confidence)) } })
+      await recomputeRelationship(prisma, relationship.id)
 
       // Genus dual-write
       if (pair.genusWide) {
@@ -263,8 +262,7 @@ export async function importEntries(entries: ExtractedEntry[]): Promise<void> {
               })
               await writeClaims(genusRel.id, src.id, paper.position as RelationshipType, 'UNKNOWN', paper.reasons.length ? paper.reasons : pair.reasons)
             }
-            const genusSources = await prisma.relationshipSource.findMany({ where: { relationshipId: genusRel.id }, select: { confidence: true } })
-            await prisma.cropRelationship.update({ where: { id: genusRel.id }, data: { confidence: computeRelationshipConfidence(genusSources.map(s => s.confidence)) } })
+            await recomputeRelationship(prisma, genusRel.id)
           }
         } catch {
           // genus derivation is best-effort
