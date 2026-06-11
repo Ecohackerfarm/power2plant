@@ -58,9 +58,12 @@ async function callLLM(cropA: string, cropB: string): Promise<{ entries: Extract
   const apiKey = process.env.LLM_API_KEY ?? process.env.OPENROUTER_API_KEY
   if (!apiKey) throw new Error('LLM_API_KEY not configured')
 
-  const requestBody = {
+  const isSonar = MODEL.startsWith('perplexity/')
+  const requestBody: Record<string, unknown> = {
     model: MODEL,
     messages: [{ role: 'user', content: buildPrompt(cropA, cropB) }],
+    // Non-sonar models need the web plugin; sonar has built-in search and ignores it
+    ...(!isSonar && { plugins: [{ id: 'web' }] }),
   }
 
   const res = await fetch(`${BASE_URL}/chat/completions`, {
