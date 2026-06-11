@@ -35,7 +35,7 @@ export async function POST(req: Request) {
     description: 'Power2Plant credit top-up',
     redirectUrl: `${base}/credits?mollie=success`,
     webhookUrl: `${base}/api/mollie/webhook`,
-    metadata: { userId: session.user.id, type: 'topup', amountCents },
+    metadata: { userId: session.user.id, type: 'topup' },
   })
 
   return NextResponse.json({ checkoutUrl: payment._links.checkout?.href })

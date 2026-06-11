@@ -18,16 +18,18 @@ export async function POST(req: Request) {
   const meta = payment.metadata as Record<string, unknown> | null
   const type = meta?.type
 
+  // Derive amount from the actual charged amount, not metadata, to prevent
+  // attackers from inflating credits by crafting payments with manipulated metadata.
+  const amountCents = Math.round(parseFloat(payment.amount.value) * 100)
+  const currency = (payment.amount.currency as string) ?? 'EUR'
+
   if (type === 'topup') {
     const userId = meta?.userId
-    const amountCents = Number(meta?.amountCents ?? 0)
     if (typeof userId !== 'string' || !userId || amountCents <= 0) {
       return NextResponse.json({ error: 'invalid metadata' }, { status: 400 })
     }
     await applyTopUp(userId, amountCents, undefined, id)
   } else if (type === 'donation') {
-    const amountCents = Number(meta?.amountCents ?? 0)
-    const currency = (payment.amount.currency as string) ?? 'EUR'
     if (amountCents <= 0) {
       return NextResponse.json({ error: 'invalid metadata' }, { status: 400 })
     }
