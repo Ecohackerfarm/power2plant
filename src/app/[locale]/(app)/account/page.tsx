@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { TopUpModal } from '@/components/top-up-modal'
+import { BillingInfoForm } from '@/components/billing-info-form'
 
 function centsToEuros(cents: number) {
   return `€${(cents / 100).toFixed(2)}`
@@ -151,6 +152,11 @@ export default function AccountPage() {
             onBalanceUpdate={cents => setBalanceCents(cents)}
           />
         )}
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="font-semibold text-lg">Billing info</h2>
+        <BillingInfoForm />
       </section>
 
       <section className="space-y-4 border border-destructive/40 rounded-lg p-5">

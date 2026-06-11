@@ -255,6 +255,13 @@ function ModalContent({ onClose, onBalanceUpdate }: Props) {
                 New balance: <span className="font-medium">{centsToEuros(stage.newBalanceCents)}</span>
               </p>
             )}
+            <p className="text-xs text-muted-foreground">
+              Invoice will be emailed to you.{' '}
+              <a href="/account#billing" className="underline underline-offset-2" onClick={onClose}>
+                Add billing address
+              </a>{' '}
+              for B2B invoices.
+            </p>
             <Button className="w-full" onClick={onClose}>Done</Button>
           </div>
         )}

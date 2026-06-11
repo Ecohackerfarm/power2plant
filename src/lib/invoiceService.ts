@@ -15,10 +15,17 @@ interface TriggerInvoiceOptions {
 export async function triggerInvoice(opts: TriggerInvoiceOptions): Promise<void> {
   if (!INVOICE_SERVICE_URL || !INVOICE_SERVICE_SECRET) return
 
-  const user = await prisma.user.findUnique({
-    where: { id: opts.userId },
-    select: { name: true, email: true },
-  })
+  const [user, billing] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: opts.userId },
+      select: { name: true, email: true },
+    }),
+    prisma.userBillingInfo.findUnique({
+      where: { userId: opts.userId },
+      select: { companyName: true, street: true, city: true, zip: true, country: true, vatId: true },
+    }),
+  ])
+
   if (!user) {
     console.error('[invoice] user not found:', opts.userId)
     return
@@ -27,15 +34,25 @@ export async function triggerInvoice(opts: TriggerInvoiceOptions): Promise<void>
   const amountGross = Math.round(opts.amountCents) / 100
   const vatRate = DEFAULT_VAT_RATE
   const unitPriceNet = Math.round((amountGross / (1 + vatRate / 100)) * 100) / 100
+  const isB2B = !!(billing?.vatId?.trim())
 
   const payload = {
     paymentId: opts.paymentId,
     paymentProvider: opts.paymentProvider,
     paidAt: opts.paidAt,
     customer: {
-      name: user.name,
+      name: billing?.companyName?.trim() || user.name,
       email: user.email,
-      type: 'b2c' as const,
+      type: isB2B ? ('b2b' as const) : ('b2c' as const),
+      ...(billing ? {
+        address: {
+          street: billing.street,
+          city: billing.city,
+          zip: billing.zip,
+          country: billing.country,
+        },
+      } : {}),
+      ...(billing?.vatId?.trim() ? { vatId: billing.vatId.trim() } : {}),
     },
     lineItems: [
       {
