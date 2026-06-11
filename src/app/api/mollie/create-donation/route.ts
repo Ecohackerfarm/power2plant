@@ -31,7 +31,7 @@ export async function POST(req: Request) {
     description: 'Power2Plant research pot donation',
     redirectUrl: `${base}/donate?mollie=success`,
     webhookUrl: `${base}/api/mollie/webhook`,
-    metadata: { type: 'donation', amountCents },
+    metadata: { type: 'donation' },
   })
 
   return NextResponse.json({ checkoutUrl: payment._links.checkout?.href })
