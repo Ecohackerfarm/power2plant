@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { mollieClient } from '@/lib/mollie'
+import { getMollieClient } from '@/lib/mollie'
 import { applyTopUp } from '@/lib/credits'
 import { recordMollieDonation, tryFundFromPot } from '@/lib/pot'
 
@@ -10,7 +10,7 @@ export async function POST(req: Request) {
   if (!id) return NextResponse.json({ error: 'missing id' }, { status: 400 })
 
   // Verify by fetching from Mollie — this is Mollie's recommended auth approach
-  const payment = await mollieClient.payments.get(id)
+  const payment = await getMollieClient().payments.get(id)
   if (payment.status !== 'paid') {
     return NextResponse.json({ ok: true }) // not paid yet, ignore
   }
