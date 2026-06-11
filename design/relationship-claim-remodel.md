@@ -220,6 +220,14 @@ BEFORE dropping them; remap data BEFORE removing old enum values.
       applied + verified + idempotent on dev DB, committed `9a2a692`
       (470→470 claims, conflict=2, 0 empty mechanisms). Also dropped the
       polymorphic XOR check constraint on RelationshipReason.
-- [ ] Migration #3 cleanup ← NEXT
-- [ ] Behavioural changes (guard, four-eyes, review submission, aggregation)
-- [ ] Regenerate seed.sql, verify ci-db replay
+- [x] Migration #3 cleanup — `20260611100002_relationship_claim_cleanup`,
+      applied + verified on dev DB, committed `c02ffa9`. Renames done (clean DB
+      names), legacy columns dropped, enum reduced to polarity, data intact
+      (470/420/470). migrate diff clean.
+- [ ] Behavioural changes (guard, four-eyes, review submission, aggregation) ← NEXT
+      NOTE: app code references old model names / dropped enum values → will not
+      compile until ported. Touch points: src/lib/research/executor.ts,
+      src/lib/research/helpers.ts, src/app/api/research/tasks/[id]/submit/route.ts,
+      src/app/api/research/tasks/[id]/claim/route.ts, any reads of
+      relationshipReason/sourceCheck/position/sourceDirection.
+- [ ] Regenerate seed.sql (pnpm db:dump), verify ci-db replay
