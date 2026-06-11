@@ -59,11 +59,14 @@ async function callLLM(cropA: string, cropB: string): Promise<{ entries: Extract
   if (!apiKey) throw new Error('LLM_API_KEY not configured')
 
   const isSonar = MODEL.startsWith('perplexity/')
+  const isAnthropic = MODEL.startsWith('anthropic/')
   const requestBody: Record<string, unknown> = {
     model: MODEL,
     messages: [{ role: 'user', content: buildPrompt(cropA, cropB) }],
     // Non-sonar models need the web plugin; sonar has built-in search and ignores it
     ...(!isSonar && { plugins: [{ id: 'web' }] }),
+    // json_object forces compliant JSON output; skip for Anthropic (unsupported/narrates anyway)
+    ...(!isSonar && !isAnthropic && { response_format: { type: 'json_object' } }),
   }
 
   const res = await fetch(`${BASE_URL}/chat/completions`, {
