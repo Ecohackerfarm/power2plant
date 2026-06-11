@@ -216,7 +216,10 @@ BEFORE dropping them; remap data BEFORE removing old enum values.
 - [x] Resolve Open #2 (REPELS remap), #3 (NULL position fallback) — RESOLVED via data
 - [x] Migration #1 additive — `20260611100000_relationship_claim_additive`,
       applied + verified on dev DB, committed `1844d59`
-- [ ] Migration #2 backfill ← NEXT
-- [ ] Migration #3 cleanup
+- [x] Migration #2 backfill — `20260611100001_relationship_claim_backfill`,
+      applied + verified + idempotent on dev DB, committed `9a2a692`
+      (470→470 claims, conflict=2, 0 empty mechanisms). Also dropped the
+      polymorphic XOR check constraint on RelationshipReason.
+- [ ] Migration #3 cleanup ← NEXT
 - [ ] Behavioural changes (guard, four-eyes, review submission, aggregation)
 - [ ] Regenerate seed.sql, verify ci-db replay
