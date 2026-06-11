@@ -3,7 +3,19 @@ import { headers } from 'next/headers'
 import prisma from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 
-const COMPANION_TYPES = new Set(['COMPANION', 'ATTRACTS', 'NURSE', 'TRAP_CROP'])
+const COMPANION_TYPES = new Set(['COMPANION'])
+
+/** Collapse per-source claims into distinct {type, explanation} for display. */
+function claimsToReasons(claims: { mechanism: string; explanation: string }[]): { type: string; explanation: string }[] {
+  const seen = new Set<string>()
+  const out: { type: string; explanation: string }[] = []
+  for (const c of claims) {
+    if (seen.has(c.mechanism)) continue
+    seen.add(c.mechanism)
+    out.push({ type: c.mechanism, explanation: c.explanation })
+  }
+  return out
+}
 
 type CropRow = {
   id: string
@@ -86,7 +98,7 @@ export async function GET(req: Request) {
     },
     select: {
       id: true, type: true, confidence: true, notes: true,
-      reasons: { select: { type: true, explanation: true } },
+      claims: { select: { mechanism: true, explanation: true } },
       cropA: { select: cropSelect },
       cropB: { select: cropSelect },
     },
@@ -111,7 +123,7 @@ export async function GET(req: Request) {
       const serialised: RelationshipRow = {
         id: rel.id,
         type: rel.type,
-        reasons: rel.reasons,
+        reasons: claimsToReasons(rel.claims),
         confidence: rel.confidence,
         notes: rel.notes,
         cropA: localisedCrop(rel.cropA),

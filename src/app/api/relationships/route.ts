@@ -5,7 +5,7 @@ import { SOURCE_CONFIDENCE } from '@/lib/source-confidence'
 import { classifyUrl } from '@/lib/classify-url'
 import { computeAndSaveTrustScore } from '@/lib/trust-score'
 import { Prisma } from '@prisma/client'
-import type { SourceClassification, ConfidenceLevel, RelationshipType } from '@prisma/client'
+import type { SourceClassification, ConfidenceLevel, RelationshipType, RelationshipReasonType, Direction } from '@prisma/client'
 import { auth } from '@/lib/auth'
 
 const VALID_TYPES = ['COMPANION', 'AVOID'] as const
@@ -18,6 +18,20 @@ function getConfidenceLabel(confidence: number): string {
   if (confidence >= 0.625) return 'OBSERVED'
   if (confidence >= 0.375) return 'TRADITIONAL'
   return 'ANECDOTAL'
+}
+
+/** Collapse per-source claims into distinct {type, explanation} for display. */
+function claimsToReasons(
+  claims: { mechanism: RelationshipReasonType; explanation: string }[],
+): { type: RelationshipReasonType; explanation: string }[] {
+  const seen = new Set<string>()
+  const out: { type: RelationshipReasonType; explanation: string }[] = []
+  for (const c of claims) {
+    if (seen.has(c.mechanism)) continue
+    seen.add(c.mechanism)
+    out.push({ type: c.mechanism, explanation: c.explanation })
+  }
+  return out
 }
 
 async function findCropIds(term: string, locale: string): Promise<string[]> {
@@ -112,7 +126,7 @@ export async function GET(request: Request) {
       include: {
         cropA: { select: cropSelect },
         cropB: { select: cropSelect },
-        reasons: { select: { type: true, explanation: true } },
+        claims: { select: { mechanism: true, explanation: true } },
         _count: { select: { sources: true } },
       },
     })
@@ -130,7 +144,7 @@ export async function GET(request: Request) {
       relationships: results.map((r) => ({
         id: r.id,
         type: r.type,
-        reasons: r.reasons,
+        reasons: claimsToReasons(r.claims),
         confidence: getConfidenceLabel(r.confidence),
         notes: r.notes,
         cropA: localisedCrop(r.cropA),
@@ -262,13 +276,22 @@ export async function POST(request: Request) {
       update: {},
     })
 
-    // Create relationship-level reason if provided
-    if (reason && VALID_REASONS.includes(reason as (typeof VALID_REASONS)[number])) {
-      await tx.relationshipReason.create({
+    // Each source carries the submission's polarity (position) + mechanism as a
+    // claim. The polarity/direction live on the claim now, not the source.
+    const claimMechanism: RelationshipReasonType =
+      reason && VALID_REASONS.includes(reason as (typeof VALID_REASONS)[number])
+        ? (reason as RelationshipReasonType)
+        : 'OTHER'
+    const claimExplanation = (notes as string | undefined) ?? (reason as string | undefined) ?? ''
+    async function addClaim(srcId: string) {
+      await tx.relationshipClaim.create({
         data: {
-          type: reason as (typeof VALID_REASONS)[number],
-          explanation: notes as string ?? (reason as string),
-          cropRelationshipId: rel.id,
+          mechanism: claimMechanism,
+          relationshipType: position,
+          direction: 'UNKNOWN' as Direction,
+          explanation: claimExplanation,
+          relationshipId: rel.id,
+          sourceId: srcId,
         },
       })
     }
@@ -285,12 +308,12 @@ export async function POST(request: Request) {
             source: 'MANUAL',
             sourceType: st,
             confidence: SOURCE_CONFIDENCE[st],
-            position,
             url,
             notes: notes as string | undefined ?? null,
             userId: session.user.id,
           },
         })
+        await addClaim(src.id)
         sourceId = src.id
       }
       const testimonyConfidence = evidenceLevel as ConfidenceLevel | undefined ?? 'ANECDOTAL'
@@ -300,11 +323,11 @@ export async function POST(request: Request) {
           source: 'COMMUNITY',
           sourceType: 'PERSONAL_OBSERVATION',
           confidence: testimonyConfidence,
-          position,
           notes: notes as string | undefined ?? null,
           userId: session.user.id,
         },
       })
+      await addClaim(testimony.id)
       sourceId = testimony.id
     } else {
       const testimonyConfidence = (evidenceLevel as ConfidenceLevel | undefined) ?? (SOURCE_CONFIDENCE[sourceType as keyof typeof SOURCE_CONFIDENCE] ?? 'ANECDOTAL')
@@ -314,11 +337,11 @@ export async function POST(request: Request) {
           source: 'COMMUNITY',
           sourceType: sourceType as (typeof VALID_SOURCE_TYPES)[number] | undefined ?? undefined,
           confidence: testimonyConfidence,
-          position,
           notes: notes as string | undefined ?? null,
           userId: session.user.id,
         },
       })
+      await addClaim(source.id)
       sourceId = source.id
     }
 

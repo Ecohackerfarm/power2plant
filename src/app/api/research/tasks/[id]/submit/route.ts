@@ -1,9 +1,16 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { isTrustedResearcher, getSessionUser } from '@/lib/admin-auth'
-import { RelationshipType, Direction } from '@prisma/client'
+import { RelationshipType, Direction, RelationshipReasonType } from '@prisma/client'
 import { validateReasons } from '@/lib/research/helpers'
-import { randomUUID } from 'crypto'
+import { processReview, recomputeRelationship, type ReviewSubmission } from '@/lib/research/review'
+
+/** Collapse a submitted (possibly legacy) relationship type to a polarity. */
+function toPolarity(t: string): RelationshipType {
+  if (t === 'AVOID') return 'AVOID'
+  if (t === 'NEUTRAL') return 'NEUTRAL'
+  return 'COMPANION' // COMPANION/ATTRACTS/REPELS/NURSE/TRAP_CROP are all beneficial
+}
 
 interface SubmitResult {
   summary: string
@@ -39,6 +46,22 @@ export async function POST(
   }
   if (task.status !== 'CLAIMED') {
     return NextResponse.json({ error: 'Task is not in CLAIMED state' }, { status: 409 })
+  }
+
+  // REVIEW tasks settle a prior submission (apply verdicts + recompute) rather
+  // than importing new data. Four-eyes was enforced at claim time.
+  if (task.type === 'REVIEW') {
+    let reviewBody: ReviewSubmission
+    try {
+      reviewBody = await req.json()
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
+    }
+    if (reviewBody.decision !== 'APPROVE' && reviewBody.decision !== 'REJECT') {
+      return NextResponse.json({ error: 'decision must be APPROVE or REJECT' }, { status: 422 })
+    }
+    await prisma.$transaction((tx) => processReview(tx, task, reviewBody, user.id))
+    return NextResponse.json({ ok: true })
   }
 
   let body: SubmitResult
@@ -81,8 +104,17 @@ export async function POST(
       },
     })
 
-    // Auto-import into CropRelationship if we have both crops and a non-UNKNOWN type
-    if (task.cropAId && task.cropBId && relationshipType !== 'UNKNOWN' && confidence >= 0.3) {
+    // Auto-import into CropRelationship — requires both crops, a non-UNKNOWN
+    // polarity, minimum confidence, AND at least one source with provenance
+    // (a relationship with no source has nothing for a reviewer to verify).
+    const validSources = (sources ?? []).filter(s => s.url || s.notes)
+    if (
+      task.cropAId && task.cropBId &&
+      relationshipType !== 'UNKNOWN' && confidence >= 0.3 &&
+      validSources.length > 0
+    ) {
+      const polarity = toPolarity(relationshipType)
+      const claimDirection = (effectiveDirection === 'UNKNOWN' ? 'UNKNOWN' : effectiveDirection) as Direction
       const [cropAId, cropBId] = task.cropAId < task.cropBId
         ? [task.cropAId, task.cropBId]
         : [task.cropBId, task.cropAId]
@@ -92,7 +124,7 @@ export async function POST(
         create: {
           cropAId,
           cropBId,
-          type: relationshipType as RelationshipType,
+          type: polarity,
           direction: (effectiveDirection === 'UNKNOWN' ? 'MUTUAL' : effectiveDirection) as Direction,
           confidence,
           notes: notes ?? summary ?? null,
@@ -100,22 +132,10 @@ export async function POST(
         update: { confidence, notes: notes ?? summary ?? null },
       })
 
-      // Write relationship-level reasons
-      if (validatedReasons.length > 0) {
-        await tx.relationshipReason.createMany({
-          data: validatedReasons.map(r => ({
-            id: randomUUID(),
-            type: r.type,
-            explanation: r.explanation,
-            cropRelationshipId: rel.id,
-          })),
-          skipDuplicates: true,
-        })
-      }
-
-      // Create source per submitted source URL, then write source-level reasons
-      for (const src of sources ?? []) {
-        if (!src.url && !src.notes) continue
+      // Each source yields >=1 claim carrying the asserted polarity + direction.
+      // Source-level reasons preferred; else the submission-level reasons; else
+      // a single OTHER-mechanism claim so the source still counts.
+      for (const src of validSources) {
         const createdSrc = await tx.relationshipSource.create({
           data: {
             relationshipId: rel.id,
@@ -130,18 +150,25 @@ export async function POST(
         })
 
         const srcReasons = validateReasons(src.reasons)
-        if (srcReasons.length > 0) {
-          await tx.relationshipReason.createMany({
-            data: srcReasons.map(r => ({
-              id: randomUUID(),
-              type: r.type,
-              explanation: r.explanation,
-              sourceId: createdSrc.id,
-            })),
-            skipDuplicates: true,
-          })
-        }
+        const claimReasons = srcReasons.length
+          ? srcReasons
+          : validatedReasons.length
+            ? validatedReasons
+            : [{ type: 'OTHER' as RelationshipReasonType, explanation: summary ?? '' }]
+        await tx.relationshipClaim.createMany({
+          data: claimReasons.map(r => ({
+            mechanism: r.type,
+            explanation: r.explanation,
+            relationshipType: polarity,
+            direction: claimDirection,
+            relationshipId: rel.id,
+            sourceId: createdSrc.id,
+          })),
+        })
       }
+
+      // Recompute aggregates (type vote, direction, confidence, conflict, mechanisms)
+      await recomputeRelationship(tx, rel.id)
 
       // Link imported relationship and trigger review task
       const reviewTask = await tx.externalResearchTask.create({

@@ -1,4 +1,4 @@
-import type { ConfidenceLevel, Direction, RelationshipReason, RelationshipType, SourceType } from '@prisma/client'
+import type { ConfidenceLevel, Direction, RelationshipReasonType, RelationshipType, SourceType } from '@prisma/client'
 
 export interface RawCrop {
   botanicalName: string
@@ -16,7 +16,7 @@ export interface RawRelationship {
   cropNameB: string
   type: RelationshipType
   direction: Direction
-  reason?: RelationshipReason
+  reason?: RelationshipReasonType
   confidence: ConfidenceLevel
   url?: string
   notes?: string

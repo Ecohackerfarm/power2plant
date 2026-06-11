@@ -21,6 +21,20 @@ export async function POST(
     return NextResponse.json({ error: 'Task is not available for claiming' }, { status: 409 })
   }
 
+  // Four-eyes: a researcher may not review their own submission.
+  if (task.type === 'REVIEW') {
+    const ctx = task.context as { originalTaskId?: string } | null
+    if (ctx?.originalTaskId) {
+      const original = await prisma.externalResearchTask.findUnique({
+        where: { id: ctx.originalTaskId },
+        select: { claimedById: true },
+      })
+      if (original?.claimedById === user.id) {
+        return NextResponse.json({ error: 'You cannot review your own submission' }, { status: 403 })
+      }
+    }
+  }
+
   const updated = await prisma.externalResearchTask.update({
     where: { id, status: 'OPEN' },
     data: { status: 'CLAIMED', claimedById: user.id, claimedAt: new Date() },

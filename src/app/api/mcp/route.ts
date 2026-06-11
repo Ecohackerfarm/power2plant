@@ -241,8 +241,8 @@ async function handleMethod(
       if (task.status !== 'CLAIMED') return err(rpcId, { ...E.CONFLICT, message: 'Task is not CLAIMED' })
 
       const { validateReasons } = await import('@/lib/research/helpers')
-      const { RelationshipType, Direction } = await import('@prisma/client')
-      const { randomUUID } = await import('crypto')
+      const { recomputeRelationship } = await import('@/lib/research/review')
+      const { RelationshipType, Direction, RelationshipReasonType } = await import('@prisma/client')
 
       const confidence = typeof result.confidence === 'number' ? result.confidence : 0
       const relationshipType = typeof result.relationshipType === 'string' ? result.relationshipType : 'UNKNOWN'
@@ -257,7 +257,10 @@ async function handleMethod(
           data: { status: 'SUBMITTED', result: result as object, submittedAt: new Date(), agentModel: model },
         })
 
-        if (task.cropAId && task.cropBId && relationshipType !== 'UNKNOWN' && confidence >= 0.3) {
+        const validSources = (Array.isArray(result.sources) ? result.sources as Array<{ url?: string; notes?: string; reasons?: unknown }> : []).filter(s => s.url || s.notes)
+        if (task.cropAId && task.cropBId && relationshipType !== 'UNKNOWN' && confidence >= 0.3 && validSources.length > 0) {
+          const polarity = (relationshipType === 'AVOID' ? 'AVOID' : relationshipType === 'NEUTRAL' ? 'NEUTRAL' : 'COMPANION') as typeof RelationshipType[keyof typeof RelationshipType]
+          const claimDirection = (direction === 'UNKNOWN' ? 'UNKNOWN' : direction) as typeof Direction[keyof typeof Direction]
           const [cropAId, cropBId] = task.cropAId < task.cropBId
             ? [task.cropAId, task.cropBId]
             : [task.cropBId, task.cropAId]
@@ -266,7 +269,7 @@ async function handleMethod(
             where: { cropAId_cropBId: { cropAId, cropBId } },
             create: {
               cropAId, cropBId,
-              type: relationshipType as typeof RelationshipType[keyof typeof RelationshipType],
+              type: polarity,
               direction: (direction === 'UNKNOWN' ? 'MUTUAL' : direction) as typeof Direction[keyof typeof Direction],
               confidence,
               notes: notes ?? summary ?? null,
@@ -274,16 +277,7 @@ async function handleMethod(
             update: { confidence, notes: notes ?? summary ?? null },
           })
 
-          if (validatedReasons.length > 0) {
-            await tx.relationshipReason.createMany({
-              data: validatedReasons.map(r => ({ id: randomUUID(), type: r.type, explanation: r.explanation, cropRelationshipId: rel.id })),
-              skipDuplicates: true,
-            })
-          }
-
-          const sources = Array.isArray(result.sources) ? result.sources as Array<{ url?: string; notes?: string; reasons?: unknown }> : []
-          for (const src of sources) {
-            if (!src.url && !src.notes) continue
+          for (const src of validSources) {
             const createdSrc = await tx.relationshipSource.create({
               data: {
                 relationshipId: rel.id,
@@ -297,13 +291,24 @@ async function handleMethod(
               },
             })
             const srcReasons = validateReasons(src.reasons)
-            if (srcReasons.length > 0) {
-              await tx.relationshipReason.createMany({
-                data: srcReasons.map(r => ({ id: randomUUID(), type: r.type, explanation: r.explanation, sourceId: createdSrc.id })),
-                skipDuplicates: true,
-              })
-            }
+            const claimReasons = srcReasons.length
+              ? srcReasons
+              : validatedReasons.length
+                ? validatedReasons
+                : [{ type: 'OTHER' as typeof RelationshipReasonType[keyof typeof RelationshipReasonType], explanation: summary }]
+            await tx.relationshipClaim.createMany({
+              data: claimReasons.map(r => ({
+                mechanism: r.type,
+                explanation: r.explanation,
+                relationshipType: polarity,
+                direction: claimDirection,
+                relationshipId: rel.id,
+                sourceId: createdSrc.id,
+              })),
+            })
           }
+
+          await recomputeRelationship(tx, rel.id)
 
           const reviewTask = await tx.externalResearchTask.create({
             data: {

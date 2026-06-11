@@ -58,7 +58,7 @@ describe('GET /api/plants/search', () => {
     vi.mocked(prisma.crop.findMany).mockResolvedValue([tomato] as never)
     vi.mocked(prisma.cropRelationship.findMany).mockResolvedValue([
       {
-        id: 'rel-1', type: 'COMPANION', reason: 'PEST_CONTROL', confidence: 0.8, notes: null,
+        id: 'rel-1', type: 'COMPANION', claims: [{ mechanism: 'PEST_CONTROL', explanation: '' }], confidence: 0.8, notes: null,
         cropA: tomato, cropB: basil,
       },
     ] as never)
@@ -80,8 +80,8 @@ describe('GET /api/plants/search', () => {
     vi.mocked(prisma.$queryRaw).mockResolvedValue([{ id: tomato.id }])
     vi.mocked(prisma.crop.findMany).mockResolvedValue([tomato] as never)
     vi.mocked(prisma.cropRelationship.findMany).mockResolvedValue([
-      { id: 'r1', type: 'COMPANION', reason: null, confidence: 0.5, notes: null, cropA: tomato, cropB: basil },
-      { id: 'r2', type: 'AVOID',     reason: null, confidence: 0.5, notes: null, cropA: tomato, cropB: unknown },
+      { id: 'r1', type: 'COMPANION', claims: [], confidence: 0.5, notes: null, cropA: tomato, cropB: basil },
+      { id: 'r2', type: 'AVOID',     claims: [], confidence: 0.5, notes: null, cropA: tomato, cropB: unknown },
     ] as never)
     vi.mocked(prisma.researchRequest.findMany).mockResolvedValue([])
 
@@ -147,7 +147,7 @@ describe('GET /api/plants/search', () => {
     vi.mocked(prisma.$queryRaw).mockResolvedValue([{ id: tomato.id }])
     vi.mocked(prisma.crop.findMany).mockResolvedValue([tomatoDe] as never)
     vi.mocked(prisma.cropRelationship.findMany).mockResolvedValue([
-      { id: 'r1', type: 'COMPANION', reason: null, confidence: 0.5, notes: null, cropA: tomatoDe, cropB: basil },
+      { id: 'r1', type: 'COMPANION', claims: [], confidence: 0.5, notes: null, cropA: tomatoDe, cropB: basil },
     ] as never)
     vi.mocked(prisma.researchRequest.findMany).mockResolvedValue([])
 
@@ -162,7 +162,7 @@ describe('GET /api/plants/search', () => {
     vi.mocked(prisma.$queryRaw).mockResolvedValue([{ id: tomato.id }])
     vi.mocked(prisma.crop.findMany).mockResolvedValue([{ ...tomato, translations: [] }] as never)
     vi.mocked(prisma.cropRelationship.findMany).mockResolvedValue([
-      { id: 'r1', type: 'COMPANION', reason: null, confidence: 0.5, notes: null, cropA: tomato, cropB: basilDe },
+      { id: 'r1', type: 'COMPANION', claims: [], confidence: 0.5, notes: null, cropA: tomato, cropB: basilDe },
     ] as never)
     vi.mocked(prisma.researchRequest.findMany).mockResolvedValue([])
 
@@ -172,30 +172,13 @@ describe('GET /api/plants/search', () => {
     expect(body.plants[0].companions[0].cropB.commonNames).toEqual(['Basilikum'])
   })
 
-  it('ATTRACTS, NURSE, TRAP_CROP all go into companions bucket', async () => {
-    vi.mocked(auth.api.getSession).mockResolvedValue(null)
-    vi.mocked(prisma.$queryRaw).mockResolvedValue([{ id: tomato.id }])
-    vi.mocked(prisma.crop.findMany).mockResolvedValue([tomato] as never)
-    vi.mocked(prisma.cropRelationship.findMany).mockResolvedValue([
-      { id: 'r1', type: 'ATTRACTS',   reason: null, confidence: 0.5, notes: null, cropA: tomato, cropB: basil },
-      { id: 'r2', type: 'NURSE',      reason: null, confidence: 0.5, notes: null, cropA: tomato, cropB: unknown },
-      { id: 'r3', type: 'TRAP_CROP',  reason: null, confidence: 0.5, notes: null, cropA: tomato, cropB: unknown },
-    ] as never)
-    vi.mocked(prisma.researchRequest.findMany).mockResolvedValue([])
-
-    const res = await GET(makeGet('tomato'))
-    const body = await res.json()
-    expect(body.plants[0].companions).toHaveLength(3)
-    expect(body.plants[0].antagonists).toHaveLength(0)
-  })
-
   it('shows a plant in both plants and noDataPlants when matched by different queries', async () => {
     // When basil matches and has relationships, tomato (also matched) has none
     vi.mocked(auth.api.getSession).mockResolvedValue(null)
     vi.mocked(prisma.$queryRaw).mockResolvedValue([{ id: tomato.id }, { id: basil.id }])
     vi.mocked(prisma.crop.findMany).mockResolvedValue([tomato, basil] as never)
     vi.mocked(prisma.cropRelationship.findMany).mockResolvedValue([
-      { id: 'r1', type: 'COMPANION', reason: null, confidence: 0.5, notes: null, cropA: basil, cropB: unknown },
+      { id: 'r1', type: 'COMPANION', claims: [], confidence: 0.5, notes: null, cropA: basil, cropB: unknown },
     ] as never)
     vi.mocked(prisma.researchRequest.findMany).mockResolvedValue([])
 

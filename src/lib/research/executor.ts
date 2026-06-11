@@ -1,5 +1,5 @@
 import prisma from '@/lib/prisma'
-import { RelationshipType } from '@prisma/client'
+import { RelationshipType, Direction, RelationshipReasonType } from '@prisma/client'
 import {
   buildPrompt,
   stripCodeFences,
@@ -7,10 +7,10 @@ import {
   aggregateByPair,
   mapDirection,
   validateReasons,
-  computeRelationshipConfidence,
   type ReasonEntry,
   type ExtractedEntry,
 } from './helpers'
+import { recomputeRelationship } from './review'
 
 const BASE_URL = process.env.LLM_BASE_URL ?? 'https://openrouter.ai/api/v1'
 const MODEL = process.env.LLM_MODEL ?? 'perplexity/sonar-deep-research'
@@ -155,20 +155,31 @@ async function findGenusCropId(botanicalName: string): Promise<string | null> {
   return rows[0]?.id ?? null
 }
 
-async function writeRelationshipReasons(
+/**
+ * Writes one claim per reason for a source. Every claim carries the source's
+ * polarity + direction (moved off RelationshipSource onto the claim). A source
+ * with no reasons still yields one OTHER-mechanism claim so it counts toward
+ * the relationship aggregate.
+ */
+async function writeClaims(
   relationshipId: string,
-  sourceId: string | null,
+  sourceId: string,
+  relationshipType: RelationshipType,
+  direction: Direction,
   reasons: ReasonEntry[],
 ): Promise<void> {
-  if (reasons.length === 0) return
-  await prisma.relationshipReason.createMany({
-    data: reasons.map(r => ({
-      type: r.type,
+  const entries: ReasonEntry[] = reasons.length
+    ? reasons
+    : [{ type: 'OTHER' as RelationshipReasonType, explanation: '' }]
+  await prisma.relationshipClaim.createMany({
+    data: entries.map(r => ({
+      mechanism: r.type,
       explanation: r.explanation,
-      cropRelationshipId: sourceId === null ? relationshipId : null,
-      sourceId: sourceId !== null ? sourceId : null,
+      relationshipType,
+      direction,
+      relationshipId,
+      sourceId,
     })),
-    skipDuplicates: false,
   })
 }
 
@@ -192,10 +203,6 @@ export async function importEntries(entries: ExtractedEntry[]): Promise<void> {
         include: { sources: true },
       })
 
-      // Write relationship-level reasons (delete old ones from automated research, re-insert)
-      await prisma.relationshipReason.deleteMany({ where: { cropRelationshipId: relationship.id } })
-      await writeRelationshipReasons(relationship.id, null, pair.reasons)
-
       const seenUrls = new Set(relationship.sources.map(s => s.url).filter(Boolean) as string[])
       const seenNoteKeys = new Set(relationship.sources.map(s => s.notes).filter(Boolean) as string[])
 
@@ -215,17 +222,15 @@ export async function importEntries(entries: ExtractedEntry[]): Promise<void> {
             relationshipId: relationship.id,
             source: 'RESEARCH',
             confidence: paperUrl ? 'PEER_REVIEWED' : 'ANECDOTAL',
-            position: paper.position,
-            sourceDirection: mapDirection(paper.direction, paperCropAId ?? idA, cropAId) as any,
             url: paperUrl,
             notes: noteKey,
           },
         })
-        await writeRelationshipReasons(relationship.id, src.id, paper.reasons)
+        const dir = mapDirection(paper.direction, paperCropAId ?? idA, cropAId) ?? 'UNKNOWN'
+        await writeClaims(relationship.id, src.id, paper.position as RelationshipType, dir, paper.reasons.length ? paper.reasons : pair.reasons)
       }
 
-      const allSources = await prisma.relationshipSource.findMany({ where: { relationshipId: relationship.id }, select: { confidence: true } })
-      await prisma.cropRelationship.update({ where: { id: relationship.id }, data: { confidence: computeRelationshipConfidence(allSources.map(s => s.confidence)) } })
+      await recomputeRelationship(prisma, relationship.id)
 
       // Genus dual-write
       if (pair.genusWide) {
@@ -240,9 +245,6 @@ export async function importEntries(entries: ExtractedEntry[]): Promise<void> {
               update: {},
               include: { sources: true },
             })
-            await prisma.relationshipReason.deleteMany({ where: { cropRelationshipId: genusRel.id } })
-            await writeRelationshipReasons(genusRel.id, null, pair.reasons)
-
             const seenGenusUrls = new Set(genusRel.sources.map(s => s.url).filter(Boolean) as string[])
             const seenGenusNoteKeys = new Set(genusRel.sources.map(s => s.notes).filter(Boolean) as string[])
             for (const paper of pair.papers) {
@@ -256,12 +258,11 @@ export async function importEntries(entries: ExtractedEntry[]): Promise<void> {
                 seenGenusNoteKeys.add(noteKey)
               }
               const src = await prisma.relationshipSource.create({
-                data: { relationshipId: genusRel.id, source: 'RESEARCH', confidence: paperUrl ? 'PEER_REVIEWED' : 'ANECDOTAL', position: paper.position, url: paperUrl, notes: noteKey },
+                data: { relationshipId: genusRel.id, source: 'RESEARCH', confidence: paperUrl ? 'PEER_REVIEWED' : 'ANECDOTAL', url: paperUrl, notes: noteKey },
               })
-              await writeRelationshipReasons(genusRel.id, src.id, paper.reasons)
+              await writeClaims(genusRel.id, src.id, paper.position as RelationshipType, 'UNKNOWN', paper.reasons.length ? paper.reasons : pair.reasons)
             }
-            const genusSources = await prisma.relationshipSource.findMany({ where: { relationshipId: genusRel.id }, select: { confidence: true } })
-            await prisma.cropRelationship.update({ where: { id: genusRel.id }, data: { confidence: computeRelationshipConfidence(genusSources.map(s => s.confidence)) } })
+            await recomputeRelationship(prisma, genusRel.id)
           }
         } catch {
           // genus derivation is best-effort

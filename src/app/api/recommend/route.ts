@@ -66,20 +66,33 @@ const allIds = [...new Set([...cropIds, ...(existingBeds ?? []).flat()])]
           { cropBId: { in: allIds } },
         ],
       },
-      select: { cropAId: true, cropBId: true, type: true, confidence: true, reasons: { select: { type: true, explanation: true } }, notes: true },
+      select: { cropAId: true, cropBId: true, type: true, confidence: true, claims: { select: { mechanism: true, explanation: true } }, notes: true },
     }),
   ])
+
+  // Collapse per-source claims into the {type, explanation} reasons the recommender expects.
+  const relInputs = relationships.map(r => {
+    const { claims, ...rest } = r
+    const seen = new Set<string>()
+    const reasons: Array<{ type: string; explanation: string }> = []
+    for (const c of claims) {
+      if (seen.has(c.mechanism)) continue
+      seen.add(c.mechanism)
+      reasons.push({ type: c.mechanism, explanation: c.explanation })
+    }
+    return { ...rest, reasons }
+  }) as unknown as RelationshipInput[]
 
   // With locked beds, skip alternative generation — alternatives don't make sense
   // when some beds are already fixed by existingBeds.
   if (existingBeds) {
-    const result = recommend(crops, relationships as RelationshipInput[], bedCount, bedCapacity, minTempC, existingBeds)
+    const result = recommend(crops, relInputs, bedCount, bedCapacity, minTempC, existingBeds)
     return NextResponse.json({ ...result, alternatives: [] })
   }
 
   const [primary, ...alternatives] = recommendAlternatives(
     crops,
-    relationships as RelationshipInput[],
+    relInputs,
     bedCount,
     bedCapacity,
     minTempC,
