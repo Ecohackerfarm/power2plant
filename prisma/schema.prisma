@@ -95,6 +95,9 @@ model CropRelationship {
   type       RelationshipType
   direction  Direction            @default(MUTUAL)
   confidence Float                @default(0.5)
+  conflict   Boolean              @default(false)
+  mechanisms RelationshipReasonType[] @default([])
+  deletedAt  DateTime?
   notes      String?
   cropAId    String
   cropBId    String
@@ -124,6 +127,7 @@ model RelationshipSource {
   relationshipId  String
   relationship    CropRelationship      @relation(fields: [relationshipId], references: [id], onDelete: Cascade)
   userId          String?
+  rejectedAt      DateTime?
   checks          SourceCheck[]
   reasons         RelationshipReason[]
 
@@ -135,25 +139,33 @@ model RelationshipReason {
   id                   String              @id @default(cuid())
   type                 RelationshipReasonType
   explanation          String
+  relationshipType     RelationshipType?
+  direction            Direction?
+  rejectedAt           DateTime?
   cropRelationshipId   String?
   cropRelationship     CropRelationship?   @relation(fields: [cropRelationshipId], references: [id], onDelete: Cascade)
   sourceId             String?
   source               RelationshipSource? @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  checks               SourceCheck[]
 
   @@index([cropRelationshipId])
   @@index([sourceId])
 }
 
 model SourceCheck {
-  id        String             @id @default(cuid())
-  sourceId  String
-  source    RelationshipSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  id        String              @id @default(cuid())
+  sourceId  String?
+  source    RelationshipSource? @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  claimId   String?
+  claim     RelationshipReason? @relation(fields: [claimId], references: [id], onDelete: Cascade)
   checkedBy String
-  checkedAt DateTime           @default(now())
+  checkedAt DateTime            @default(now())
   correct   Boolean
+  reason    RejectReason?
   notes     String?
 
   @@index([sourceId])
+  @@index([claimId])
 }
 
 model UserGarden {
@@ -208,6 +220,7 @@ enum RelationshipType {
   REPELS
   NURSE
   TRAP_CROP
+  UNCERTAIN
 }
 
 enum Direction {
@@ -222,7 +235,23 @@ enum RelationshipReasonType {
   NUTRIENT
   SHADE
   ALLELOPATHY
+  NURSE
+  TRAP_CROP
   OTHER
+}
+
+enum RejectReason {
+  // source-level
+  SOURCE_NOT_FOUND
+  OFF_TOPIC
+  NOT_PEER_REVIEWED
+  DUPLICATE
+  INACCESSIBLE
+  // claim-level
+  CLAIM_UNSUPPORTED
+  WRONG_TYPE
+  WRONG_DIRECTION
+  CONTRADICTS
 }
 
 enum ConfidenceLevel {
