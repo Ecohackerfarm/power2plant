@@ -22,6 +22,17 @@ rm -f "$BRANCH_FILE" /run/p2p/staging-deploy.trigger
 cd "$PROJECT_PATH"
 sudo -u "$DEPLOY_USERNAME" git fetch --prune origin
 sudo -u "$DEPLOY_USERNAME" git checkout -B "$BRANCH" "origin/$BRANCH"
+
+# Clone or update invoice-service if INVOICE_SERVICE_REPO is set in .env
+INVOICE_SERVICE_REPO=$(grep -E '^INVOICE_SERVICE_REPO=' "${PROJECT_PATH}/.env" 2>/dev/null | cut -d= -f2- | tr -d '"' || true)
+if [[ -n "${INVOICE_SERVICE_REPO}" ]]; then
+  if [[ -d "${PROJECT_PATH}/invoice-service/.git" ]]; then
+    sudo -u "$DEPLOY_USERNAME" git -C "${PROJECT_PATH}/invoice-service" pull origin main
+  else
+    sudo -u "$DEPLOY_USERNAME" git clone "$INVOICE_SERVICE_REPO" "${PROJECT_PATH}/invoice-service"
+  fi
+fi
+
 sudo -u "$DEPLOY_USERNAME" docker compose up -d --build
 
 "${PROJECT_PATH}/scripts/server/staging-seed-bootstrap.sh"
