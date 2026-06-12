@@ -171,7 +171,9 @@
     "plantHasNoData": "No companion data yet for this plant",
     "ATTRACTS": "Attracts",
     "NURSE": "Nurse crop",
-    "TRAP_CROP": "Trap crop"
+    "TRAP_CROP": "Trap crop",
+    "conflicting": "विरोधाभासी",
+    "unreviewed": "अनीक्षित"
   },
   "Contribute": {
     "title": "अवलोकन साझा करें",
@@ -257,7 +259,9 @@
     "inheritedFrom": "{genus} से",
     "wikiReadMore": "Wikipedia →",
     "wikiAttribution": "स्रोत: Wikipedia (CC BY-SA)",
-    "contributeObservation": "खोज जोड़ें →"
+    "contributeObservation": "खोज जोड़ें →",
+    "conflicting": "विरोधाभासी",
+    "unreviewed": "अनीक्षित"
   },
   "RelationshipPage": {
     "back": "← वापस",
@@ -311,7 +315,10 @@
     "genusLevelEvidence": "वंश स्तर के प्रमाण",
     "fundedBy": "शोध वित्त पोषित",
     "community": "समुदाय",
-    "unknownUser": "अज्ञात"
+    "unknownUser": "अज्ञात",
+    "conflicting": "विरोधाभासी साक्ष्य",
+    "unreviewed": "अनीक्षित",
+    "uncertain": "अनिश्चित"
   },
   "GardenPage": {
     "backHome": "← {brand}",

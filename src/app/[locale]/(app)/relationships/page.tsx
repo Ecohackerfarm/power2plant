@@ -18,6 +18,7 @@ type CropRow = { id: string; name: string; botanicalName: string; commonNames: s
 type RelRow = {
   id: string; type: string; reason: string | null; confidence: number; notes: string | null
   cropA: CropRow; cropB: CropRow
+  conflict?: boolean; unreviewed?: boolean
 }
 
 type PlantResult = CropRow & { companions: RelRow[]; antagonists: RelRow[] }
@@ -71,6 +72,8 @@ function CompanionRow({ rel, plantId, t }: {
       <div className="flex items-center gap-2 shrink-0">
         <span className="text-xs text-muted-foreground">{tryT(clevel)}</span>
         <Badge variant={variant} className="text-xs">{label}</Badge>
+        {rel.conflict && <Badge variant="destructive" className="text-xs">{tryT('conflicting')}</Badge>}
+        {rel.unreviewed && <Badge variant="outline" className="text-xs">{tryT('unreviewed')}</Badge>}
       </div>
     </Link>
   )

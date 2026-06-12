@@ -137,6 +137,7 @@ export async function GET(request: Request) {
       where: {
         ...whereClause,
         ...(cursor ? { id: { lt: cursor } } : {}),
+        deletedAt: null,
       },
       take: limit + 1,
       orderBy: { id: 'desc' },
@@ -170,6 +171,7 @@ export async function GET(request: Request) {
       relationships: results.map((r) => ({
         id: r.id,
         type: r.type,
+        conflict: r.conflict,
         reasons: claimsToReasons(r.claims),
         confidence: getConfidenceLabel(r.confidence),
         notes: r.notes,

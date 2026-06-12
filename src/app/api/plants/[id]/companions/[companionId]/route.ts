@@ -7,6 +7,7 @@ type ReasonRow = { type: string; explanation: string }
 type RelRow = {
   relId: string; type: string; reasons: ReasonRow[]; confidence: number
   notes: string | null; direction: string
+  conflict: boolean; unreviewed: boolean
   cropAId: string; cropAName: string; cropABotanical: string; cropACommonNames: string[]
   cropANitrogen: boolean
   cropBId: string; cropBName: string; cropBBotanical: string; cropBCommonNames: string[]
@@ -19,6 +20,12 @@ async function findRelationship(cropAId: string, cropBId: string): Promise<RelRo
   const rows = await prisma.$queryRaw<RelRow[]>`
     SELECT
       cr.id AS "relId", cr.type, cr.confidence, cr.notes, cr.direction,
+      cr.conflict,
+      NOT EXISTS (
+        SELECT 1 FROM "ReviewCheck" rc
+        JOIN "RelationshipSource" rs ON rs.id = rc."sourceId"
+        WHERE rs."relationshipId" = cr.id
+      ) AS unreviewed,
       COALESCE((
         SELECT json_agg(json_build_object('type', rr.mechanism, 'explanation', rr.explanation))
         FROM "RelationshipClaim" rr WHERE rr."relationshipId" = cr.id
@@ -30,8 +37,9 @@ async function findRelationship(cropAId: string, cropBId: string): Promise<RelRo
     FROM "CropRelationship" cr
     JOIN "Crop" ca ON cr."cropAId" = ca.id
     JOIN "Crop" cb ON cr."cropBId" = cb.id
-    WHERE (cr."cropAId" = ${cropAId} AND cr."cropBId" = ${cropBId})
-       OR (cr."cropAId" = ${cropBId} AND cr."cropBId" = ${cropAId})
+    WHERE ((cr."cropAId" = ${cropAId} AND cr."cropBId" = ${cropBId})
+       OR (cr."cropAId" = ${cropBId} AND cr."cropBId" = ${cropAId}))
+      AND cr."deletedAt" IS NULL
   `
   return rows[0] ?? null
 }
