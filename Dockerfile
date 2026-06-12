@@ -65,12 +65,6 @@ RUN corepack enable && corepack prepare pnpm@11.4.0 --activate
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-# NEXT_PUBLIC_* vars are baked into the client bundle at build time, so we use
-# placeholder strings here. The entrypoint replaces them at container startup
-# with the actual runtime env values — keeping the image environment-agnostic.
-ENV NEXT_PUBLIC_APP_URL=__NEXT_PUBLIC_APP_URL__ \
-    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=__NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY__ \
-    NEXT_PUBLIC_KOFI_URL=__NEXT_PUBLIC_KOFI_URL__
 RUN pnpm exec prisma generate
 RUN NODE_ENV=production pnpm build
 

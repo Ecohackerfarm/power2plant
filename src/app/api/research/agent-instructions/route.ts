@@ -23,7 +23,7 @@ export async function GET() {
     }),
   ])
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://power2plant.app'
+  const baseUrl = process.env['NEXT_PUBLIC_APP_URL'] ?? 'https://power2plant.app'
   const modelList = allowedModels.map(m => `  - ${m.id} (${m.label}, score ${m.score}/100)`).join('\n')
 
   const instructions = `You are a research contributor for power2plant.

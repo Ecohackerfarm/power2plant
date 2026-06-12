@@ -226,7 +226,7 @@ async function handleMethod(
       }
 
       // Delegate to the submit route logic by calling it via fetch (internal)
-      const base = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+      const base = process.env['NEXT_PUBLIC_APP_URL'] ?? 'http://localhost:3000'
       // We can't pass session cookies here, so we re-implement the core logic inline.
       const result = args.result as Record<string, unknown>
       const model = result.model as string

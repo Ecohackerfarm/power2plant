@@ -3,10 +3,11 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { TopUpModal } from '@/components/top-up-modal'
 import { ExternalLink } from 'lucide-react'
+import { clientEnv } from '@/lib/client-env'
 
-const STRIPE_PK = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-const KOFI_BASE = process.env.NEXT_PUBLIC_KOFI_URL?.startsWith('https://')
-  ? process.env.NEXT_PUBLIC_KOFI_URL : undefined
+const STRIPE_PK = clientEnv.stripePublishableKey()
+const _kofiUrl  = clientEnv.kofiUrl()
+const KOFI_BASE = _kofiUrl?.startsWith('https://') ? _kofiUrl : undefined
 
 function centsToEuros(cents: number) {
   return `€${(cents / 100).toFixed(2)}`
