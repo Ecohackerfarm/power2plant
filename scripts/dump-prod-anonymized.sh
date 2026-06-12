@@ -50,6 +50,7 @@ fi
 DUMP_FILE=$(mktemp /tmp/p2p-prod-dump-XXXXXX.sql)
 trap 'rm -f "$DUMP_FILE"' EXIT
 
+# sed expression: swap /power2plant (+ any query string) for /postgres
 MAINT_SED='s|/power2plant[^/]*$|/postgres|'
 
 echo "==> Dumping prod..."
@@ -60,9 +61,11 @@ docker compose -f "$PROD_COMPOSE" run --rm -T scripts \
 echo "    Dump size: $(du -sh "$DUMP_FILE" | cut -f1)"
 
 echo "==> Restoring to ${TARGET}..."
+# Kill active connections so DROP DATABASE doesn't block
 docker compose -f "$TARGET_COMPOSE" run --rm scripts \
   sh -c "MAINT=\$(echo \"\$DATABASE_URL\" | sed '$MAINT_SED'); psql \"\$MAINT\" -c \"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='power2plant' AND pid<>pg_backend_pid();\""
 
+# WITH (FORCE) handles any connections that reconnected (Postgres 13+)
 docker compose -f "$TARGET_COMPOSE" run --rm scripts \
   sh -c "MAINT=\$(echo \"\$DATABASE_URL\" | sed '$MAINT_SED'); psql \"\$MAINT\" -c 'DROP DATABASE IF EXISTS power2plant WITH (FORCE);'"
 
@@ -74,7 +77,6 @@ docker compose -f "$TARGET_COMPOSE" run --rm -T scripts \
   < "$DUMP_FILE"
 
 echo "==> Anonymizing user PII (preserving ${PRESERVE_IN})..."
-# Build SQL dynamically so preserved emails can be interpolated
 docker compose -f "$TARGET_COMPOSE" run --rm -T scripts \
   sh -c 'psql "${DATABASE_URL%%\?*}"' \
   <<SQL
