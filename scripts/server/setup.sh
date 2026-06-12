@@ -63,7 +63,8 @@ RemainAfterExit=yes
 User=${DEPLOY_USERNAME}
 Group=${DEPLOY_USERNAME}
 WorkingDirectory=${PROD_PATH}
-ExecStart=docker compose up -d --build
+ExecStart=docker compose pull
+ExecStart=docker compose up -d
 ExecStop=docker compose down
 TimeoutStartSec=300
 
@@ -108,7 +109,10 @@ RemainAfterExit=yes
 User=${DEPLOY_USERNAME}
 Group=${DEPLOY_USERNAME}
 WorkingDirectory=${STAGING_PATH}
-ExecStart=docker compose up -d --build
+Environment=IMAGE_TAG=staging
+Environment=SCRIPTS_IMAGE_TAG=scripts-staging
+ExecStart=docker compose pull
+ExecStart=docker compose up -d
 ExecStop=docker compose down
 TimeoutStartSec=300
 

@@ -17,15 +17,7 @@ services:
       - default
 
   app:
-    build:
-      context: .
-      target: runner
-      args:
-        BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
-        BETTER_AUTH_URL: ${BETTER_AUTH_URL}
-        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
-        NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}
-        NEXT_PUBLIC_KOFI_URL: ${NEXT_PUBLIC_KOFI_URL}
+    image: ghcr.io/ecohackerfarm/power2plant:${IMAGE_TAG:-latest}
     restart: unless-stopped
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgresql://power2plant:power2plant@db:5432/power2plant}
@@ -75,9 +67,7 @@ services:
       - default
 
   research-worker:
-    build:
-      context: .
-      target: scripts
+    image: ghcr.io/ecohackerfarm/power2plant:${SCRIPTS_IMAGE_TAG:-scripts}
     command: npm run worker:research
     restart: unless-stopped
     environment:
@@ -99,9 +89,7 @@ services:
       - default
 
   scripts:
-    build:
-      context: .
-      target: scripts
+    image: ghcr.io/ecohackerfarm/power2plant:${SCRIPTS_IMAGE_TAG:-scripts}
     entrypoint: >
       sh -c "
         pg_isready -d \"$$DATABASE_URL\" -q 2>/dev/null ||
