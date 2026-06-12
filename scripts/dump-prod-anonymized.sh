@@ -22,40 +22,41 @@ if [[ "$TARGET" != "dev" && "$TARGET" != "staging" ]]; then
   exit 1
 fi
 
-PROD_DIR="/opt/power2plant/prod"
-TARGET_DIR="/opt/power2plant/${TARGET}"
+PROD_COMPOSE="/opt/power2plant/prod/docker-compose.yml"
+TARGET_COMPOSE="/opt/power2plant/${TARGET}/docker-compose.yml"
 
 DUMP_FILE=$(mktemp /tmp/p2p-prod-dump-XXXXXX.sql)
 trap 'rm -f "$DUMP_FILE"' EXIT
 
-echo "==> Dumping prod via scripts container..."
-# DATABASE_URL is set in the container env — pg_dump reads it directly
-docker compose -f "${PROD_DIR}/docker-compose.yml" \
-  run --rm -T scripts \
-  sh -c 'pg_dump "$DATABASE_URL" --no-owner --no-acl' \
-  > "$DUMP_FILE"
+# sed expression: swap /power2plant (+ any query string) for /postgres
+MAINT_SED='s|/power2plant[^/]*$|/postgres|'
 
+echo "==> Dumping prod..."
+# Strip ?schema=... — pg_dump doesn't accept URL query params
+docker compose -f "$PROD_COMPOSE" run --rm -T scripts \
+  sh -c 'pg_dump "${DATABASE_URL%%\?*}" --no-owner --no-acl' \
+  > "$DUMP_FILE"
 echo "    Dump size: $(du -sh "$DUMP_FILE" | cut -f1)"
 
 echo "==> Restoring to ${TARGET}..."
-# Drop + recreate DB via the target scripts container (connect to postgres maintenance DB)
-docker compose -f "${TARGET_DIR}/docker-compose.yml" \
-  run --rm scripts \
-  sh -c 'psql "${DATABASE_URL%/*}/postgres" -c "DROP DATABASE IF EXISTS power2plant;"'
+# Kill active connections so DROP DATABASE doesn't block
+docker compose -f "$TARGET_COMPOSE" run --rm scripts \
+  sh -c "MAINT=\$(echo \"\$DATABASE_URL\" | sed '$MAINT_SED'); psql \"\$MAINT\" -c \"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='power2plant' AND pid<>pg_backend_pid();\""
 
-docker compose -f "${TARGET_DIR}/docker-compose.yml" \
-  run --rm scripts \
-  sh -c 'psql "${DATABASE_URL%/*}/postgres" -c "CREATE DATABASE power2plant;"'
+# WITH (FORCE) handles any connections that reconnected (Postgres 13+)
+docker compose -f "$TARGET_COMPOSE" run --rm scripts \
+  sh -c "MAINT=\$(echo \"\$DATABASE_URL\" | sed '$MAINT_SED'); psql \"\$MAINT\" -c 'DROP DATABASE IF EXISTS power2plant WITH (FORCE);'"
 
-docker compose -f "${TARGET_DIR}/docker-compose.yml" \
-  run --rm -T scripts \
-  sh -c 'psql "$DATABASE_URL" -q' \
+docker compose -f "$TARGET_COMPOSE" run --rm scripts \
+  sh -c "MAINT=\$(echo \"\$DATABASE_URL\" | sed '$MAINT_SED'); psql \"\$MAINT\" -c 'CREATE DATABASE power2plant;'"
+
+docker compose -f "$TARGET_COMPOSE" run --rm -T scripts \
+  sh -c 'psql "${DATABASE_URL%%\?*}" -q' \
   < "$DUMP_FILE"
 
 echo "==> Anonymizing user PII..."
-docker compose -f "${TARGET_DIR}/docker-compose.yml" \
-  run --rm scripts \
-  sh -c 'psql "$DATABASE_URL"' \
+docker compose -f "$TARGET_COMPOSE" run --rm -T scripts \
+  sh -c 'psql "${DATABASE_URL%%\?*}"' \
   <<'SQL'
 UPDATE "user"
 SET
