@@ -99,6 +99,23 @@ export async function GET(
     orderBy: { attemptedAt: 'desc' },
   })
 
+  // Find completed research queue entry for this pair
+  const queueEntry = await prisma.researchQueue.findFirst({
+    where: { cropAId: cA, cropBId: cB, status: 'DONE' },
+    include: {
+      funders: {
+        include: { user: { select: { id: true, name: true } } },
+        orderBy: { createdAt: 'asc' },
+      },
+    },
+  })
+
+  const funders = queueEntry?.funders.map(f => ({
+    userId: f.userId,
+    name: f.user?.name ?? null,
+    source: f.source,
+  })) ?? []
+
   if (!rel) {
     if (researchAttempts.length === 0) {
       return NextResponse.json({ error: 'relationship not found' }, { status: 404 })
@@ -107,6 +124,7 @@ export async function GET(
       relationship: null,
       sources: [],
       researchAttempts: researchAttempts.map(a => ({ ...a, attemptedAt: a.attemptedAt.toISOString() })),
+      funders,
     })
   }
 
@@ -189,7 +207,9 @@ export async function GET(
             select: { source: true, sourceType: true, confidence: true, url: true, notes: true, fetchedAt: true },
             orderBy: { confidence: 'desc' },
           })
-          const existingUrls = new Set(sources.filter(s => s.url).map(s => s.url))
+          const existingUrls = new Set(
+            sources.flatMap(s => ('urls' in s ? s.urls.map(u => u.url) : s.url ? [s.url] : [])),
+          )
           genusSources = genusSrcRaw
             .filter(s => !s.url || !existingUrls.has(s.url))
             .map(s => ({
@@ -223,5 +243,6 @@ export async function GET(
     sources,
     genusSources,
     researchAttempts: researchAttempts.map(a => ({ ...a, attemptedAt: a.attemptedAt.toISOString() })),
+    funders,
   })
 }

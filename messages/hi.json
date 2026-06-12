@@ -308,7 +308,10 @@
     "link": "लिंक",
     "genusLevelBanner": "संबंध वंश स्तर पर परिभाषित ({genusA} ↔ {genusB}) — सभी {genus} प्रजातियों पर लागू होता है।",
     "appliesToAllSpecies": "सभी {genus} प्रजातियों पर लागू होता है।",
-    "genusLevelEvidence": "वंश स्तर के प्रमाण"
+    "genusLevelEvidence": "वंश स्तर के प्रमाण",
+    "fundedBy": "शोध वित्त पोषित",
+    "community": "समुदाय",
+    "unknownUser": "अज्ञात"
   },
   "GardenPage": {
     "backHome": "← {brand}",

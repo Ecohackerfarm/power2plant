@@ -320,7 +320,10 @@
     "LOW_CONFIDENCE": "Unzureichende Belege",
     "researchAttemptClose": "Schließen",
     "researchAttemptNoRelationship": "Keine Beziehungsdaten gefunden.",
-    "genusLevelEvidence": "Belege auf Gattungsebene"
+    "genusLevelEvidence": "Belege auf Gattungsebene",
+    "fundedBy": "Forschung finanziert von",
+    "community": "Gemeinschaft",
+    "unknownUser": "Anonym"
   },
   "GardenPage": {
     "backHome": "← {brand}",

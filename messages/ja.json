@@ -308,7 +308,10 @@
     "link": "リンク",
     "genusLevelBanner": "この関係は属レベルで定義されています（{genusA} ↔ {genusB}）——{genus}のすべての種に適用されます。",
     "appliesToAllSpecies": "{genus}のすべての種に適用されます。",
-    "genusLevelEvidence": "属レベルの根拠"
+    "genusLevelEvidence": "属レベルの根拠",
+    "fundedBy": "研究の資金提供者",
+    "community": "コミュニティ",
+    "unknownUser": "匿名"
   },
   "GardenPage": {
     "backHome": "← {brand}",
