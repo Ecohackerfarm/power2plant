@@ -75,7 +75,8 @@
     "lookup": "Encontrar planta companheira",
     "plan": "Planejar canteiros",
     "garden": "Minha horta",
-    "admin": "Administração"
+    "admin": "Administração",
+    "leaderboard": "Classificação"
   },
   "ZoneDetector": {
     "title": "Passo 1 — Sua zona de cultivo",
@@ -439,5 +440,20 @@
     "noBadges": "Nenhum emblema ainda.",
     "plantsResearched": "{count} plantas",
     "pairsResearched": "{count} pares"
+  },
+  "Leaderboard": {
+    "title": "Classificação de pesquisa",
+    "allTime": "Todo o tempo",
+    "yearly": "Este ano",
+    "monthly": "Este mês",
+    "weekly": "Esta semana",
+    "daily": "Hoje",
+    "rank": "Posição",
+    "researcher": "Pesquisador",
+    "researches": "Pesquisas",
+    "badge": "Distintivo",
+    "community": "Comunidade",
+    "noData": "Ainda não há dados para este período.",
+    "fundedBy": "financiado pelo fundo comunitário"
   }
 }

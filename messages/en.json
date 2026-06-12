@@ -75,7 +75,8 @@
     "lookup": "Find Companions",
     "plan": "Plan Beds",
     "garden": "My Garden",
-    "admin": "Admin"
+    "admin": "Admin",
+    "leaderboard": "Leaderboard"
   },
   "ZoneDetector": {
     "title": "Step 1 — Your Growing Zone",
@@ -481,5 +482,20 @@
     "noBadges": "No badges yet.",
     "plantsResearched": "{count} plants",
     "pairsResearched": "{count} pairs"
+  },
+  "Leaderboard": {
+    "title": "Research Leaderboard",
+    "allTime": "All time",
+    "yearly": "This year",
+    "monthly": "This month",
+    "weekly": "This week",
+    "daily": "Today",
+    "rank": "Rank",
+    "researcher": "Researcher",
+    "researches": "Researches",
+    "badge": "Badge",
+    "community": "Community",
+    "noData": "No data for this period yet.",
+    "fundedBy": "funded by community pot"
   }
 }

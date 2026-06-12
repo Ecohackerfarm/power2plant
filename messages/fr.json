@@ -75,7 +75,8 @@
     "lookup": "Trouver une plante compagne",
     "plan": "Planifier les planches",
     "garden": "Mon jardin",
-    "admin": "Administration"
+    "admin": "Administration",
+    "leaderboard": "Classement"
   },
   "ZoneDetector": {
     "title": "Étape 1 — Votre zone de culture",
@@ -439,5 +440,20 @@
     "noBadges": "Pas encore de badges.",
     "plantsResearched": "{count} plantes",
     "pairsResearched": "{count} paires"
+  },
+  "Leaderboard": {
+    "title": "Classement des recherches",
+    "allTime": "Tout le temps",
+    "yearly": "Cette année",
+    "monthly": "Ce mois-ci",
+    "weekly": "Cette semaine",
+    "daily": "Aujourd'hui",
+    "rank": "Rang",
+    "researcher": "Chercheur",
+    "researches": "Recherches",
+    "badge": "Badge",
+    "community": "Communauté",
+    "noData": "Pas encore de données pour cette période.",
+    "fundedBy": "financé par la cagnotte communautaire"
   }
 }

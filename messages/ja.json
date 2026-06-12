@@ -75,7 +75,8 @@
     "lookup": "コンパニオン植物を探す",
     "plan": "花壇を計画する",
     "garden": "マイガーデン",
-    "admin": "管理"
+    "admin": "管理",
+    "leaderboard": "リーダーボード"
   },
   "ZoneDetector": {
     "title": "ステップ 1 — 栽培ゾーン",
@@ -439,5 +440,20 @@
     "noBadges": "まだバッジがありません。",
     "plantsResearched": "{count} 種の植物",
     "pairsResearched": "{count} ペア"
+  },
+  "Leaderboard": {
+    "title": "研究リーダーボード",
+    "allTime": "全期間",
+    "yearly": "今年",
+    "monthly": "今月",
+    "weekly": "今週",
+    "daily": "今日",
+    "rank": "順位",
+    "researcher": "研究者",
+    "researches": "研究数",
+    "badge": "バッジ",
+    "community": "コミュニティ",
+    "noData": "この期間のデータはまだありません。",
+    "fundedBy": "コミュニティポットから資金提供"
   }
 }

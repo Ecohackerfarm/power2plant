@@ -75,7 +75,8 @@
     "lookup": "查找伴生植物",
     "plan": "规划花圃",
     "garden": "我的花园",
-    "admin": "管理"
+    "admin": "管理",
+    "leaderboard": "排行榜"
   },
   "ZoneDetector": {
     "title": "第 1 步 — 您的种植区",
@@ -439,5 +440,20 @@
     "noBadges": "暂无徽章。",
     "plantsResearched": "{count} 种植物",
     "pairsResearched": "{count} 对"
+  },
+  "Leaderboard": {
+    "title": "研究排行榜",
+    "allTime": "全部时间",
+    "yearly": "今年",
+    "monthly": "本月",
+    "weekly": "本周",
+    "daily": "今天",
+    "rank": "排名",
+    "researcher": "研究者",
+    "researches": "研究数",
+    "badge": "徽章",
+    "community": "社区",
+    "noData": "该时段暂无数据。",
+    "fundedBy": "由社区基金资助"
   }
 }

@@ -75,7 +75,8 @@
     "lookup": "ابحث عن نبات مرافق",
     "plan": "خطّط أحواضك",
     "garden": "حديقتي",
-    "admin": "الإدارة"
+    "admin": "الإدارة",
+    "leaderboard": "لوحة المتصدرين"
   },
   "ZoneDetector": {
     "title": "الخطوة 1 — منطقة زراعتك",
@@ -439,5 +440,20 @@
     "noBadges": "لا توجد شارات بعد.",
     "plantsResearched": "{count} نبات",
     "pairsResearched": "{count} زوج"
+  },
+  "Leaderboard": {
+    "title": "لوحة متصدري الأبحاث",
+    "allTime": "كل الوقت",
+    "yearly": "هذا العام",
+    "monthly": "هذا الشهر",
+    "weekly": "هذا الأسبوع",
+    "daily": "اليوم",
+    "rank": "الترتيب",
+    "researcher": "الباحث",
+    "researches": "الأبحاث",
+    "badge": "الشارة",
+    "community": "المجتمع",
+    "noData": "لا توجد بيانات لهذه الفترة بعد.",
+    "fundedBy": "ممول من صندوق المجتمع"
   }
 }
