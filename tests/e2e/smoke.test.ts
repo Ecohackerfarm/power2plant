@@ -106,9 +106,9 @@ test('map picker: stays visible during zone fetch, hides after success', async (
   // Unblock the zone API
   resolveZone(undefined)
 
-  // Map hides and zone confirmation appears
+  // Map hides and wizard advances to plant selection
   await expect(page.locator('.leaflet-container')).not.toBeVisible({ timeout: 5000 })
-  await expect(page.getByText(/coldest winter night/i)).toBeVisible()
+  await expect(page).toHaveURL(/\/plan\/plants/, { timeout: 5000 })
 })
 
 test('plan page shows plant search', async ({ page }) => {
