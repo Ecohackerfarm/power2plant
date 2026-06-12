@@ -65,16 +65,12 @@ RUN corepack enable && corepack prepare pnpm@11.4.0 --activate
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-ARG BETTER_AUTH_SECRET
-ARG BETTER_AUTH_URL
-ARG NEXT_PUBLIC_APP_URL
-ARG NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-ARG NEXT_PUBLIC_KOFI_URL
-ENV BETTER_AUTH_SECRET=$BETTER_AUTH_SECRET \
-    BETTER_AUTH_URL=$BETTER_AUTH_URL \
-    NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL \
-    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=$NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY \
-    NEXT_PUBLIC_KOFI_URL=$NEXT_PUBLIC_KOFI_URL
+# NEXT_PUBLIC_* vars are baked into the client bundle at build time, so we use
+# placeholder strings here. The entrypoint replaces them at container startup
+# with the actual runtime env values — keeping the image environment-agnostic.
+ENV NEXT_PUBLIC_APP_URL=__NEXT_PUBLIC_APP_URL__ \
+    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=__NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY__ \
+    NEXT_PUBLIC_KOFI_URL=__NEXT_PUBLIC_KOFI_URL__
 RUN pnpm exec prisma generate
 RUN NODE_ENV=production pnpm build
 
@@ -95,6 +91,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 # Must be copied into a folder literally named "node_modules" so Node's
 # module resolution finds @prisma/engines etc. when walking up from the CLI.
 COPY --from=prod-deps --chown=nextjs:nodejs /app/node_modules /opt/prod-modules/node_modules
+COPY --chown=nextjs:nodejs scripts/docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh
+
 ENV PATH="/opt/prod-modules/node_modules/.bin:$PATH"
 
 USER nextjs
@@ -102,7 +101,7 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["sh", "-c", "prisma migrate deploy && node server.js"]
+CMD ["/app/docker-entrypoint.sh"]
 
 # ---- scripts ----
 # On-demand admin/research container. Not started by default.

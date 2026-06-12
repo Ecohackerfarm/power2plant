@@ -11,7 +11,6 @@ jobs:
     name: Build & push staging images
     if: startsWith(github.ref, 'refs/heads/release/')
     runs-on: ubuntu-latest
-    environment: staging
     permissions:
       contents: read
       packages: write
@@ -36,12 +35,6 @@ jobs:
           target: runner
           push: true
           tags: ghcr.io/${{ github.repository }}:staging
-          build-args: |
-            BETTER_AUTH_SECRET=${{ secrets.BETTER_AUTH_SECRET }}
-            BETTER_AUTH_URL=${{ secrets.BETTER_AUTH_URL }}
-            NEXT_PUBLIC_APP_URL=${{ secrets.NEXT_PUBLIC_APP_URL }}
-            NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
-            NEXT_PUBLIC_KOFI_URL=${{ secrets.NEXT_PUBLIC_KOFI_URL }}
           cache-from: type=gha,scope=staging-runner
           cache-to: type=gha,mode=max,scope=staging-runner
 
@@ -59,7 +52,6 @@ jobs:
     name: Build & push production images
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    environment: production
     permissions:
       contents: read
       packages: write
@@ -84,12 +76,6 @@ jobs:
           target: runner
           push: true
           tags: ghcr.io/${{ github.repository }}:latest
-          build-args: |
-            BETTER_AUTH_SECRET=${{ secrets.BETTER_AUTH_SECRET }}
-            BETTER_AUTH_URL=${{ secrets.BETTER_AUTH_URL }}
-            NEXT_PUBLIC_APP_URL=${{ secrets.NEXT_PUBLIC_APP_URL }}
-            NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
-            NEXT_PUBLIC_KOFI_URL=${{ secrets.NEXT_PUBLIC_KOFI_URL }}
           cache-from: type=gha,scope=prod-runner
           cache-to: type=gha,mode=max,scope=prod-runner
 
