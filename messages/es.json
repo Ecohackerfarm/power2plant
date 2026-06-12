@@ -417,5 +417,16 @@
     "title": "Desbloquea más con una recarga",
     "moreBeds": "Hasta 100 bancales (gratuito: hasta 20)",
     "topUp": "Recargar →"
+  },
+  "UserProfile": {
+    "notFound": "Usuario no encontrado.",
+    "loading": "Cargando…",
+    "badges": "Insignias",
+    "incrementalBadges": "Hitos de investigación",
+    "plantBadges": "Plantas investigadas",
+    "pairBadges": "Pares investigados",
+    "noBadges": "Aún sin insignias.",
+    "plantsResearched": "{count} plantas",
+    "pairsResearched": "{count} pares"
   }
 }

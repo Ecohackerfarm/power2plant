@@ -417,5 +417,16 @@
     "title": "Desbloqueie mais com recarga",
     "moreBeds": "Até 100 canteiros (gratuito: até 20)",
     "topUp": "Recarregar →"
+  },
+  "UserProfile": {
+    "notFound": "Usuário não encontrado.",
+    "loading": "Carregando…",
+    "badges": "Emblemas",
+    "incrementalBadges": "Marcos de pesquisa",
+    "plantBadges": "Plantas pesquisadas",
+    "pairBadges": "Pares pesquisados",
+    "noBadges": "Nenhum emblema ainda.",
+    "plantsResearched": "{count} plantas",
+    "pairsResearched": "{count} pares"
   }
 }

@@ -417,5 +417,16 @@
     "title": "टॉप-अप से अधिक सुविधाएँ अनलॉक करें",
     "moreBeds": "100 तक क्यारियाँ (निःशुल्क: 20 तक)",
     "topUp": "टॉप-अप करें →"
+  },
+  "UserProfile": {
+    "notFound": "उपयोगकर्ता नहीं मिला।",
+    "loading": "लोड हो रहा है…",
+    "badges": "बैज",
+    "incrementalBadges": "शोध मील के पत्थर",
+    "plantBadges": "शोधित पौधे",
+    "pairBadges": "शोधित जोड़े",
+    "noBadges": "अभी तक कोई बैज नहीं।",
+    "plantsResearched": "{count} पौधे",
+    "pairsResearched": "{count} जोड़े"
   }
 }

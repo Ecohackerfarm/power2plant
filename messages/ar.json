@@ -417,5 +417,16 @@
     "title": "افتح المزيد بإضافة رصيد",
     "moreBeds": "حتى 100 سرير (مجاناً: حتى 20)",
     "topUp": "إضافة رصيد ←"
+  },
+  "UserProfile": {
+    "notFound": "المستخدم غير موجود.",
+    "loading": "جارِ التحميل…",
+    "badges": "الشارات",
+    "incrementalBadges": "معالم البحث",
+    "plantBadges": "النباتات المبحوثة",
+    "pairBadges": "الأزواج المبحوثة",
+    "noBadges": "لا توجد شارات بعد.",
+    "plantsResearched": "{count} نبات",
+    "pairsResearched": "{count} زوج"
   }
 }

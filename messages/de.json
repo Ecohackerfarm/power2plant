@@ -459,5 +459,16 @@
     "title": "Mehr mit Guthaben freischalten",
     "moreBeds": "Bis zu 100 Beete (kostenlos: bis zu 20)",
     "topUp": "Aufladen →"
+  },
+  "UserProfile": {
+    "notFound": "Benutzer nicht gefunden.",
+    "loading": "Laden…",
+    "badges": "Abzeichen",
+    "incrementalBadges": "Forschungs-Meilensteine",
+    "plantBadges": "Erforschte Pflanzen",
+    "pairBadges": "Erforschte Paare",
+    "noBadges": "Noch keine Abzeichen.",
+    "plantsResearched": "{count} Pflanzen",
+    "pairsResearched": "{count} Paare"
   }
 }
