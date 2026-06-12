@@ -38,6 +38,21 @@ describe('GET /api/plants/[id]/companions/[companionId]', () => {
     expect(res.status).toBe(404)
   })
 
+  it('finds relationship when URL IDs are reversed from DB storage order', async () => {
+    // DB stores cropAId='crop-b', cropBId='crop-a' (larger ID first)
+    const reversedRel = { ...fakeRel, cropAId: 'crop-b', cropBId: 'crop-a' }
+    vi.mocked(prisma.$queryRaw).mockResolvedValue([reversedRel])
+    vi.mocked(prisma.relationshipSource.findMany).mockResolvedValue([])
+
+    // URL uses crop-a as [id] — opposite of DB storage
+    const res = await GET(makeReq('crop-a', 'crop-b'), {
+      params: Promise.resolve({ id: 'crop-a', companionId: 'crop-b' }),
+    })
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.relationship.relId).toBe('rel-1')
+  })
+
   it('returns relationship with non-community sources', async () => {
     vi.mocked(prisma.$queryRaw).mockResolvedValue([fakeRel])
     vi.mocked(prisma.relationshipSource.findMany).mockResolvedValue([

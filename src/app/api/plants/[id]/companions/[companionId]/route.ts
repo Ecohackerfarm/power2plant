@@ -16,7 +16,6 @@ type RelRow = {
 type GenusRow = { id: string; botanicalName: string }
 
 async function findRelationship(cropAId: string, cropBId: string): Promise<RelRow | null> {
-  const [a, b] = cropAId < cropBId ? [cropAId, cropBId] : [cropBId, cropAId]
   const rows = await prisma.$queryRaw<RelRow[]>`
     SELECT
       cr.id AS "relId", cr.type, cr.confidence, cr.notes, cr.direction,
@@ -31,7 +30,8 @@ async function findRelationship(cropAId: string, cropBId: string): Promise<RelRo
     FROM "CropRelationship" cr
     JOIN "Crop" ca ON cr."cropAId" = ca.id
     JOIN "Crop" cb ON cr."cropBId" = cb.id
-    WHERE cr."cropAId" = ${a} AND cr."cropBId" = ${b}
+    WHERE (cr."cropAId" = ${cropAId} AND cr."cropBId" = ${cropBId})
+       OR (cr."cropAId" = ${cropBId} AND cr."cropBId" = ${cropAId})
   `
   return rows[0] ?? null
 }
