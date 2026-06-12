@@ -372,6 +372,7 @@ function parseArgs() {
     importFile:  get('--import'),
     cleanEmpty:  args.includes('--clean-empty'),
     agrovocDump: get('--agrovoc-dump'),
+    cropFilter:  get('--crop'),
   }
 }
 
@@ -512,8 +513,10 @@ async function runLocale(locale: string, opts: {
   dryRun: boolean,
   cleanEmpty: boolean,
   agrovocDump?: string,
+  cropFilter?: string,
 }) {
-  let { source, force, dryRun, cleanEmpty, agrovocDump } = opts
+  let { source, force, dryRun, cleanEmpty, agrovocDump, cropFilter } = opts
+  if (cropFilter) console.log(`[--crop] Filtering to crops matching: "${cropFilter}"`)
 
   const outFile = `data/intl/translations-${locale}.tsv`
 
@@ -574,6 +577,7 @@ async function runLocale(locale: string, opts: {
       console.log(`[AGROVOC] Index ready: ${index.size} en→${targetLang} mappings`)
 
       const crops = await prisma.crop.findMany({
+        where: cropFilter ? { botanicalName: { contains: cropFilter, mode: 'insensitive' } } : undefined,
         select: { id: true, botanicalName: true, canonicalName: true,
                   botanicalSynonyms: { select: { name: true } } },
         orderBy: { botanicalName: 'asc' },
@@ -644,6 +648,7 @@ async function runLocale(locale: string, opts: {
     console.log(`[Wikipedia recovery] locale=${locale} — targeting wikidata-attempted crops with no translation`)
 
     const allCrops = await prisma.crop.findMany({
+      where: cropFilter ? { botanicalName: { contains: cropFilter, mode: 'insensitive' } } : undefined,
       select: { id: true, botanicalName: true, canonicalName: true, commonNames: true },
       orderBy: { botanicalName: 'asc' },
     })
@@ -742,6 +747,7 @@ async function runLocale(locale: string, opts: {
   }
 
   const crops = await prisma.crop.findMany({
+    where: cropFilter ? { botanicalName: { contains: cropFilter, mode: 'insensitive' } } : undefined,
     select: { id: true, botanicalName: true, canonicalName: true, commonNames: true,
               botanicalSynonyms: { select: { name: true } } },
     orderBy: { botanicalName: 'asc' },
@@ -922,7 +928,7 @@ async function runLocale(locale: string, opts: {
 }
 
 async function main() {
-  const { locales, source, force, debug, dryRun, importFile, cleanEmpty, agrovocDump } = parseArgs()
+  const { locales, source, force, debug, dryRun, importFile, cleanEmpty, agrovocDump, cropFilter } = parseArgs()
   DEBUG = debug
 
   if (importFile) {
@@ -933,7 +939,7 @@ async function main() {
 
   for (const locale of locales) {
     if (locales.length > 1) console.log(`\n${'='.repeat(60)}\nLocale: ${locale}\n${'='.repeat(60)}`)
-    await runLocale(locale, { source, force, dryRun, cleanEmpty, agrovocDump })
+    await runLocale(locale, { source, force, dryRun, cleanEmpty, agrovocDump, cropFilter })
   }
 
   await prisma.$disconnect()
