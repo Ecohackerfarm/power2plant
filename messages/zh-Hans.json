@@ -307,7 +307,8 @@
     "RESEARCH": "研究",
     "link": "链接",
     "genusLevelBanner": "关系定义于属级（{genusA} ↔ {genusB}）——适用于所有 {genus} 物种。",
-    "appliesToAllSpecies": "适用于所有 {genus} 物种。"
+    "appliesToAllSpecies": "适用于所有 {genus} 物种。",
+    "genusLevelEvidence": "属级证据"
   },
   "GardenPage": {
     "backHome": "← power2plant",

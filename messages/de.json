@@ -319,7 +319,8 @@
     "NOT_FOUND": "Kein Beleg gefunden",
     "LOW_CONFIDENCE": "Unzureichende Belege",
     "researchAttemptClose": "Schließen",
-    "researchAttemptNoRelationship": "Keine Beziehungsdaten gefunden."
+    "researchAttemptNoRelationship": "Keine Beziehungsdaten gefunden.",
+    "genusLevelEvidence": "Belege auf Gattungsebene"
   },
   "GardenPage": {
     "backHome": "← power2plant",

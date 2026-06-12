@@ -307,7 +307,8 @@
     "RESEARCH": "Investigación",
     "link": "enlace",
     "genusLevelBanner": "Relación definida a nivel de género ({genusA} ↔ {genusB}) — se aplica a todas las especies de {genus}.",
-    "appliesToAllSpecies": "Se aplica a todas las especies de {genus}."
+    "appliesToAllSpecies": "Se aplica a todas las especies de {genus}.",
+    "genusLevelEvidence": "Evidencia a nivel de género"
   },
   "GardenPage": {
     "backHome": "← power2plant",

@@ -167,6 +167,44 @@ export async function GET(
     ...groupedCommunity,
   ]
 
+  // Fetch genus sources for species relationships (case: direct rel exists but genus also has sources)
+  let genusSources: typeof sources = []
+  if (!resolvedToGenus && rel) {
+    const cropRows2 = await prisma.$queryRaw<Array<{ id: string; botanicalName: string }>>`
+      SELECT id, "botanicalName" FROM "Crop" WHERE id IN (${rel.cropAId}, ${rel.cropBId})
+    `
+    const cA2 = cropRows2.find(r => r.id === rel!.cropAId)
+    const cB2 = cropRows2.find(r => r.id === rel!.cropBId)
+    if (
+      cA2 && cB2 &&
+      detectRank(cA2.botanicalName) === 'species' &&
+      detectRank(cB2.botanicalName) === 'species'
+    ) {
+      const [gA, gB] = await Promise.all([findGenusCrop(cA2.botanicalName), findGenusCrop(cB2.botanicalName)])
+      if (gA && gB) {
+        const genusRel = await findRelationship(gA.id, gB.id)
+        if (genusRel && genusRel.relId !== rel.relId) {
+          const genusSrcRaw = await prisma.relationshipSource.findMany({
+            where: { relationshipId: genusRel.relId },
+            select: { source: true, sourceType: true, confidence: true, url: true, notes: true, fetchedAt: true },
+            orderBy: { confidence: 'desc' },
+          })
+          const existingUrls = new Set(sources.filter(s => s.url).map(s => s.url))
+          genusSources = genusSrcRaw
+            .filter(s => !s.url || !existingUrls.has(s.url))
+            .map(s => ({
+              source: s.source,
+              confidence: s.confidence,
+              url: s.url,
+              notes: s.notes,
+              fetchedAt: s.fetchedAt.toISOString(),
+              sourceType: s.sourceType,
+            }))
+        }
+      }
+    }
+  }
+
   if (locale !== 'en') {
     const translations = await prisma.cropTranslation.findMany({
       where: { cropId: { in: [rel.cropAId, rel.cropBId] }, locale },
@@ -183,6 +221,7 @@ export async function GET(
       ...(resolvedToGenus ? { resolvedToGenus: true, genusA, genusB } : {}),
     },
     sources,
+    genusSources,
     researchAttempts: researchAttempts.map(a => ({ ...a, attemptedAt: a.attemptedAt.toISOString() })),
   })
 }

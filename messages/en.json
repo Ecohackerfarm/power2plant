@@ -319,7 +319,8 @@
     "NOT_FOUND": "No evidence found",
     "LOW_CONFIDENCE": "Insufficient evidence",
     "researchAttemptClose": "Close",
-    "researchAttemptNoRelationship": "No relationship data found."
+    "researchAttemptNoRelationship": "No relationship data found.",
+    "genusLevelEvidence": "Genus-level evidence"
   },
   "GardenPage": {
     "backHome": "← power2plant",

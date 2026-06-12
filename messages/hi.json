@@ -307,7 +307,8 @@
     "RESEARCH": "शोध",
     "link": "लिंक",
     "genusLevelBanner": "संबंध वंश स्तर पर परिभाषित ({genusA} ↔ {genusB}) — सभी {genus} प्रजातियों पर लागू होता है।",
-    "appliesToAllSpecies": "सभी {genus} प्रजातियों पर लागू होता है।"
+    "appliesToAllSpecies": "सभी {genus} प्रजातियों पर लागू होता है।",
+    "genusLevelEvidence": "वंश स्तर के प्रमाण"
   },
   "GardenPage": {
     "backHome": "← power2plant",

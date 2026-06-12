@@ -52,6 +52,7 @@ export default function RelationshipPage() {
   const router = useRouter()
   const [rel, setRel] = useState<RelationshipRow | null>(null)
   const [sources, setSources] = useState<Source[]>([])
+  const [genusSources, setGenusSources] = useState<Source[]>([])
   const [researchAttempts, setResearchAttempts] = useState<ResearchAttempt[]>([])
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
@@ -64,6 +65,7 @@ export default function RelationshipPage() {
         if (!ok && !body.researchAttempts?.length) { setNotFound(true); return }
         setRel(body.relationship ?? null)
         setSources(body.sources ?? [])
+        setGenusSources(body.genusSources ?? [])
         setResearchAttempts(body.researchAttempts ?? [])
         if (!body.relationship) setNotFound(false)
       })
@@ -246,6 +248,39 @@ export default function RelationshipPage() {
                         </span>
                       )}
                       {s.notes && <> · {s.notes}</>}
+                    </span>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+        </>
+      )}
+
+      {genusSources.length > 0 && (
+        <>
+          <Separator />
+          <div>
+            <h3 className="font-semibold text-sm text-muted-foreground mb-2">{t('genusLevelEvidence')}</h3>
+            <ul className="space-y-3">
+              {genusSources.map((s, i) => {
+                const sourceLabel = translateKey(s.source, s.source)
+                const sourceConf = translateKey(s.confidence, s.confidence)
+                const isDerived = s.notes?.startsWith('Derived from')
+                return (
+                  <li key={i} className="text-sm flex items-start gap-2">
+                    <span className="font-medium shrink-0">{sourceLabel}</span>
+                    <span className="text-muted-foreground">
+                      — <ConfidenceBadge level={sourceConf} />
+                      {s.url && (s.url.startsWith('http://') || s.url.startsWith('https://')) && (
+                        <> · <a href={s.url} target="_blank" rel="noopener noreferrer" className="underline">{t('link')}</a></>
+                      )}
+                      {s.sourceType && (
+                        <span className="ml-1 text-xs bg-muted rounded px-1.5 py-0.5">
+                          {translateKey(s.sourceType, s.sourceType)}
+                        </span>
+                      )}
+                      {s.notes && <> · <span className={isDerived ? 'italic' : ''}>{s.notes}</span></>}
                     </span>
                   </li>
                 )

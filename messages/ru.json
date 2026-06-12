@@ -307,7 +307,8 @@
     "RESEARCH": "Исследование",
     "link": "ссылка",
     "genusLevelBanner": "Отношение определено на уровне рода ({genusA} ↔ {genusB}) — применяется ко всем видам {genus}.",
-    "appliesToAllSpecies": "Применяется ко всем видам {genus}."
+    "appliesToAllSpecies": "Применяется ко всем видам {genus}.",
+    "genusLevelEvidence": "Свидетельства на уровне рода"
   },
   "GardenPage": {
     "backHome": "← power2plant",
