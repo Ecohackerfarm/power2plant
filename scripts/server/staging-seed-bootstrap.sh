@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Idempotently bootstrap staging DB — either from a non-user prod dump or seed.sql.
+# Idempotently bootstrap staging DB — either from an anonymized prod dump or seed.sql.
 #
 # Controlled by STAGING_DATA_SOURCE in staging .env:
-#   prod  — pg_dump prod DB (excludes auth/user-garden tables), restore to staging
+#   prod  — dump prod DB via dump-prod-anonymized.sh (PII scrubbed, ADMIN_EMAIL/TEST_USER_EMAIL preserved)
 #   seed  — restore from db/seed.sql (default)
 #
 # Sentinel file on the staging volume prevents re-seeding on subsequent deploys.
@@ -46,29 +46,14 @@ for _ in $(seq 1 30); do
   sleep 1
 done
 
-sudo -u "$DEPLOY_USERNAME" docker compose exec -T db \
-  psql -U power2plant -d power2plant \
-  -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'
-
 if [[ "$STAGING_DATA_SOURCE" == "prod" ]]; then
-  echo "[staging-seed] dumping non-user data from prod..."
-  sudo -u "$DEPLOY_USERNAME" docker compose \
-    --project-directory "$PROD_PATH" \
-    exec -T db \
-    pg_dump -U power2plant power2plant \
-      --format=plain \
-      --no-owner \
-      --no-acl \
-      --exclude-table-data='public."user"' \
-      --exclude-table-data='public.session' \
-      --exclude-table-data='public.account' \
-      --exclude-table-data='public.verification' \
-      --exclude-table-data='public."UserGarden"' \
-      --exclude-table-data='public."Bed"' \
-      --exclude-table-data='public."Planting"' \
-  | sudo -u "$DEPLOY_USERNAME" docker compose exec -T db \
-      psql -U power2plant -d power2plant
+  echo "[staging-seed] restoring anonymized prod dump via scripts container..."
+  # dump-prod-anonymized.sh handles DROP/CREATE DB internally
+  sudo -u "$DEPLOY_USERNAME" bash "${PROD_PATH}/scripts/dump-prod-anonymized.sh" --target staging
 else
+  sudo -u "$DEPLOY_USERNAME" docker compose exec -T db \
+    psql -U power2plant -d power2plant \
+    -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'
   SEED_FILE="${PROJECT_PATH}/db/seed.sql"
   if [[ ! -f "$SEED_FILE" ]]; then
     echo "[staging-seed] $SEED_FILE missing — cannot bootstrap" >&2
