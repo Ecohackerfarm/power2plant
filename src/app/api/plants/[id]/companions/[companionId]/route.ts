@@ -20,8 +20,8 @@ async function findRelationship(cropAId: string, cropBId: string): Promise<RelRo
     SELECT
       cr.id AS "relId", cr.type, cr.confidence, cr.notes, cr.direction,
       COALESCE((
-        SELECT json_agg(json_build_object('type', rr.type, 'explanation', rr.explanation))
-        FROM "RelationshipReason" rr WHERE rr."cropRelationshipId" = cr.id
+        SELECT json_agg(json_build_object('type', rr.mechanism, 'explanation', rr.explanation))
+        FROM "RelationshipClaim" rr WHERE rr."relationshipId" = cr.id
       ), '[]'::json) AS reasons,
       ca.id AS "cropAId", ca.name AS "cropAName", ca."botanicalName" AS "cropABotanical",
       ca."commonNames" AS "cropACommonNames", ca."isNitrogenFixer" AS "cropANitrogen",

@@ -48,8 +48,8 @@ export async function GET(
       c.id, c.name, c."botanicalName", c."commonNames", c."minTempC", c."isNitrogenFixer",
       cr.id AS "relationshipId", cr.type, cr.confidence, cr.notes, cr.direction,
       COALESCE((
-        SELECT json_agg(json_build_object('type', rr.type, 'explanation', rr.explanation))
-        FROM "RelationshipReason" rr WHERE rr."cropRelationshipId" = cr.id
+        SELECT json_agg(json_build_object('type', rr.mechanism, 'explanation', rr.explanation))
+        FROM "RelationshipClaim" rr WHERE rr."relationshipId" = cr.id
       ), '[]'::json) AS reasons
     FROM "CropRelationship" cr
     JOIN "Crop" c ON (
@@ -57,7 +57,7 @@ export async function GET(
     )
     WHERE
       (cr."cropAId" = ${id} OR cr."cropBId" = ${id})
-      AND cr.type IN ('COMPANION', 'ATTRACTS', 'NURSE', 'TRAP_CROP')
+      AND cr.type = 'COMPANION'
     ORDER BY cr.confidence DESC
   `
 
@@ -82,8 +82,8 @@ export async function GET(
           c.id, c.name, c."botanicalName", c."commonNames", c."minTempC", c."isNitrogenFixer",
           cr.id AS "relationshipId", cr.type, cr.confidence, cr.notes, cr.direction,
           COALESCE((
-            SELECT json_agg(json_build_object('type', rr.type, 'explanation', rr.explanation))
-            FROM "RelationshipReason" rr WHERE rr."cropRelationshipId" = cr.id
+            SELECT json_agg(json_build_object('type', rr.mechanism, 'explanation', rr.explanation))
+            FROM "RelationshipClaim" rr WHERE rr."relationshipId" = cr.id
           ), '[]'::json) AS reasons
         FROM "CropRelationship" cr
         JOIN "Crop" c ON (
@@ -91,7 +91,7 @@ export async function GET(
         )
         WHERE
           (cr."cropAId" = ${genusId} OR cr."cropBId" = ${genusId})
-          AND cr.type IN ('COMPANION', 'ATTRACTS', 'NURSE', 'TRAP_CROP')
+          AND cr.type = 'COMPANION'
         ORDER BY cr.confidence DESC
       `
 
