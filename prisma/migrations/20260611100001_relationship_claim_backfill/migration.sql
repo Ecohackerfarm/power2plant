@@ -13,9 +13,10 @@ ALTER TABLE "RelationshipReason" DROP CONSTRAINT IF EXISTS "RelationshipReason_e
 UPDATE "CropRelationship" SET "type" = 'COMPANION'
   WHERE "type" IN ('ATTRACTS', 'REPELS', 'NURSE', 'TRAP_CROP');
 
--- 2. Synthesize one claim per source. mechanism is derived from the legacy
---    position where it was mechanism-flavored, else OTHER. Polarity inherits the
---    parent relationship when the source had no position; direction likewise.
+-- 2. Synthesize one claim per source, but only for sources with a mechanism-
+--    specific position (ATTRACTS/REPELS/NURSE/TRAP_CROP). Sources with only
+--    polarity (COMPANION/AVOID/NEUTRAL) or no position carry no mechanism claim —
+--    the relationship exists but with no specific reason, which is valid.
 INSERT INTO "RelationshipReason"
   ("id", "type", "explanation", "relationshipType", "direction", "cropRelationshipId", "sourceId")
 SELECT
@@ -25,25 +26,19 @@ SELECT
     WHEN 'REPELS'    THEN 'PEST_CONTROL'::"RelationshipReasonType"
     WHEN 'NURSE'     THEN 'NURSE'::"RelationshipReasonType"
     WHEN 'TRAP_CROP' THEN 'TRAP_CROP'::"RelationshipReasonType"
-    ELSE 'OTHER'::"RelationshipReasonType"
   END,
   COALESCE(s."notes", ''),
-  CASE COALESCE(s."position", r."type")
-    WHEN 'ATTRACTS'  THEN 'COMPANION'::"RelationshipType"
-    WHEN 'REPELS'    THEN 'COMPANION'::"RelationshipType"
-    WHEN 'NURSE'     THEN 'COMPANION'::"RelationshipType"
-    WHEN 'TRAP_CROP' THEN 'COMPANION'::"RelationshipType"
-    ELSE COALESCE(s."position", r."type")
-  END,
+  'COMPANION'::"RelationshipType",
   COALESCE(s."sourceDirection", r."direction", 'UNKNOWN'::"Direction"),
   s."relationshipId",
   s."id"
 FROM "RelationshipSource" s
 JOIN "CropRelationship" r ON r."id" = s."relationshipId"
-WHERE NOT EXISTS (
-  SELECT 1 FROM "RelationshipReason" rr
-  WHERE rr."sourceId" = s."id" AND rr."relationshipType" IS NOT NULL
-);
+WHERE s."position" IN ('ATTRACTS', 'REPELS', 'NURSE', 'TRAP_CROP')
+  AND NOT EXISTS (
+    SELECT 1 FROM "RelationshipReason" rr
+    WHERE rr."sourceId" = s."id" AND rr."relationshipType" IS NOT NULL
+  );
 
 -- 2b. Pre-existing relationship-level reasons (sourceId NULL) carried from older
 --     data (e.g. the scalar CropRelationship.reason migrated by #277) have no
