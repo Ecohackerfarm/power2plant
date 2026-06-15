@@ -23,15 +23,14 @@ if [[ "$TARGET" != "staging" && "$TARGET" != "dev" ]]; then
   exit 1
 fi
 
-# Auto-derive PROJECT_PATH from script location when not injected by systemd.
+# Always derive PROJECT_PATH from script location — ignore any inherited env var
+# since it may point to a different repo (e.g. prod's PROJECT_PATH in the shell).
 # Script lives at <repo>/scripts/server/ so repo root is two levels up.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_PATH="${PROJECT_PATH:-$(cd "$SCRIPT_DIR/../.." && pwd)}"
+PROJECT_PATH="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-# Auto-derive DEPLOY_USERNAME from repo ownership when not injected by systemd.
+# DEPLOY_USERNAME and STAGING_DUMP_FILE: use env if set, else sensible defaults.
 DEPLOY_USERNAME="${DEPLOY_USERNAME:-$(stat -c '%U' "$PROJECT_PATH")}"
-
-# Default STAGING_DUMP_FILE: sibling backups/ dir next to prod/staging dirs.
 STAGING_DUMP_FILE="${STAGING_DUMP_FILE:-$(dirname "$PROJECT_PATH")/backups/staging-latest.sql}"
 
 echo "[dump-refresh] starting — target=${TARGET} — $(date -u +%Y-%m-%dT%H:%M:%SZ)"
