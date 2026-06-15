@@ -165,7 +165,7 @@ function ModalContent({ onClose, onBalanceUpdate }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-background rounded-xl shadow-xl w-full max-w-sm mx-4 p-6 space-y-4">
+      <div className="bg-background text-foreground rounded-xl shadow-xl w-full max-w-sm mx-4 p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="font-semibold text-base">Top up balance</h2>
           <button
