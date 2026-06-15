@@ -290,12 +290,7 @@ export function RecommendationDisplay({ result, alternatives = [], onAccepted }:
                                     href={`/research-requests?a=${encodeURIComponent(pair.cropAId)}&b=${encodeURIComponent(pair.cropBId)}`}
                                     className="flex items-center justify-between gap-2 text-xs rounded px-1 py-0.5 -mx-1 hover:bg-muted group"
                                   >
-                                    <span>
-                                      <span className="font-medium">{pair.pairLabel}</span>
-                                      <span className="text-muted-foreground ml-1">
-                                        — {t('requestResearch')}
-                                      </span>
-                                    </span>
+                                    <span className="font-medium">{pair.pairLabel}</span>
                                     <ArrowRight className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                                   </Link>
                                 </li>

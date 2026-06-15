@@ -110,7 +110,7 @@
     "conflicts": "Conflictos — plantas incompatibles en el mismo bancal",
     "conflictItem": "{a} y {b} no deben compartir bancal",
     "conflictsHint": "Añade más bancales para separar estas plantas.",
-    "noDataTitle": "Aún no tenemos datos para estos pares",
+    "noDataTitle": "Aún no tenemos datos para estos pares — pero puedes votar o financiar la investigación",
     "requestResearch": "Solicitar investigación →"
   },
   "Relationships": {

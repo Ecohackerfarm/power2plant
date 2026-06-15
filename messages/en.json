@@ -112,7 +112,7 @@
     "conflicts": "Conflicts — incompatible plants in same bed",
     "conflictItem": "{a} and {b} should not share a bed",
     "conflictsHint": "Add more beds to separate these plants.",
-    "noDataTitle": "We don't have data for these pairs yet",
+    "noDataTitle": "We don't have data for these pairs yet — but you can vote or fund the research",
     "requestResearch": "Request research →"
   },
   "Relationships": {

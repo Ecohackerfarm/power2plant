@@ -110,7 +110,7 @@
     "conflicts": "Conflits — plantes incompatibles dans la même planche",
     "conflictItem": "{a} et {b} ne doivent pas partager la même planche",
     "conflictsHint": "Ajoutez plus de planches pour séparer ces plantes.",
-    "noDataTitle": "Nous n'avons pas encore de données pour ces paires",
+    "noDataTitle": "Nous n'avons pas encore de données pour ces paires — mais vous pouvez voter ou financer la recherche",
     "requestResearch": "Demander une recherche →"
   },
   "Relationships": {
