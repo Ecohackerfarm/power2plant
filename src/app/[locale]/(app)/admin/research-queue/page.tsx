@@ -1,10 +1,10 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
-type Crop = { id: string; name: string; botanicalName: string }
+type Crop = { id: string; name: string; botanicalName: string; commonNames?: string[] }
 type Funder = { source: string; user: { id: string; name: string } | null }
 type Log = { model: string; promptTokens: number; completionTokens: number; costUsd: string } | null
 
@@ -29,14 +29,94 @@ const STATUS_COLORS: Record<string, 'default' | 'secondary' | 'destructive' | 'o
   FAILED: 'destructive',
 }
 
+function displayName(crop: Crop): string {
+  const raw = crop.commonNames?.[0] ?? (crop.name !== crop.botanicalName ? crop.name : crop.botanicalName)
+  return raw.replace(/(^|[\s-])(\S)/g, (_: string, sep: string, c: string) => sep + c.toUpperCase())
+}
+
+function CropPicker({ label, value, onChange }: {
+  label: string
+  value: Crop | null
+  onChange: (crop: Crop | null) => void
+}) {
+  const [query, setQuery] = useState('')
+  const [results, setResults] = useState<Crop[]>([])
+  const [searching, setSearching] = useState(false)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    if (timerRef.current) clearTimeout(timerRef.current)
+    if (query.trim().length < 2) { setResults([]); return }
+    timerRef.current = setTimeout(async () => {
+      setSearching(true)
+      try {
+        const res = await fetch(`/api/crops?q=${encodeURIComponent(query.trim())}&locale=en`)
+        const data = res.ok ? await res.json() : { crops: [] }
+        setResults((data.crops ?? []).slice(0, 8))
+      } finally {
+        setSearching(false)
+      }
+    }, 250)
+  }, [query])
+
+  function select(crop: Crop) {
+    onChange(crop)
+    setQuery(displayName(crop))
+    setResults([])
+  }
+
+  function clear() {
+    onChange(null)
+    setQuery('')
+    setResults([])
+  }
+
+  return (
+    <div className="relative w-64">
+      <div className="flex gap-1">
+        <Input
+          placeholder={label}
+          value={query}
+          onChange={e => { setQuery(e.target.value); if (value) onChange(null) }}
+          className="text-sm"
+        />
+        {value && (
+          <button
+            type="button"
+            onClick={clear}
+            className="text-muted-foreground hover:text-foreground px-1 text-lg leading-none"
+          >
+            ×
+          </button>
+        )}
+      </div>
+      {searching && <p className="text-xs text-muted-foreground mt-0.5">Searching…</p>}
+      {results.length > 0 && !value && (
+        <ul className="absolute z-10 mt-1 w-full bg-background border rounded shadow-md max-h-48 overflow-y-auto">
+          {results.map(crop => (
+            <li
+              key={crop.id}
+              className="px-3 py-1.5 text-sm cursor-pointer hover:bg-accent"
+              onClick={() => select(crop)}
+            >
+              <span className="font-medium">{displayName(crop)}</span>
+              <span className="text-muted-foreground italic ml-1 text-xs">{crop.botanicalName}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
 export default function AdminResearchQueuePage() {
   const [queue, setQueue] = useState<QueueItem[]>([])
   const [priceCents, setPriceCents] = useState<number>(100)
   const [potBalanceCents, setPotBalanceCents] = useState<number>(0)
   const [loading, setLoading] = useState(true)
   const [enqueuing, setEnqueuing] = useState(false)
-  const [cropAId, setCropAId] = useState('')
-  const [cropBId, setCropBId] = useState('')
+  const [cropA, setCropA] = useState<Crop | null>(null)
+  const [cropB, setCropB] = useState<Crop | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const load = useCallback(() => {
@@ -55,19 +135,20 @@ export default function AdminResearchQueuePage() {
   useEffect(() => { load() }, [load])
 
   async function enqueue() {
+    if (!cropA || !cropB) return
     setEnqueuing(true)
     setError(null)
     const res = await fetch('/api/admin/research-queue', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cropAId: cropAId.trim(), cropBId: cropBId.trim() }),
+      body: JSON.stringify({ cropAId: cropA.id, cropBId: cropB.id }),
     })
     const data = await res.json() as { error?: string }
     if (!res.ok) {
       setError(data.error ?? 'Failed')
     } else {
-      setCropAId('')
-      setCropBId('')
+      setCropA(null)
+      setCropB(null)
       load()
     }
     setEnqueuing(false)
@@ -97,22 +178,12 @@ export default function AdminResearchQueuePage() {
       {/* Manual enqueue */}
       <div className="border rounded-md p-4 mb-6 space-y-3">
         <p className="text-sm font-medium">Manually enqueue pair</p>
-        <div className="flex gap-2 flex-wrap">
-          <Input
-            className="w-64"
-            placeholder="Crop A ID"
-            value={cropAId}
-            onChange={e => setCropAId(e.target.value)}
-          />
-          <Input
-            className="w-64"
-            placeholder="Crop B ID"
-            value={cropBId}
-            onChange={e => setCropBId(e.target.value)}
-          />
+        <div className="flex gap-2 flex-wrap items-start">
+          <CropPicker label="Search crop A…" value={cropA} onChange={setCropA} />
+          <CropPicker label="Search crop B…" value={cropB} onChange={setCropB} />
           <Button
             size="sm"
-            disabled={enqueuing || !cropAId.trim() || !cropBId.trim()}
+            disabled={enqueuing || !cropA || !cropB}
             onClick={enqueue}
           >
             {enqueuing ? 'Enqueueing…' : 'Enqueue'}
