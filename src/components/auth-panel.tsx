@@ -30,6 +30,7 @@ export function AuthPanel() {
   const [open, setOpen] = useState(false)
   const [resendLoading, setResendLoading] = useState(false)
   const [resendDone, setResendDone] = useState(false)
+  const [showResend, setShowResend] = useState(false)
 
   // User menu state
   const [menuOpen, setMenuOpen] = useState(false)
@@ -124,6 +125,7 @@ export function AuthPanel() {
     setMode(nextMode)
     setError(null)
     setResendDone(false)
+    setShowResend(false)
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -146,7 +148,11 @@ export function AuthPanel() {
         return
       } else {
         const result = await signIn.email({ email, password })
-        if (result.error) throw new Error(result.error.message ?? 'Sign in failed')
+        if (result.error) {
+          const msg = result.error.message ?? 'Sign in failed'
+          if (msg === 'Email not verified') setShowResend(true)
+          throw new Error(msg)
+        }
       }
       setOpen(false)
     } catch (err) {
@@ -261,6 +267,20 @@ export function AuthPanel() {
                     </div>
                   )}
                   {error && <p className="text-red-600 text-sm">{error}</p>}
+                  {showResend && (
+                    resendDone ? (
+                      <p className="text-sm text-green-600">{t('verificationResent')}</p>
+                    ) : (
+                      <button
+                        type="button"
+                        className="text-sm text-primary hover:underline w-full text-left"
+                        disabled={resendLoading}
+                        onClick={handleResendVerification}
+                      >
+                        {resendLoading ? t('pleaseWait') : t('resendVerification')}
+                      </button>
+                    )
+                  )}
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading
                       ? t('pleaseWait')
