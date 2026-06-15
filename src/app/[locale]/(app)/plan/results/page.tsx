@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { useRouter } from '@/i18n/navigation'
 import { useGarden } from '@/hooks/use-garden'
 import { RecommendationDisplay } from '@/components/recommendation-display'
@@ -22,6 +22,7 @@ function inputsKey(wishlist: string[], bedCount: number, bedCapacity: number, mi
 
 export default function PlanResultsPage() {
   const t = useTranslations('Plan')
+  const locale = useLocale()
   const router = useRouter()
   const { state, hydrated } = useGarden()
   const [result, setResult] = useState<RecommendResponse | null>(null)
@@ -70,6 +71,7 @@ export default function PlanResultsPage() {
           bedCount: state.bedCount,
           bedCapacity: state.bedCapacity,
           minTempC: state.minTempC,
+          locale,
           ...(lockedBeds ? { existingBeds: lockedBeds } : {}),
         }),
       })

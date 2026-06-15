@@ -1,13 +1,14 @@
 import { NextResponse } from 'next/server'
 import { Prisma } from '@prisma/client'
 import prisma from '@/lib/prisma'
-import { recommend, recommendAlternatives, type RelationshipInput, type CropInput } from '@/lib/recommend'
+import { recommend, recommendAlternatives, applyTranslations, type RelationshipInput, type CropInput } from '@/lib/recommend'
 
 interface RecommendBody {
   cropIds: string[]
   bedCount: number
   bedCapacity: number
   minTempC: number
+  locale?: string
   existingBeds?: string[][]
 }
 
@@ -19,7 +20,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'invalid JSON' }, { status: 400 })
   }
 
-  const { cropIds, bedCount, bedCapacity, minTempC, existingBeds } = body
+  const { cropIds, bedCount, bedCapacity, minTempC, locale = 'en', existingBeds } = body
 
   if (
     !Array.isArray(cropIds) ||
@@ -52,9 +53,9 @@ export async function POST(request: Request) {
     }
   }
 
-const allIds = [...new Set([...cropIds, ...(existingBeds ?? []).flat()])]
+  const allIds = [...new Set([...cropIds, ...(existingBeds ?? []).flat()])]
   const idList = Prisma.join(allIds.map(id => Prisma.sql`${id}`))
-  const [crops, relationships] = await Promise.all([
+  const [rawCrops, relationships, tMapRows] = await Promise.all([
     prisma.$queryRaw<CropInput[]>`
       SELECT id, name, "botanicalName", "minTempC", "commonNames"
       FROM "Crop" WHERE id IN (${idList})
@@ -68,7 +69,18 @@ const allIds = [...new Set([...cropIds, ...(existingBeds ?? []).flat()])]
       },
       select: { cropAId: true, cropBId: true, type: true, confidence: true, claims: { select: { mechanism: true, explanation: true } }, notes: true },
     }),
+    locale !== 'en' && allIds.length > 0
+      ? prisma.cropTranslation.findMany({
+          where: { cropId: { in: allIds }, locale },
+          select: { cropId: true, commonNames: true },
+        })
+      : Promise.resolve([]),
   ])
+
+  const tMap = new Map(
+    tMapRows.filter(r => r.commonNames.length > 0).map(r => [r.cropId, r.commonNames])
+  )
+  const crops = applyTranslations(rawCrops, tMap)
 
   // Collapse per-source claims into the {type, explanation} reasons the recommender expects.
   const relInputs = relationships.map(r => {
