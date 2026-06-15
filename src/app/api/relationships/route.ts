@@ -51,6 +51,21 @@ async function findCropIds(term: string, locale: string): Promise<string[]> {
   return rows.map(r => r.id)
 }
 
+async function findExactCropIds(term: string, locale: string): Promise<string[]> {
+  const exact = term.toLowerCase()
+  const rows = await prisma.$queryRaw<{ id: string }[]>`
+    SELECT c.id FROM "Crop" c
+    LEFT JOIN "CropTranslation" t ON t."cropId" = c.id AND t.locale = ${locale}
+    WHERE
+      lower(c.name) = ${exact}
+      OR lower(c."botanicalName") = ${exact}
+      OR lower(c."canonicalName") = ${exact}
+      OR EXISTS (SELECT 1 FROM unnest(c."commonNames") cn WHERE lower(cn) = ${exact})
+      OR EXISTS (SELECT 1 FROM unnest(COALESCE(t."commonNames", ARRAY[]::TEXT[])) cn WHERE lower(cn) = ${exact})
+  `
+  return rows.map(r => r.id)
+}
+
 async function detectTwoCropIds(q: string, locale: string): Promise<[string[], string[]] | null> {
   const trimmed = q.trim()
   if (!trimmed.includes(' ') && !trimmed.includes(',')) return null
@@ -92,6 +107,7 @@ export async function GET(request: Request) {
   try {
     // Two-crop detection: if query matches two distinct crop names, filter their relationship
     let whereClause: Record<string, unknown> = {}
+    let exactCropIds = new Set<string>()
     if (q) {
       const twoCropIds = await detectTwoCropIds(q, locale)
       if (twoCropIds) {
@@ -103,7 +119,8 @@ export async function GET(request: Request) {
           ],
         }
       } else {
-        const ids = await findCropIds(q, locale)
+        const [ids, exactIds] = await Promise.all([findCropIds(q, locale), findExactCropIds(q, locale)])
+        exactCropIds = new Set(exactIds)
         whereClause = { OR: [{ cropAId: { in: ids } }, { cropBId: { in: ids } }] }
       }
     }
@@ -132,8 +149,17 @@ export async function GET(request: Request) {
     })
 
     const hasNext = relationships.length > limit
-    const results = hasNext ? relationships.slice(0, -1) : relationships
-    const nextCursor = hasNext ? results[results.length - 1].id : null
+    const page = hasNext ? relationships.slice(0, -1) : relationships
+    // Exact-match crops surface first; stable (preserves id:desc within each tier)
+    if (exactCropIds.size > 0) {
+      page.sort((a, b) => {
+        const aExact = exactCropIds.has(a.cropAId) || exactCropIds.has(a.cropBId)
+        const bExact = exactCropIds.has(b.cropAId) || exactCropIds.has(b.cropBId)
+        return (aExact === bExact) ? 0 : aExact ? -1 : 1
+      })
+    }
+    const results = page
+    const nextCursor = hasNext ? page[page.length - 1].id : null
 
     function localisedCrop(crop: { id: string; name: string; botanicalName: string; commonNames: string[]; translations: { commonNames: string[] }[] }) {
       const { translations, ...rest } = crop
