@@ -110,7 +110,7 @@
     "conflicts": "競合——同じ花壇に相性の悪い植物があります",
     "conflictItem": "{a}と{b}は同じ花壇に植えるべきではありません",
     "conflictsHint": "これらの植物を分けるには花壇を追加してください。",
-    "noDataTitle": "これらのペアのデータはまだありません",
+    "noDataTitle": "これらのペアのデータはまだありません — ただし、研究に投票または資金提供できます",
     "requestResearch": "調査をリクエスト →"
   },
   "Relationships": {

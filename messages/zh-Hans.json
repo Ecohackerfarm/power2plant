@@ -110,7 +110,7 @@
     "conflicts": "冲突——同一花圃中有不相容的植物",
     "conflictItem": "{a} 和 {b} 不应种植在同一花圃",
     "conflictsHint": "添加更多花圃以分开这些植物。",
-    "noDataTitle": "暂无这些植物组合的数据",
+    "noDataTitle": "暂无这些植物组合的数据 — 但您可以投票或资助研究",
     "requestResearch": "请求研究 →"
   },
   "Relationships": {

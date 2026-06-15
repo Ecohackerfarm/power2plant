@@ -110,7 +110,7 @@
     "conflicts": "Conflitos — plantas incompatíveis no mesmo canteiro",
     "conflictItem": "{a} e {b} não devem compartilhar um canteiro",
     "conflictsHint": "Adicione mais canteiros para separar essas plantas.",
-    "noDataTitle": "Ainda não temos dados para esses pares",
+    "noDataTitle": "Ainda não temos dados para esses pares — mas você pode votar ou financiar a pesquisa",
     "requestResearch": "Solicitar pesquisa →"
   },
   "Relationships": {
