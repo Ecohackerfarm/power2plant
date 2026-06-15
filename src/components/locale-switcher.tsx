@@ -29,7 +29,7 @@ export function LocaleSwitcher() {
     <select
       value={locale}
       onChange={(e) => switchLocale(e.target.value)}
-      className="text-sm bg-transparent border-none cursor-pointer text-muted-foreground hover:text-foreground focus:outline-none"
+      className="text-sm bg-transparent border-none cursor-pointer text-[#F7F3E8]/70 hover:text-[#F7F3E8] focus:outline-none"
       aria-label="Language"
     >
       {routing.locales.map((l) => (
