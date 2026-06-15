@@ -55,7 +55,7 @@ export function SiteHeader({ isAdmin = false }: { isAdmin?: boolean }) {
 
   return (
     <header className="border-b bg-[#2D4A3E] text-[#F7F3E8] sticky top-0 z-40 shadow-sm">
-      <div className="max-w-5xl mx-auto px-4 h-14 flex items-center relative">
+      <div className="max-w-5xl mx-auto px-4 h-14 flex items-center gap-3">
 
         {/* Left: hamburger + dropdown */}
         <div ref={menuRef} className="relative">
@@ -106,13 +106,18 @@ export function SiteHeader({ isAdmin = false }: { isAdmin?: boolean }) {
           )}
         </div>
 
-        {/* Center: logo + name — absolute for true centering */}
-        <div className="absolute left-1/2 -translate-x-1/2 pointer-events-none">
-          <Link href="/" className="flex items-center gap-2 pointer-events-auto" onClick={() => setMenuOpen(false)}>
+        {/* Logo + name — inline after hamburger */}
+        <Link href="/" className="flex items-center gap-2" onClick={() => setMenuOpen(false)}>
+          <div className="bg-[#F7F3E8] rounded-2xl p-1 shrink-0">
             <Image src="/logo.png" alt="" width={32} height={32} />
-            <span className="font-semibold text-sm text-[#F7F3E8]" style={{ fontFamily: 'var(--font-fraunces), ui-serif, serif', fontWeight: 300 }}>power2plant</span>
-          </Link>
-        </div>
+          </div>
+          <span
+            className="font-semibold text-sm min-[400px]:text-xl text-[#F7F3E8] leading-none"
+            style={{ fontFamily: 'var(--font-fraunces), ui-serif, serif', fontWeight: 300 }}
+          >
+            power2plant
+          </span>
+        </Link>
 
         {/* Right: actions */}
         <div className="flex items-center gap-3 ml-auto">
