@@ -132,16 +132,22 @@ function ModalContent({ onClose, onBalanceUpdate }: Props) {
     setIntentError(null)
     try {
       if (isEuTimezone()) {
-        // Mollie redirect flow for EU
-        const res = await fetch('/api/mollie/create-payment', {
+        // Mollie redirect flow for EU; fall through to Stripe if Mollie not configured
+        const mollieRes = await fetch('/api/mollie/create-payment', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ amountCents: effectiveCents }),
         })
-        const data = await res.json()
-        if (!res.ok) throw new Error(data.error ?? 'Failed to create payment')
-        window.location.href = data.checkoutUrl
-        return
+        if (mollieRes.ok) {
+          const data = await mollieRes.json()
+          window.location.href = data.checkoutUrl
+          return
+        }
+        if (mollieRes.status !== 503) {
+          const data = await mollieRes.json()
+          throw new Error(data.error ?? 'Failed to create payment')
+        }
+        // 503 = provider not configured, fall through to Stripe
       }
       const res = await fetch('/api/stripe/create-payment-intent', {
         method: 'POST',
