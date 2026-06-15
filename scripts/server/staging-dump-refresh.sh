@@ -1,30 +1,52 @@
 #!/usr/bin/env bash
-# Refresh the staging dump file: restore prod → anonymize → pg_dump to STAGING_DUMP_FILE.
-# Run daily via systemd timer (power2plant-staging-dump-refresh.timer).
-# Safe to run manually: bash staging-dump-refresh.sh
+# Restore an environment's DB from prod (dump → anonymize), then for staging
+# also save the anonymized DB to STAGING_DUMP_FILE for use by future deploys.
 #
-# Requires DEPLOY_USERNAME, PROJECT_PATH (staging), STAGING_DUMP_FILE in env.
-# setup.sh injects all three via Environment= in the service unit.
+# Usage (manual):  bash staging-dump-refresh.sh [--target staging|dev]
+# Usage (systemd): called by power2plant-staging-dump-refresh.service (target=staging)
+#
+# When run manually PROJECT_PATH, DEPLOY_USERNAME, and STAGING_DUMP_FILE are
+# auto-derived from the script location and file ownership — no env setup needed.
 set -euo pipefail
 
-: "${DEPLOY_USERNAME:?not set — run scripts/server/setup.sh}"
-: "${PROJECT_PATH:?not set — run scripts/server/setup.sh}"
-: "${STAGING_DUMP_FILE:?not set — run scripts/server/setup.sh}"
+TARGET="staging"
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --target=*) TARGET="${1#--target=}"; shift ;;
+    --target)   TARGET="$2"; shift 2 ;;
+    *) echo "Unknown arg: $1" >&2; exit 1 ;;
+  esac
+done
 
-echo "[staging-dump-refresh] starting — $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+if [[ "$TARGET" != "staging" && "$TARGET" != "dev" ]]; then
+  echo "Invalid target: $TARGET (must be staging or dev)" >&2
+  exit 1
+fi
 
-# Step 1: full prod → staging restore + PII anonymization.
-# Use staging's own copy of the script — both repos are the same codebase.
-# dump-prod-anonymized.sh uses hardcoded /opt/power2plant/ paths internally,
-# so calling it from PROJECT_PATH works regardless of what PROD_PATH is set to.
-bash "${PROJECT_PATH}/scripts/dump-prod-anonymized.sh" --target staging
+# Auto-derive PROJECT_PATH from script location when not injected by systemd.
+# Script lives at <repo>/scripts/server/ so repo root is two levels up.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_PATH="${PROJECT_PATH:-$(cd "$SCRIPT_DIR/../.." && pwd)}"
 
-# Step 2: pg_dump the now-clean anonymized staging DB → save to dump file
-mkdir -p "$(dirname "$STAGING_DUMP_FILE")"
-sudo -u "$DEPLOY_USERNAME" docker compose -f "${PROJECT_PATH}/docker-compose.yml" \
-  run --rm -T scripts \
-  sh -c 'pg_dump "${DATABASE_URL%%\?*}" --no-owner --no-acl' \
-  > "$STAGING_DUMP_FILE"
+# Auto-derive DEPLOY_USERNAME from repo ownership when not injected by systemd.
+DEPLOY_USERNAME="${DEPLOY_USERNAME:-$(stat -c '%U' "$PROJECT_PATH")}"
 
-echo "[staging-dump-refresh] saved to $STAGING_DUMP_FILE ($(du -sh "$STAGING_DUMP_FILE" | cut -f1))"
-echo "[staging-dump-refresh] done — $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+# Default STAGING_DUMP_FILE: sibling backups/ dir next to prod/staging dirs.
+STAGING_DUMP_FILE="${STAGING_DUMP_FILE:-$(dirname "$PROJECT_PATH")/backups/staging-latest.sql}"
+
+echo "[dump-refresh] starting — target=${TARGET} — $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+# Step 1: full prod → target restore + PII anonymization.
+bash "${PROJECT_PATH}/scripts/dump-prod-anonymized.sh" --target "$TARGET"
+
+# Step 2 (staging only): pg_dump the anonymized staging DB → save for deploys.
+if [[ "$TARGET" == "staging" ]]; then
+  mkdir -p "$(dirname "$STAGING_DUMP_FILE")"
+  sudo -u "$DEPLOY_USERNAME" docker compose -f "${PROJECT_PATH}/docker-compose.yml" \
+    run --rm -T scripts \
+    sh -c 'pg_dump "${DATABASE_URL%%\?*}" --no-owner --no-acl' \
+    > "$STAGING_DUMP_FILE"
+  echo "[dump-refresh] saved to $STAGING_DUMP_FILE ($(du -sh "$STAGING_DUMP_FILE" | cut -f1))"
+fi
+
+echo "[dump-refresh] done — $(date -u +%Y-%m-%dT%H:%M:%SZ)"
