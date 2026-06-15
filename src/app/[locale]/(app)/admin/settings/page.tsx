@@ -137,7 +137,7 @@ export default function AdminSettingsPage() {
                   onChange={e => setEmailInput(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && addEmail()}
                   placeholder="user@example.com"
-                  className="flex-1 text-sm border rounded px-2 py-1"
+                  className="flex-1 text-sm border rounded px-2 py-1 placeholder:text-muted-foreground/50"
                 />
                 <Button size="sm" variant="outline" onClick={addEmail}>Add</Button>
               </div>

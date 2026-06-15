@@ -188,7 +188,7 @@ export default function AdminFeedbackPage() {
                       <div className="flex flex-col gap-1">
                         <div className="flex gap-1 items-center">
                           <input
-                            className="text-xs border rounded px-1 py-0.5 w-28"
+                            className="text-xs border rounded px-1 py-0.5 w-28 placeholder:text-muted-foreground/50"
                             placeholder="Note (optional)"
                             value={resolveNote[item.id] ?? ''}
                             onChange={e => setResolveNote(prev => ({ ...prev, [item.id]: e.target.value }))}
