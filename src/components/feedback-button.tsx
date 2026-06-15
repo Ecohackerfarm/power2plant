@@ -341,7 +341,7 @@ export function FeedbackButton() {
     return (
       <button
         onClick={() => setMode('modal')}
-        className="text-muted-foreground hover:text-foreground transition-colors"
+        className="text-[#F7F3E8]/70 hover:text-[#F7F3E8] transition-colors"
         aria-label={t('label')}
         title={t('label')}
       >
