@@ -134,7 +134,7 @@ export function PlantSearch({ wishlistIds, onAdd, onRemove, onClearAll, initialQ
         {searching && <p className="text-sm text-muted-foreground">{t('searching')}</p>}
 
         {results.length > 0 && (
-          <ul ref={listRef} className="space-y-0.5 max-h-64 overflow-y-auto border rounded p-1">
+          <ul ref={listRef} className="max-h-64 overflow-y-auto border rounded p-1 divide-y divide-border/30">
             {results.map((crop, index) => {
               const displayName = getDisplayName(crop)
               const added = inWishlist(crop.id)
