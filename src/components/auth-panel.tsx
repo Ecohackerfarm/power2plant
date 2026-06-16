@@ -187,7 +187,7 @@ export function AuthPanel() {
   return (
     <div className="relative">
       <Button variant="outline" size="sm" onClick={() => setOpen(o => !o)}>
-        {t('signInToSave')}
+        {t('signIn')}
       </Button>
       {open && (
         <div className="absolute right-0 top-full mt-1 z-50">

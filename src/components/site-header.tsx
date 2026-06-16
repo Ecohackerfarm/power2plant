@@ -108,7 +108,7 @@ export function SiteHeader({ isAdmin = false, version }: { isAdmin?: boolean; ve
 
         {/* Logo + name — inline after hamburger */}
         <Link href="/" className="flex items-center gap-2" onClick={() => setMenuOpen(false)}>
-          <div className="bg-[#F7F3E8] rounded-2xl p-1 shrink-0">
+          <div className="bg-[#F7F3E8] rounded-full p-1 shrink-0">
             <Image src="/logo.png" alt="" width={32} height={32} />
           </div>
           <div className="flex flex-col leading-none gap-0.5">
