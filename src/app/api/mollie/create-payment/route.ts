@@ -33,7 +33,7 @@ export async function POST(req: Request) {
   const payment = await getMollieClient().payments.create({
     amount: { currency: 'EUR', value: centsToCurrencyString(amountCents) },
     description: 'Power2Plant credit top-up',
-    redirectUrl: `${base}/credits?mollie=success`,
+    redirectUrl: `${base}/account?mollie=success`,
     webhookUrl: `${base}/api/mollie/webhook`,
     metadata: { userId: session.user.id, type: 'topup' },
   })
