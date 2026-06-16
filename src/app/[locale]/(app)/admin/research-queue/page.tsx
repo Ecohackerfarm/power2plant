@@ -7,6 +7,15 @@ import { Input } from '@/components/ui/input'
 type Crop = { id: string; name: string; botanicalName: string; commonNames?: string[] }
 type Funder = { source: string; user: { id: string; name: string } | null }
 type Log = { model: string; promptTokens: number; completionTokens: number; costUsd: string } | null
+type FullLog = {
+  model: string
+  promptTokens: number
+  completionTokens: number
+  costUsd: string
+  requestJson: unknown
+  responseJson: unknown
+  createdAt: string
+}
 
 type QueueItem = {
   id: string
@@ -118,6 +127,9 @@ export default function AdminResearchQueuePage() {
   const [cropA, setCropA] = useState<Crop | null>(null)
   const [cropB, setCropB] = useState<Crop | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [fullLogs, setFullLogs] = useState<Record<string, FullLog>>({})
+  const [loadingLogId, setLoadingLogId] = useState<string | null>(null)
 
   const load = useCallback(() => {
     setLoading(true)
@@ -161,6 +173,26 @@ export default function AdminResearchQueuePage() {
       body: JSON.stringify({ id, status }),
     })
     load()
+  }
+
+  async function toggleSession(id: string) {
+    if (expandedId === id) {
+      setExpandedId(null)
+      return
+    }
+    setExpandedId(id)
+    if (!fullLogs[id]) {
+      setLoadingLogId(id)
+      try {
+        const res = await fetch(`/api/admin/research-queue/${id}/log`)
+        if (res.ok) {
+          const data = await res.json() as { log: FullLog }
+          setFullLogs(prev => ({ ...prev, [id]: data.log }))
+        }
+      } finally {
+        setLoadingLogId(null)
+      }
+    }
   }
 
   const centsToEur = (c: number) => `€${(c / 100).toFixed(2)}`
@@ -236,7 +268,32 @@ export default function AdminResearchQueuePage() {
               {item.log && (
                 <p className="text-xs text-muted-foreground">
                   {item.log.model} · {item.log.promptTokens + item.log.completionTokens} tokens · ${item.log.costUsd}
+                  {' · '}
+                  <button type="button" className="underline hover:text-foreground" onClick={() => toggleSession(item.id)}>
+                    {expandedId === item.id ? 'Hide session' : 'View session'}
+                  </button>
                 </p>
+              )}
+              {expandedId === item.id && (
+                <div className="mt-2 space-y-2">
+                  {loadingLogId === item.id && <p className="text-xs text-muted-foreground">Loading…</p>}
+                  {fullLogs[item.id] && (
+                    <>
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground">Request</p>
+                        <pre className="text-xs bg-muted rounded p-2 overflow-x-auto max-h-64 overflow-y-auto whitespace-pre-wrap">
+                          {JSON.stringify(fullLogs[item.id].requestJson, null, 2)}
+                        </pre>
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground">Response</p>
+                        <pre className="text-xs bg-muted rounded p-2 overflow-x-auto max-h-64 overflow-y-auto whitespace-pre-wrap">
+                          {JSON.stringify(fullLogs[item.id].responseJson, null, 2)}
+                        </pre>
+                      </div>
+                    </>
+                  )}
+                </div>
               )}
             </div>
           ))}
