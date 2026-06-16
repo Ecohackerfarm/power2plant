@@ -17,11 +17,13 @@ type Props = {
   cropBName: string
   cropAId: string
   cropBId: string
+  signedIn: boolean
+  onRequireSignIn: () => void
 }
 
 type FundState = 'idle' | 'confirm' | 'loading' | 'queued' | 'already-queued' | 'error'
 
-export function ResearchFundButton({ cropAName, cropBName, cropAId, cropBId }: Props) {
+export function ResearchFundButton({ cropAName, cropBName, cropAId, cropBId, signedIn, onRequireSignIn }: Props) {
   const [topUpOpen, setTopUpOpen] = useState(false)
   const [fundState, setFundState] = useState<FundState>('idle')
   const [priceCents, setPriceCents] = useState<number | null>(null)
@@ -44,6 +46,10 @@ export function ResearchFundButton({ cropAName, cropBName, cropAId, cropBId }: P
 
   function handleClick() {
     if (!STRIPE_PK) return
+    if (!signedIn) {
+      onRequireSignIn()
+      return
+    }
     if (hasFunds) {
       setFundState('confirm')
     } else {
