@@ -38,6 +38,24 @@ echo "[dump-refresh] starting — target=${TARGET} — $(date -u +%Y-%m-%dT%H:%M
 # Step 1: full prod → target restore + PII anonymization.
 bash "${PROJECT_PATH}/scripts/dump-prod-anonymized.sh" --target "$TARGET"
 
+# Step 1b: restart the app container so its existing startup command
+# (`prisma migrate deploy && node server.js`, see Dockerfile CMD) re-applies
+# any migrations the restored dump doesn't have yet. The restore above can
+# regress the schema below what's already deployed (prod may lag staging),
+# so this is required after every restore, not just on a real deploy.
+sudo -u "$DEPLOY_USERNAME" docker compose -f "${PROJECT_PATH}/docker-compose.yml" restart app
+
+echo "[dump-refresh] waiting for app to report healthy (migrate deploy in progress)..."
+for _ in $(seq 1 60); do
+  status="$(sudo -u "$DEPLOY_USERNAME" docker compose -f "${PROJECT_PATH}/docker-compose.yml" ps app --format '{{.Health}}')"
+  [[ "$status" == "healthy" ]] && break
+  sleep 2
+done
+if [[ "$status" != "healthy" ]]; then
+  echo "[dump-refresh] app did not become healthy after restart — check 'docker compose logs app' for migrate errors" >&2
+  exit 1
+fi
+
 # Step 2 (staging only): pg_dump the anonymized staging DB → save for deploys.
 if [[ "$TARGET" == "staging" ]]; then
   mkdir -p "$(dirname "$STAGING_DUMP_FILE")"
