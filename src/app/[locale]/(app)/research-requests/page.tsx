@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { getDisplayName } from '@/lib/recommend'
 import { ResearchFundButton } from '@/components/research-fund-button'
+import { SignInModal } from '@/components/sign-in-modal'
 import { ThumbsUp } from 'lucide-react'
 
 type Crop = { id: string; name: string; botanicalName: string; commonNames: string[] }
@@ -82,18 +83,24 @@ function PairCard({
   item,
   highlighted,
   onVote,
-  canVote,
+  signedIn,
+  onRequireSignIn,
   t,
 }: {
   item: ResearchRequestItem
   highlighted: boolean
   onVote: (id: string, cropAId: string, cropBId: string | null) => void
-  canVote: boolean
+  signedIn: boolean
+  onRequireSignIn: () => void
   t: ReturnType<typeof useTranslations>
 }) {
   const [voting, setVoting] = useState(false)
 
   async function handleVote() {
+    if (!signedIn) {
+      onRequireSignIn()
+      return
+    }
     setVoting(true)
     await onVote(item.id, item.cropAId, item.cropBId)
     setVoting(false)
@@ -138,12 +145,14 @@ function PairCard({
               cropBName={getDisplayName(item.cropB)}
               cropAId={item.cropAId}
               cropBId={item.cropBId!}
+              signedIn={signedIn}
+              onRequireSignIn={onRequireSignIn}
             />
           )}
           <Button
             size="sm"
             variant={item.hasVoted ? 'secondary' : 'default'}
-            disabled={!canVote || item.hasVoted || voting}
+            disabled={item.hasVoted || voting}
             onClick={handleVote}
           >
             {item.hasVoted ? t('voted') : t('vote')}
@@ -164,6 +173,7 @@ export default function ResearchRequestsPage() {
   const [items, setItems] = useState<ResearchRequestItem[]>([])
   const [loading, setLoading] = useState(true)
   const [deepVoted, setDeepVoted] = useState(false)
+  const [showSignIn, setShowSignIn] = useState(false)
 
   const fetchItems = useCallback(async () => {
     try {
@@ -253,11 +263,14 @@ export default function ResearchRequestsPage() {
             item={item}
             highlighted={isHighlighted(item)}
             onVote={handleVote}
-            canVote={!!session}
+            signedIn={!!session}
+            onRequireSignIn={() => setShowSignIn(true)}
             t={t}
           />
         ))}
       </div>
+
+      {showSignIn && <SignInModal onClose={() => setShowSignIn(false)} />}
     </div>
   )
 }

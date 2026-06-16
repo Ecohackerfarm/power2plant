@@ -90,7 +90,14 @@ export default function AdminResearchRequestsPage() {
                 <div className="flex items-center gap-3 shrink-0 flex-wrap justify-end">
                   <Badge variant="secondary">{item.voteCount} vote{item.voteCount !== 1 ? 's' : ''}</Badge>
                   {item.funded && <Badge variant="default">Funded</Badge>}
-                  <ResearchFundButton cropAName={nameA} cropBName={nameB} cropAId={item.cropAId} cropBId={item.cropBId} />
+                  <ResearchFundButton
+                    cropAName={nameA}
+                    cropBName={nameB}
+                    cropAId={item.cropAId}
+                    cropBId={item.cropBId}
+                    signedIn
+                    onRequireSignIn={() => {}}
+                  />
                   <Button
                     size="sm"
                     variant={item.funded ? 'outline' : 'secondary'}
