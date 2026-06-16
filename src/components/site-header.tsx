@@ -35,7 +35,7 @@ function menuItemClass(active: boolean) {
     : `${base} text-[#5A6E60] hover:text-[#2D4A3E] hover:bg-[#EDE8DC]`
 }
 
-export function SiteHeader({ isAdmin = false }: { isAdmin?: boolean }) {
+export function SiteHeader({ isAdmin = false, version }: { isAdmin?: boolean; version?: string }) {
   const t = useTranslations('Nav')
   const pathname = usePathname()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -111,12 +111,17 @@ export function SiteHeader({ isAdmin = false }: { isAdmin?: boolean }) {
           <div className="bg-[#F7F3E8] rounded-2xl p-1 shrink-0">
             <Image src="/logo.png" alt="" width={32} height={32} />
           </div>
-          <span
-            className="font-semibold text-sm min-[400px]:text-xl text-[#F7F3E8] leading-none"
-            style={{ fontFamily: 'var(--font-fraunces), ui-serif, serif', fontWeight: 300 }}
-          >
-            power2plant
-          </span>
+          <div className="flex flex-col leading-none gap-0.5">
+            <span
+              className="font-semibold text-sm min-[400px]:text-xl text-[#F7F3E8] leading-none"
+              style={{ fontFamily: 'var(--font-fraunces), ui-serif, serif', fontWeight: 300 }}
+            >
+              power2plant
+            </span>
+            {version && (
+              <span className="text-[10px] text-[#F7F3E8]/40 leading-none">v{version}</span>
+            )}
+          </div>
         </Link>
 
         {/* Right: actions */}
