@@ -1,0 +1,10 @@
+/* Brand font family vars the host app injects at runtime via next/font.
+   The design-sync extraFonts parser ships only @font-face rules from
+   fonts.css and drops its :root block, so these definitions are appended
+   to the compiled stylesheet (cssEntry) by buildCmd to keep them in the
+   styles.css closure. Families must match the @font-face family names in
+   .design-sync/fonts.css. */
+:root {
+  --font-dm-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-fraunces: 'Fraunces', ui-serif, Georgia, serif;
+}
