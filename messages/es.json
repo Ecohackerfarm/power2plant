@@ -40,14 +40,36 @@
     "addAtLeast2": "Añade al menos 2 plantas a tu lista de deseos."
   },
   "Landing": {
-    "title": "power2plant",
-    "subtitle": "Planificador de huerto para plantas compañeras",
-    "lookupTitle": "Buscar planta compañera",
-    "lookupDesc": "Encuentra compañeras y antagonistas para cualquier planta",
-    "planTitle": "Planificar bancales",
-    "planDesc": "Sabe qué quieres cultivar — encuentra qué va junto",
-    "gardenTitle": "Mi huerto",
-    "gardenDesc": "Ve cómo conviven las plantas de tus bancales"
+    "eyebrow": "Choose your path",
+    "learnMore": "Learn more",
+    "previous": "Previous",
+    "next": "Next",
+    "slides": {
+      "explore": {
+        "tab": "Explore Companion Plants",
+        "heading": "Find who your plants love.",
+        "description": "Search any plant to discover its best companions — and the ones to keep apart. Backed by traditional knowledge and community observations.",
+        "cta": "Start exploring"
+      },
+      "plan": {
+        "tab": "Plan Garden Beds",
+        "heading": "Know what fits together.",
+        "description": "Map out your beds with plants that support each other. Catch conflicts before they happen and make the most of every square metre.",
+        "cta": "Plan your beds"
+      },
+      "evaluate": {
+        "tab": "Evaluate Your Garden",
+        "heading": "See how your beds get along.",
+        "description": "Check the health of your existing garden layout. Get suggestions to improve harmony, yield, and soil over time.",
+        "cta": "Evaluate now"
+      },
+      "community": {
+        "tab": "Join Community to Research",
+        "heading": "Be part of the science.",
+        "description": "Collaborate with researchers and curious growers worldwide. Share your own garden observations, add useful sources you discover, or help fund the collection of peer-reviewed research through advanced scientific research AI. Every contribution strengthens our shared understanding of companion planting.",
+        "cta": "Join the community"
+      }
+    }
   },
   "Nav": {
     "lookup": "Buscar planta compañera",

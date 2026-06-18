@@ -161,6 +161,7 @@
 @keyframes slideOutRight { from{transform:translateX(0);opacity:1}   to{transform:translateX(115%);opacity:0}  }
 @keyframes slideInRight  { from{transform:translateX(115%);opacity:0} to{transform:translateX(0);opacity:1}   }
 @keyframes slideInLeft   { from{transform:translateX(-115%);opacity:0} to{transform:translateX(0);opacity:1}  }
+@keyframes fadeIn        { from{opacity:0;transform:translateY(8px)}  to{opacity:1;transform:translateY(0)}  }
 
 /* Force-include the four utility classes (v4 @source inline replaces safelist) */
 @source inline("{animate-slide-out-left,animate-slide-out-right,animate-slide-in-right,animate-slide-in-left}");
