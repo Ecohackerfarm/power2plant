@@ -1,0 +1,27 @@
+{
+  "projectId": "045d5399-040c-4f9c-b1a6-1f768947c823",
+  "shape": "package",
+  "pkg": "power2plant",
+  "globalName": "Power2Plant",
+  "entry": ".design-sync/ds-entry.ts",
+  "srcDir": "src/components/ui",
+  "tsconfig": ".design-sync/tsconfig.shim.json",
+  "cssEntry": ".design-sync/compiled.css",
+  "readmeHeader": ".design-sync/conventions.md",
+  "extraFonts": ".design-sync/fonts.css",
+  "buildCmd": "node .ds-sync/node_modules/@tailwindcss/cli/dist/index.mjs -i src/app/globals.css -o .design-sync/compiled.css && cat .design-sync/font-vars.css >> .design-sync/compiled.css",
+  "componentSrcMap": {
+    "Button": "src/components/ui/button.tsx",
+    "Badge": "src/components/ui/badge.tsx",
+    "Card": "src/components/ui/card.tsx",
+    "Input": "src/components/ui/input.tsx",
+    "Label": "src/components/ui/label.tsx",
+    "Separator": "src/components/ui/separator.tsx",
+    "PlantSearch": "src/components/plant-search.tsx",
+    "RecommendationDisplay": "src/components/recommendation-display.tsx"
+  },
+  "dtsPropsFor": {
+    "PlantSearch": "  /** Crop IDs currently in the wishlist (controlled). */\n  wishlistIds: string[];\n  /** Add a crop to the wishlist by id. */\n  onAdd: (cropId: string) => void;\n  /** Remove a crop from the wishlist by id. */\n  onRemove: (cropId: string) => void;\n  /** Clear the entire wishlist. */\n  onClearAll: () => void;\n  /** Optional controlled initial query string. */\n  initialQuery?: string;\n  /** Crop IDs saved as inspirations; presence enables the bookmark action. */\n  inspirationIds?: string[];\n  onInspire?: (cropId: string) => void;\n  onUninspire?: (cropId: string) => void;",
+    "RecommendationDisplay": "  /** Primary companion-planting arrangement from the recommend engine. */\n  result: { beds: Array<{ index: number; crops: Array<{ id: string; name: string; botanicalName: string; commonNames: string[]; minTempC: number | null }>; hints: Array<{ cropAId: string; cropBId: string; pairLabel: string; details: string; confidenceLevel: 'anecdotal' | 'traditional' | 'observed' | 'peer-reviewed' }>; noDataPairs: Array<{ cropAId: string; cropBId: string; pairLabel: string }> }>; overflow: Array<{ id: string; name: string; botanicalName: string; commonNames: string[]; minTempC: number | null }>; conflicts: Array<{ a: { id: string; name: string; botanicalName: string; commonNames: string[]; minTempC: number | null }; b: { id: string; name: string; botanicalName: string; commonNames: string[]; minTempC: number | null } }>; duplicatedCropIds: string[] };\n  /** Alternative arrangements; rendered as switchable \"Plan A / B / …\" tabs. */\n  alternatives?: Array<{ beds: Array<{ index: number; crops: Array<{ id: string; name: string; botanicalName: string; commonNames: string[]; minTempC: number | null }>; hints: Array<{ cropAId: string; cropBId: string; pairLabel: string; details: string; confidenceLevel: 'anecdotal' | 'traditional' | 'observed' | 'peer-reviewed' }>; noDataPairs: Array<{ cropAId: string; cropBId: string; pairLabel: string }> }>; overflow: Array<{ id: string; name: string; botanicalName: string; commonNames: string[]; minTempC: number | null }>; conflicts: Array<{ a: { id: string; name: string; botanicalName: string; commonNames: string[]; minTempC: number | null }; b: { id: string; name: string; botanicalName: string; commonNames: string[]; minTempC: number | null } }>; duplicatedCropIds: string[] }>;\n  /** Called after the user accepts/saves a plan to their garden. */\n  onAccepted?: () => void;"
+  }
+}

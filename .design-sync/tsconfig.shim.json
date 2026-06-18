@@ -1,0 +1,11 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": "..",
+    "paths": {
+      "@/i18n/navigation": ["./.design-sync/shims/navigation.tsx"],
+      "@/lib/auth-client": ["./.design-sync/shims/auth-client.tsx"],
+      "@/*": ["./src/*"]
+    }
+  }
+}
