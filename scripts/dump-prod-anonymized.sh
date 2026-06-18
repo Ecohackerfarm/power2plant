@@ -130,6 +130,10 @@ SQL
 
 if [[ -n "$DUMP_ADMIN_PASSWORD" && -n "$ADMIN_EMAILS" ]]; then
   echo "==> Setting known admin login for: ${ADMIN_EMAILS}..."
+  # The scripts image bakes source in at build time (COPY . .) and is profile-gated,
+  # so a normal `compose up --build` deploy never rebuilds it. Build it explicitly
+  # here, else this step runs stale code (e.g. missing set-admin-credentials.ts).
+  docker compose -f "$TARGET_COMPOSE" build scripts
   docker compose -f "$TARGET_COMPOSE" run --rm -T \
     -e ADMIN_EMAILS="$ADMIN_EMAILS" \
     -e DUMP_ADMIN_PASSWORD="$DUMP_ADMIN_PASSWORD" \
