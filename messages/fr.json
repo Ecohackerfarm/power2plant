@@ -40,14 +40,36 @@
     "addAtLeast2": "Ajoutez au moins 2 plantes à votre liste de souhaits."
   },
   "Landing": {
-    "title": "power2plant",
-    "subtitle": "Planificateur de jardin pour les plantes compagnes",
-    "lookupTitle": "Trouver une plante compagne",
-    "lookupDesc": "Trouvez les compagnes et antagonistes de n'importe quelle plante",
-    "planTitle": "Planifier les planches",
-    "planDesc": "Sachez ce que vous voulez cultiver — trouvez ce qui va ensemble",
-    "gardenTitle": "Mon jardin",
-    "gardenDesc": "Voyez comment cohabitent les plantes de vos planches"
+    "eyebrow": "Choose your path",
+    "learnMore": "Learn more",
+    "previous": "Previous",
+    "next": "Next",
+    "slides": {
+      "explore": {
+        "tab": "Explore Companion Plants",
+        "heading": "Find who your plants love.",
+        "description": "Search any plant to discover its best companions — and the ones to keep apart. Backed by traditional knowledge and community observations.",
+        "cta": "Start exploring"
+      },
+      "plan": {
+        "tab": "Plan Garden Beds",
+        "heading": "Know what fits together.",
+        "description": "Map out your beds with plants that support each other. Catch conflicts before they happen and make the most of every square metre.",
+        "cta": "Plan your beds"
+      },
+      "evaluate": {
+        "tab": "Evaluate Your Garden",
+        "heading": "See how your beds get along.",
+        "description": "Check the health of your existing garden layout. Get suggestions to improve harmony, yield, and soil over time.",
+        "cta": "Evaluate now"
+      },
+      "community": {
+        "tab": "Join Community to Research",
+        "heading": "Be part of the science.",
+        "description": "Collaborate with researchers and curious growers worldwide. Share your own garden observations, add useful sources you discover, or help fund the collection of peer-reviewed research through advanced scientific research AI. Every contribution strengthens our shared understanding of companion planting.",
+        "cta": "Join the community"
+      }
+    }
   },
   "Nav": {
     "lookup": "Trouver une plante compagne",
