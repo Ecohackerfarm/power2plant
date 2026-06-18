@@ -35,11 +35,20 @@ read_env() { grep -E "^${1}=" "$2" | head -1 | cut -d= -f2- | tr -d '"' || true;
 # Emails to preserve unchanged (single-quote-escaped for SQL)
 sq() { echo "$1" | sed "s/'/''/g"; }
 PRESERVED_EMAILS=()
-ADMIN_EMAIL=$(read_env ADMIN_EMAIL "$TARGET_ENV")
+# ADMIN_EMAILS is a comma-separated list (matches docker-compose / the app).
+# Fall back to the legacy singular ADMIN_EMAIL if the plural form is unset.
+ADMIN_EMAILS=$(read_env ADMIN_EMAILS "$TARGET_ENV")
+[[ -z "$ADMIN_EMAILS" ]] && ADMIN_EMAILS=$(read_env ADMIN_EMAIL "$TARGET_ENV")
 TEST_USER_EMAIL=$(read_env TEST_USER_EMAIL "$TARGET_ENV")
 # Optional: force a known admin login into the restored DB (see set-admin-credentials.ts)
 DUMP_ADMIN_PASSWORD=$(read_env DUMP_ADMIN_PASSWORD "$TARGET_ENV")
-[[ -n "$ADMIN_EMAIL" ]]      && PRESERVED_EMAILS+=("'$(sq "$ADMIN_EMAIL")'")
+
+# Split ADMIN_EMAILS on commas, trim whitespace, preserve each
+IFS=',' read -ra _admin_arr <<< "$ADMIN_EMAILS"
+for _e in "${_admin_arr[@]}"; do
+  _e="${_e#"${_e%%[![:space:]]*}"}"; _e="${_e%"${_e##*[![:space:]]}"}"  # trim
+  [[ -n "$_e" ]] && PRESERVED_EMAILS+=("'$(sq "$_e")'")
+done
 [[ -n "$TEST_USER_EMAIL" ]]  && PRESERVED_EMAILS+=("'$(sq "$TEST_USER_EMAIL")'")
 
 if [[ ${#PRESERVED_EMAILS[@]} -gt 0 ]]; then
@@ -119,10 +128,10 @@ DELETE FROM verification
 WHERE identifier NOT IN ${PRESERVE_IN};
 SQL
 
-if [[ -n "$DUMP_ADMIN_PASSWORD" && -n "$ADMIN_EMAIL" ]]; then
-  echo "==> Setting known admin login for ${ADMIN_EMAIL}..."
+if [[ -n "$DUMP_ADMIN_PASSWORD" && -n "$ADMIN_EMAILS" ]]; then
+  echo "==> Setting known admin login for: ${ADMIN_EMAILS}..."
   docker compose -f "$TARGET_COMPOSE" run --rm -T \
-    -e ADMIN_EMAIL="$ADMIN_EMAIL" \
+    -e ADMIN_EMAILS="$ADMIN_EMAILS" \
     -e DUMP_ADMIN_PASSWORD="$DUMP_ADMIN_PASSWORD" \
     scripts npx tsx scripts/set-admin-credentials.ts
 fi
