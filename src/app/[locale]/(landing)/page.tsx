@@ -111,7 +111,23 @@ export default function LandingPage() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#F7F3E8] px-4 py-8">
-      {/* Fixed decorative plants — left & right edges, behind content, non-moving */}
+      {/* Fixed decorative plants — corners, behind content, non-moving */}
+      <Image
+        src="/deco_left-2.png"
+        alt=""
+        width={596}
+        height={715}
+        aria-hidden="true"
+        className="pointer-events-none fixed left-0 top-0 z-0 hidden h-auto w-[clamp(180px,22vw,340px)] select-none opacity-30 md:block"
+      />
+      <Image
+        src="/deco_right-2.png"
+        alt=""
+        width={540}
+        height={708}
+        aria-hidden="true"
+        className="pointer-events-none fixed right-0 top-0 z-0 hidden h-auto w-[clamp(180px,22vw,340px)] select-none opacity-30 md:block"
+      />
       <Image
         src="/deco_left.png"
         alt=""
