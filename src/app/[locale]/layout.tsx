@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { DM_Sans, Fraunces } from 'next/font/google'
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages } from 'next-intl/server'
@@ -22,6 +22,11 @@ const fraunces = Fraunces({
 export const metadata: Metadata = {
   title: 'power2plant',
   description: 'Companion planting garden planner',
+  manifest: '/manifest.webmanifest',
+}
+
+export const viewport: Viewport = {
+  themeColor: '#1C2E28',
 }
 
 export default async function LocaleLayout({
