@@ -37,6 +37,8 @@ sq() { echo "$1" | sed "s/'/''/g"; }
 PRESERVED_EMAILS=()
 ADMIN_EMAIL=$(read_env ADMIN_EMAIL "$TARGET_ENV")
 TEST_USER_EMAIL=$(read_env TEST_USER_EMAIL "$TARGET_ENV")
+# Optional: force a known admin login into the restored DB (see set-admin-credentials.ts)
+DUMP_ADMIN_PASSWORD=$(read_env DUMP_ADMIN_PASSWORD "$TARGET_ENV")
 [[ -n "$ADMIN_EMAIL" ]]      && PRESERVED_EMAILS+=("'$(sq "$ADMIN_EMAIL")'")
 [[ -n "$TEST_USER_EMAIL" ]]  && PRESERVED_EMAILS+=("'$(sq "$TEST_USER_EMAIL")'")
 
@@ -116,6 +118,14 @@ WHERE "userId" NOT IN (SELECT id FROM "user" WHERE email IN ${PRESERVE_IN});
 DELETE FROM verification
 WHERE identifier NOT IN ${PRESERVE_IN};
 SQL
+
+if [[ -n "$DUMP_ADMIN_PASSWORD" && -n "$ADMIN_EMAIL" ]]; then
+  echo "==> Setting known admin login for ${ADMIN_EMAIL}..."
+  docker compose -f "$TARGET_COMPOSE" run --rm -T \
+    -e ADMIN_EMAIL="$ADMIN_EMAIL" \
+    -e DUMP_ADMIN_PASSWORD="$DUMP_ADMIN_PASSWORD" \
+    scripts npx tsx scripts/set-admin-credentials.ts
+fi
 
 echo "==> Done. ${TARGET} DB restored + anonymized."
 [[ ${#PRESERVED_EMAILS[@]} -eq 0 ]] && echo "    All sessions cleared — register a fresh account to log in." \
