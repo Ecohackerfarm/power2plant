@@ -64,6 +64,18 @@ trap 'rm -f "$DUMP_FILE"' EXIT
 # sed expression: swap /power2plant (+ any query string) for /postgres
 MAINT_SED='s|/power2plant[^/]*$|/postgres|'
 
+# Authenticate to ghcr.io so the private :scripts image can be pulled below.
+# The compose calls in this script run as the *invoking* user (root when run
+# manually, the deploy user via systemd), so — unlike ghcr-login.sh, which logs
+# in the deploy user for deploy.sh — log in whoever runs this script. No-op when
+# GHCR_TOKEN is unset (e.g. if the package is made public). Reads from prod's .env.
+GHCR_USER=$(read_env GHCR_USER /opt/power2plant/prod/.env)
+GHCR_TOKEN=$(read_env GHCR_TOKEN /opt/power2plant/prod/.env)
+if [[ -n "$GHCR_TOKEN" ]]; then
+  echo "==> Logging in to ghcr.io..."
+  printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "${GHCR_USER:-x}" --password-stdin >/dev/null
+fi
+
 echo "==> Dumping prod..."
 # Strip ?schema=... — pg_dump doesn't accept URL query params
 docker compose -f "$PROD_COMPOSE" run --rm -T scripts \
