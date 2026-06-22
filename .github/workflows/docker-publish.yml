@@ -6,6 +6,11 @@ on:
       - release/**
       - main
 
+# ghcr.io requires a lowercase repository path; github.repository keeps the
+# org's casing (Ecohackerfarm), so hardcode the lowercase image name here.
+env:
+  IMAGE: ghcr.io/ecohackerfarm/power2plant
+
 jobs:
   build-staging:
     name: Build & push staging images
@@ -34,7 +39,7 @@ jobs:
           context: .
           target: runner
           push: true
-          tags: ghcr.io/${{ github.repository }}:staging
+          tags: ${{ env.IMAGE }}:staging
           cache-from: type=gha,scope=staging-runner
           cache-to: type=gha,mode=max,scope=staging-runner
 
@@ -44,7 +49,7 @@ jobs:
           context: .
           target: scripts
           push: true
-          tags: ghcr.io/${{ github.repository }}:scripts-staging
+          tags: ${{ env.IMAGE }}:scripts-staging
           cache-from: type=gha,scope=staging-scripts
           cache-to: type=gha,mode=max,scope=staging-scripts
 
@@ -75,7 +80,7 @@ jobs:
           context: .
           target: runner
           push: true
-          tags: ghcr.io/${{ github.repository }}:latest
+          tags: ${{ env.IMAGE }}:latest
           cache-from: type=gha,scope=prod-runner
           cache-to: type=gha,mode=max,scope=prod-runner
 
@@ -85,6 +90,6 @@ jobs:
           context: .
           target: scripts
           push: true
-          tags: ghcr.io/${{ github.repository }}:scripts
+          tags: ${{ env.IMAGE }}:scripts
           cache-from: type=gha,scope=prod-scripts
           cache-to: type=gha,mode=max,scope=prod-scripts
