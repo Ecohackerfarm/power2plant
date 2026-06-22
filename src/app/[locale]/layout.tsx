@@ -41,8 +41,18 @@ export default async function LocaleLayout({
 
   const messages = await getMessages()
 
+  const publicEnv = {
+    APP_URL:                 process.env['APP_URL'] ?? '',
+    STRIPE_PUBLISHABLE_KEY:  process.env['STRIPE_PUBLISHABLE_KEY'] ?? '',
+    KOFI_URL:                process.env['KOFI_URL'] ?? '',
+  }
+
   return (
     <html lang={locale} dir={RTL_LOCALES.has(locale) ? 'rtl' : 'ltr'}>
+      <head>
+        {/* Injected at request time so client code reads runtime env without build-time baking */}
+        <script dangerouslySetInnerHTML={{ __html: `window.__ENV__=${JSON.stringify(publicEnv)}` }} />
+      </head>
       <body className={`${dmSans.variable} ${fraunces.variable} antialiased`}>
         <NextIntlClientProvider messages={messages}>
           {children}

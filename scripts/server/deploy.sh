@@ -21,8 +21,8 @@ if [[ -n "${INVOICE_SERVICE_REPO}" ]]; then
   fi
 fi
 
-sudo -u "$DEPLOY_USERNAME" docker compose up -d --build
-sudo -u "$DEPLOY_USERNAME" docker compose build scripts
+sudo -u "$DEPLOY_USERNAME" docker compose pull
+sudo -u "$DEPLOY_USERNAME" docker compose up -d
 
 # One-time seed bootstrap on a fresh volume — sentinel makes this a no-op on
 # every subsequent deploy. Never clobbers existing prod data.

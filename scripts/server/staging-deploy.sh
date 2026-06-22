@@ -34,13 +34,16 @@ if [[ -n "${INVOICE_SERVICE_REPO}" ]]; then
   fi
 fi
 
+# Pull the freshly built staging images (no build on the VPS).
+sudo -u "$DEPLOY_USERNAME" env IMAGE_TAG=staging SCRIPTS_IMAGE_TAG=scripts-staging docker compose pull
+
 # Start DB only first so bootstrap can restore the dump before the app migrates.
 # This ensures prisma migrate deploy always runs against a clean known-good state.
-sudo -u "$DEPLOY_USERNAME" docker compose up -d db invoice-db 2>/dev/null || \
-  sudo -u "$DEPLOY_USERNAME" docker compose up -d db
+sudo -u "$DEPLOY_USERNAME" env IMAGE_TAG=staging SCRIPTS_IMAGE_TAG=scripts-staging docker compose up -d db invoice-db 2>/dev/null || \
+  sudo -u "$DEPLOY_USERNAME" env IMAGE_TAG=staging SCRIPTS_IMAGE_TAG=scripts-staging docker compose up -d db
 
 "${PROJECT_PATH}/scripts/server/staging-seed-bootstrap.sh"
 
 # Now bring up the full stack. App container runs prisma migrate deploy against
 # the freshly restored DB — no stuck migrations possible.
-sudo -u "$DEPLOY_USERNAME" docker compose up -d --build
+sudo -u "$DEPLOY_USERNAME" env IMAGE_TAG=staging SCRIPTS_IMAGE_TAG=scripts-staging docker compose up -d

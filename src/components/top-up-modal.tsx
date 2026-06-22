@@ -15,7 +15,9 @@ function isEuTimezone(): boolean {
   }
 }
 
-const STRIPE_PK = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+import { clientEnv } from '@/lib/client-env'
+
+const STRIPE_PK = clientEnv.stripePublishableKey()
 
 const stripePromise = STRIPE_PK ? loadStripe(STRIPE_PK) : null
 

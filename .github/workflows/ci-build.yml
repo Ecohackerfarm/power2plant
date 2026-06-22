@@ -31,7 +31,7 @@ jobs:
       DATABASE_URL: postgresql://power2plant:power2plant@localhost:5432/power2plant
       BETTER_AUTH_SECRET: ci-build-secret-at-least-32-characters-long
       BETTER_AUTH_URL: http://localhost:3000
-      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      APP_URL: http://localhost:3000
 
     steps:
       - uses: actions/checkout@v4
@@ -64,7 +64,7 @@ jobs:
       DATABASE_URL: postgresql://power2plant:power2plant@localhost:5432/power2plant
       BETTER_AUTH_SECRET: ci-build-secret-at-least-32-characters-long
       BETTER_AUTH_URL: http://localhost:3000
-      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      APP_URL: http://localhost:3000
       NODE_ENV: production
     steps:
       - uses: actions/checkout@v4

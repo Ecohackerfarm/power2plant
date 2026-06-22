@@ -26,7 +26,7 @@ services:
       DATABASE_URL: postgresql://power2plant:power2plant@db:5432/power2plant
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-dev-secret-change-in-production}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3001}
-      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3001}
+      APP_URL: ${APP_URL:-http://localhost:3001}
     volumes:
       - .:/app
       - /app/node_modules
