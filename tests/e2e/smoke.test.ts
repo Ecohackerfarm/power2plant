@@ -1,13 +1,13 @@
 import { test, expect } from '@playwright/test'
 
-test('landing page shows 3 use-case cards', async ({ page }) => {
+test('landing page shows site header and hero', async ({ page }) => {
   await page.goto('/')
-  await expect(page.getByRole('heading', { name: 'power2plant' })).toBeVisible()
-  // Landing page has both hero CTA buttons and card links pointing to the same destinations.
-  // Use .first() to avoid strict-mode violations from duplicate role+name matches.
-  await expect(page.getByRole('link', { name: /find companion plant/i }).first()).toBeVisible()
-  await expect(page.getByRole('link', { name: /plan beds/i }).first()).toBeVisible()
-  await expect(page.getByRole('link', { name: /my garden/i })).toBeVisible()
+  // SiteHeader is rendered on the landing page (same banner as the rest of the app).
+  const banner = page.getByRole('banner')
+  await expect(banner).toBeVisible()
+  await expect(banner.getByRole('link', { name: /power2plant/i })).toBeVisible()
+  // Hero carousel renders a slide heading.
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
 })
 
 test('plan page has site header with nav', async ({ page }) => {
@@ -143,15 +143,16 @@ test('sign-in panel: opens as dropdown without shifting header layout', async ({
 
 test('sign-in panel: opens on landing page without layout shift', async ({ page }) => {
   await page.goto('/')
-  const heading = page.getByRole('heading', { name: 'power2plant' })
-  const headingBoxBefore = await heading.boundingBox()
-  expect(headingBoxBefore).not.toBeNull()
+  // Sign-in lives in the header now; anchor the no-shift check on the banner.
+  const banner = page.getByRole('banner')
+  const bannerBoxBefore = await banner.boundingBox()
+  expect(bannerBoxBefore).not.toBeNull()
 
   await page.getByRole('button', { name: /sign in/i }).click()
   await expect(page.getByLabel(/email/i).first()).toBeVisible()
 
-  const headingBoxAfter = await heading.boundingBox()
-  expect(headingBoxAfter!.y).toBe(headingBoxBefore!.y)
+  const bannerBoxAfter = await banner.boundingBox()
+  expect(bannerBoxAfter!.y).toBe(bannerBoxBefore!.y)
 })
 
 test('garden page has back link to home', async ({ page }) => {

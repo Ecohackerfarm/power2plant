@@ -5,8 +5,6 @@ import { useTranslations } from 'next-intl'
 import { ArrowRight, ChevronLeft, ChevronRight, Leaf, LayoutGrid, Search, Users } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Link } from '@/i18n/navigation'
-import { LocaleSwitcher } from '@/components/locale-switcher'
-import { AuthPanel } from '@/components/auth-panel'
 
 type SlideTheme = {
   id: 'explore' | 'plan' | 'evaluate' | 'community'
@@ -146,11 +144,6 @@ export default function LandingPage() {
       />
 
       <div className="relative z-10 mx-auto max-w-5xl">
-        <div className="mb-8 flex items-center justify-end gap-3">
-          <LocaleSwitcher />
-          <AuthPanel />
-        </div>
-
         {/* Hero — changes with the active slide */}
         <div className="mb-12 flex flex-col items-center py-6 text-center">
           <p
