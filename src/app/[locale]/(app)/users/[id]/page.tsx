@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { use, useState, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 import Image from 'next/image'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -62,14 +62,15 @@ function getNextTier(current: number): number | null {
   return TIER_ORDER[idx + 1]
 }
 
-export default function UserProfilePage({ params }: { params: { id: string } }) {
+export default function UserProfilePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
   const t = useTranslations('UserProfile')
   const [data, setData] = useState<ProfileData | null>(null)
   const [notFound, setNotFound] = useState(false)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch(`/api/users/${params.id}/badges`)
+    fetch(`/api/users/${id}/badges`)
       .then(async res => {
         if (res.status === 404) {
           setNotFound(true)
@@ -80,7 +81,7 @@ export default function UserProfilePage({ params }: { params: { id: string } }) 
       })
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false))
-  }, [params.id])
+  }, [id])
 
   if (loading) {
     return (
