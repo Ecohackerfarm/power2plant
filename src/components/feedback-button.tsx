@@ -412,7 +412,7 @@ export function FeedbackButton() {
                 value={message}
                 onChange={e => setMessage(e.target.value)}
                 placeholder={t('messagePlaceholder')}
-                className="w-full border rounded p-2 text-sm min-h-[80px] resize-none"
+                className="w-full border rounded p-2 text-sm min-h-[80px] resize-none placeholder:text-muted-foreground/50"
                 maxLength={2000}
               />
             </div>
@@ -443,7 +443,7 @@ export function FeedbackButton() {
                 value={message}
                 onChange={e => setMessage(e.target.value)}
                 placeholder={t('messagePlaceholder')}
-                className="w-full border rounded p-2 text-sm min-h-[80px] resize-none"
+                className="w-full border rounded p-2 text-sm min-h-[80px] resize-none placeholder:text-muted-foreground/50"
                 maxLength={2000}
               />
             </div>
