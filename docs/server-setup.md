@@ -179,8 +179,8 @@ BETTER_AUTH_URL=https://power2plant.ecohackerfarm.org
 APP_URL=https://power2plant.ecohackerfarm.org
 VOLUME_DATA_DIR=$VOLUME_PATH/power2plant/prod/data
 # Private ghcr.io image pulls (classic PAT, read:packages scope):
-GHCR_USER=<github-username>
 GHCR_TOKEN=<classic-pat-read-packages>
+GHCR_USER=<github-username>   # optional — ghcr authenticates by token; any value works
 ```
 
 > The images are published to `ghcr.io/ecohackerfarm/power2plant` as **private**
@@ -319,8 +319,8 @@ APP_PORT=3001
 DB_PORT=5433
 STAGING_DATA_SOURCE=prod
 # Private ghcr.io image pulls (classic PAT, read:packages; same as prod is fine):
-GHCR_USER=<github-username>
 GHCR_TOKEN=<classic-pat-read-packages>
+GHCR_USER=<github-username>   # optional
 ```
 
 ```sh
