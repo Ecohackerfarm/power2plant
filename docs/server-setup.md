@@ -178,7 +178,15 @@ BETTER_AUTH_SECRET=<min-32-char-random>
 BETTER_AUTH_URL=https://power2plant.ecohackerfarm.org
 APP_URL=https://power2plant.ecohackerfarm.org
 VOLUME_DATA_DIR=$VOLUME_PATH/power2plant/prod/data
+# Private ghcr.io image pulls (token needs read:packages only):
+GHCR_USER=<github-username>
+GHCR_TOKEN=<pat-read-packages>
 ```
+
+> The images are published to `ghcr.io/ecohackerfarm/power2plant` as **private**
+> packages. The deploy runs `docker login ghcr.io` (via `scripts/server/ghcr-login.sh`)
+> using `GHCR_USER`/`GHCR_TOKEN` before pulling. If you instead make the package
+> public, leave both unset and pulls work without auth.
 
 ```sh
 openssl rand -base64 48   # → BETTER_AUTH_SECRET
@@ -305,6 +313,9 @@ VOLUME_DATA_DIR=$VOLUME_PATH/power2plant/staging/data
 APP_PORT=3001
 DB_PORT=5433
 STAGING_DATA_SOURCE=prod
+# Private ghcr.io image pulls (same token as prod is fine):
+GHCR_USER=<github-username>
+GHCR_TOKEN=<pat-read-packages>
 ```
 
 ```sh

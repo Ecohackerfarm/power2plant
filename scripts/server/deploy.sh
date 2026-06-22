@@ -21,6 +21,9 @@ if [[ -n "${INVOICE_SERVICE_REPO}" ]]; then
   fi
 fi
 
+# Authenticate to ghcr.io (private images) before pulling.
+"${PROJECT_PATH}/scripts/server/ghcr-login.sh"
+
 sudo -u "$DEPLOY_USERNAME" docker compose pull
 sudo -u "$DEPLOY_USERNAME" docker compose up -d
 

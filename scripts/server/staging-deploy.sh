@@ -34,6 +34,9 @@ if [[ -n "${INVOICE_SERVICE_REPO}" ]]; then
   fi
 fi
 
+# Authenticate to ghcr.io (private images) before pulling.
+"${PROJECT_PATH}/scripts/server/ghcr-login.sh"
+
 # Pull the freshly built staging images (no build on the VPS).
 sudo -u "$DEPLOY_USERNAME" env IMAGE_TAG=staging SCRIPTS_IMAGE_TAG=scripts-staging docker compose pull
 
