@@ -176,7 +176,7 @@ DATABASE_URL=postgresql://power2plant:<strong-db-password>@db:5432/power2plant
 POSTGRES_PASSWORD=<same-strong-db-password>
 BETTER_AUTH_SECRET=<min-32-char-random>
 BETTER_AUTH_URL=https://power2plant.ecohackerfarm.org
-NEXT_PUBLIC_APP_URL=https://power2plant.ecohackerfarm.org
+APP_URL=https://power2plant.ecohackerfarm.org
 VOLUME_DATA_DIR=$VOLUME_PATH/power2plant/prod/data
 ```
 
@@ -300,7 +300,7 @@ DATABASE_URL=postgresql://power2plant:<staging-db-password>@db:5432/power2plant
 POSTGRES_PASSWORD=<staging-db-password>
 BETTER_AUTH_SECRET=<min-32-char-random>
 BETTER_AUTH_URL=https://staging.power2plant.ecohackerfarm.org
-NEXT_PUBLIC_APP_URL=https://staging.power2plant.ecohackerfarm.org
+APP_URL=https://staging.power2plant.ecohackerfarm.org
 VOLUME_DATA_DIR=$VOLUME_PATH/power2plant/staging/data
 APP_PORT=3001
 DB_PORT=5433

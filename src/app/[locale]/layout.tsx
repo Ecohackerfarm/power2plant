@@ -42,9 +42,9 @@ export default async function LocaleLayout({
   const messages = await getMessages()
 
   const publicEnv = {
-    NEXT_PUBLIC_APP_URL:                 process.env['NEXT_PUBLIC_APP_URL'] ?? '',
-    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:  process.env['NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY'] ?? '',
-    NEXT_PUBLIC_KOFI_URL:                process.env['NEXT_PUBLIC_KOFI_URL'] ?? '',
+    APP_URL:                 process.env['APP_URL'] ?? '',
+    STRIPE_PUBLISHABLE_KEY:  process.env['STRIPE_PUBLISHABLE_KEY'] ?? '',
+    KOFI_URL:                process.env['KOFI_URL'] ?? '',
   }
 
   return (

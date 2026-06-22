@@ -465,7 +465,7 @@ echo ""
 echo "  Staging:"
 echo "  6. Create staging .env:      ${STAGING_PATH}/.env"
 echo "       Required: VOLUME_DATA_DIR, POSTGRES_PASSWORD, DATABASE_URL, APP_PORT=3001, DB_PORT=5433"
-echo "       BETTER_AUTH_SECRET, BETTER_AUTH_URL, NEXT_PUBLIC_APP_URL (pointing to ${STAGING_DOMAIN})"
+echo "       BETTER_AUTH_SECRET, BETTER_AUTH_URL, APP_URL (pointing to ${STAGING_DOMAIN})"
 echo "       STAGING_DATA_SOURCE=prod  # or: seed"
 echo "  7. Start staging:            systemctl start ${PROJECT}-staging"
 if [[ "$staging_nginx_mode" == "http-bootstrap" ]]; then
