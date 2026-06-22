@@ -308,7 +308,10 @@
     "link": "ссылка",
     "genusLevelBanner": "Отношение определено на уровне рода ({genusA} ↔ {genusB}) — применяется ко всем видам {genus}.",
     "appliesToAllSpecies": "Применяется ко всем видам {genus}.",
-    "genusLevelEvidence": "Свидетельства на уровне рода"
+    "genusLevelEvidence": "Свидетельства на уровне рода",
+    "fundedBy": "Исследование профинансировано",
+    "community": "Сообщество",
+    "unknownUser": "Аноним"
   },
   "GardenPage": {
     "backHome": "← {brand}",

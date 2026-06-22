@@ -308,7 +308,10 @@
     "link": "رابط",
     "genusLevelBanner": "العلاقة محدَّدة على مستوى الجنس ({genusA} ↔ {genusB}) — تنطبق على جميع أنواع {genus}.",
     "appliesToAllSpecies": "تنطبق على جميع أنواع {genus}.",
-    "genusLevelEvidence": "أدلة على مستوى الجنس"
+    "genusLevelEvidence": "أدلة على مستوى الجنس",
+    "fundedBy": "البحث ممول من",
+    "community": "المجتمع",
+    "unknownUser": "مجهول"
   },
   "GardenPage": {
     "backHome": "→ {brand}",

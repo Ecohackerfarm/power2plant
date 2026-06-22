@@ -320,7 +320,10 @@
     "LOW_CONFIDENCE": "Insufficient evidence",
     "researchAttemptClose": "Close",
     "researchAttemptNoRelationship": "No relationship data found.",
-    "genusLevelEvidence": "Genus-level evidence"
+    "genusLevelEvidence": "Genus-level evidence",
+    "fundedBy": "Research funded by",
+    "community": "Community",
+    "unknownUser": "Anonymous"
   },
   "GardenPage": {
     "backHome": "← {brand}",

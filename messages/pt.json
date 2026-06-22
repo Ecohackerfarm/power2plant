@@ -308,7 +308,10 @@
     "link": "link",
     "genusLevelBanner": "Relação definida a nível de gênero ({genusA} ↔ {genusB}) — aplica-se a todas as espécies de {genus}.",
     "appliesToAllSpecies": "Aplica-se a todas as espécies de {genus}.",
-    "genusLevelEvidence": "Evidências ao nível do género"
+    "genusLevelEvidence": "Evidências ao nível do género",
+    "fundedBy": "Pesquisa financiada por",
+    "community": "Comunidade",
+    "unknownUser": "Anônimo"
   },
   "GardenPage": {
     "backHome": "← {brand}",

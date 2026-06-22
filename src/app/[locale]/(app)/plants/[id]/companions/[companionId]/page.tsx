@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
-import { useRouter } from '@/i18n/navigation'
+import { useRouter, Link } from '@/i18n/navigation'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { ConfidenceBadge } from '@/components/confidence-badge'
@@ -32,6 +32,8 @@ type ResearchAttempt = {
   id: string; model: string; result: string; confidence: number | null; notes: string | null; attemptedAt: string
 }
 
+type Funder = { userId: string | null; name: string | null; source: 'PERSONAL' | 'POT' }
+
 function CropCard({ name, botanical, commonNames, isNitrogen, nitrogenLabel }: {
   name: string; botanical: string; commonNames: string[]; isNitrogen: boolean; nitrogenLabel: string
 }) {
@@ -54,6 +56,7 @@ export default function RelationshipPage() {
   const [sources, setSources] = useState<Source[]>([])
   const [genusSources, setGenusSources] = useState<Source[]>([])
   const [researchAttempts, setResearchAttempts] = useState<ResearchAttempt[]>([])
+  const [funders, setFunders] = useState<Funder[]>([])
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [expandedAttempt, setExpandedAttempt] = useState<string | null>(null)
@@ -67,6 +70,7 @@ export default function RelationshipPage() {
         setSources(body.sources ?? [])
         setGenusSources(body.genusSources ?? [])
         setResearchAttempts(body.researchAttempts ?? [])
+        setFunders(body.funders ?? [])
         if (!body.relationship) setNotFound(false)
       })
       .finally(() => setLoading(false))
@@ -288,6 +292,21 @@ export default function RelationshipPage() {
             </ul>
           </div>
         </>
+      )}
+
+      {funders.length > 0 && (
+        <div className="text-sm text-muted-foreground">
+          <span className="font-medium">{t('fundedBy')}:</span>{' '}
+          {funders.map((f, i) => (
+            <span key={i}>
+              {i > 0 && ', '}
+              {f.source === 'POT' || !f.userId
+                ? t('community')
+                : <Link href={`/users/${f.userId}`}>{f.name ?? t('unknownUser')}</Link>
+              }
+            </span>
+          ))}
+        </div>
       )}
     </main>
   )
