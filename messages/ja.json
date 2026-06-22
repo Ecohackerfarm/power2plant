@@ -307,7 +307,8 @@
     "RESEARCH": "研究",
     "link": "リンク",
     "genusLevelBanner": "この関係は属レベルで定義されています（{genusA} ↔ {genusB}）——{genus}のすべての種に適用されます。",
-    "appliesToAllSpecies": "{genus}のすべての種に適用されます。"
+    "appliesToAllSpecies": "{genus}のすべての種に適用されます。",
+    "genusLevelEvidence": "属レベルの根拠"
   },
   "GardenPage": {
     "backHome": "← {brand}",
