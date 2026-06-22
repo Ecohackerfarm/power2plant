@@ -171,7 +171,9 @@
     "plantHasNoData": "No companion data yet for this plant",
     "ATTRACTS": "Attracts",
     "NURSE": "Nurse crop",
-    "TRAP_CROP": "Trap crop"
+    "TRAP_CROP": "Trap crop",
+    "conflicting": "Противоречивый",
+    "unreviewed": "Непроверенный"
   },
   "Contribute": {
     "title": "Добавить наблюдение",
@@ -257,7 +259,9 @@
     "inheritedFrom": "от {genus}",
     "wikiReadMore": "Википедия →",
     "wikiAttribution": "Источник: Википедия (CC BY-SA)",
-    "contributeObservation": "Добавить находку →"
+    "contributeObservation": "Добавить находку →",
+    "conflicting": "Противоречивый",
+    "unreviewed": "Непроверенный"
   },
   "RelationshipPage": {
     "back": "← Назад",
@@ -311,7 +315,10 @@
     "genusLevelEvidence": "Свидетельства на уровне рода",
     "fundedBy": "Исследование профинансировано",
     "community": "Сообщество",
-    "unknownUser": "Аноним"
+    "unknownUser": "Аноним",
+    "conflicting": "Противоречивые данные",
+    "unreviewed": "Непроверенный",
+    "uncertain": "Неопределённый"
   },
   "GardenPage": {
     "backHome": "← {brand}",

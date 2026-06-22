@@ -24,6 +24,7 @@ type CompanionRow = CropRow & {
   relationshipId: string; type: string
   reasons: Array<{ type: string; explanation: string }>
   confidence: number; notes: string | null; direction: string
+  conflict: boolean; unreviewed: boolean
   inheritedFrom?: { id: string; botanicalName: string }
 }
 
@@ -207,6 +208,12 @@ export default function PlantPage() {
                             )
                           )}
                         </div>
+                        {c.conflict && (
+                          <Badge variant="destructive" className="text-xs">{t('conflicting')}</Badge>
+                        )}
+                        {c.unreviewed && (
+                          <Badge variant="outline" className="text-xs text-muted-foreground">{t('unreviewed')}</Badge>
+                        )}
                         {c.notes && (
                           <p className="text-xs text-muted-foreground mt-1">{c.notes}</p>
                         )}

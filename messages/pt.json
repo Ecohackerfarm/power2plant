@@ -171,7 +171,9 @@
     "plantHasNoData": "No companion data yet for this plant",
     "ATTRACTS": "Attracts",
     "NURSE": "Nurse crop",
-    "TRAP_CROP": "Trap crop"
+    "TRAP_CROP": "Trap crop",
+    "conflicting": "Contraditório",
+    "unreviewed": "Não revisado"
   },
   "Contribute": {
     "title": "Contribuir uma observação",
@@ -257,7 +259,9 @@
     "inheritedFrom": "via {genus}",
     "wikiReadMore": "Wikipedia →",
     "wikiAttribution": "Fonte: Wikipedia (CC BY-SA)",
-    "contributeObservation": "Adicionar uma descoberta →"
+    "contributeObservation": "Adicionar uma descoberta →",
+    "conflicting": "Contraditório",
+    "unreviewed": "Não revisado"
   },
   "RelationshipPage": {
     "back": "← Voltar",
@@ -311,7 +315,10 @@
     "genusLevelEvidence": "Evidências ao nível do género",
     "fundedBy": "Pesquisa financiada por",
     "community": "Comunidade",
-    "unknownUser": "Anônimo"
+    "unknownUser": "Anônimo",
+    "conflicting": "Evidência contraditória",
+    "unreviewed": "Não revisado",
+    "uncertain": "Incerto"
   },
   "GardenPage": {
     "backHome": "← {brand}",

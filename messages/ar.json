@@ -171,7 +171,9 @@
     "plantHasNoData": "No companion data yet for this plant",
     "ATTRACTS": "Attracts",
     "NURSE": "Nurse crop",
-    "TRAP_CROP": "Trap crop"
+    "TRAP_CROP": "Trap crop",
+    "conflicting": "متناقض",
+    "unreviewed": "غير مراجع"
   },
   "Contribute": {
     "title": "إضافة ملاحظة",
@@ -257,7 +259,9 @@
     "inheritedFrom": "عبر {genus}",
     "wikiReadMore": "ويكيبيديا ←",
     "wikiAttribution": "المصدر: ويكيبيديا (CC BY-SA)",
-    "contributeObservation": "أضف اكتشافاً ←"
+    "contributeObservation": "أضف اكتشافاً ←",
+    "conflicting": "متناقض",
+    "unreviewed": "غير مراجع"
   },
   "RelationshipPage": {
     "back": "→ رجوع",
@@ -311,7 +315,10 @@
     "genusLevelEvidence": "أدلة على مستوى الجنس",
     "fundedBy": "البحث ممول من",
     "community": "المجتمع",
-    "unknownUser": "مجهول"
+    "unknownUser": "مجهول",
+    "conflicting": "أدلة متناقضة",
+    "unreviewed": "غير مراجع",
+    "uncertain": "غير مؤكد"
   },
   "GardenPage": {
     "backHome": "→ {brand}",

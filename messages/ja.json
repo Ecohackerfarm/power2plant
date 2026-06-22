@@ -171,7 +171,9 @@
     "plantHasNoData": "No companion data yet for this plant",
     "ATTRACTS": "Attracts",
     "NURSE": "Nurse crop",
-    "TRAP_CROP": "Trap crop"
+    "TRAP_CROP": "Trap crop",
+    "conflicting": "矛盾",
+    "unreviewed": "未レビュー"
   },
   "Contribute": {
     "title": "観察を投稿する",
@@ -257,7 +259,9 @@
     "inheritedFrom": "{genus}より継承",
     "wikiReadMore": "Wikipedia →",
     "wikiAttribution": "出典：Wikipedia（CC BY-SA）",
-    "contributeObservation": "発見を追加する →"
+    "contributeObservation": "発見を追加する →",
+    "conflicting": "矛盾する証拠",
+    "unreviewed": "未レビュー"
   },
   "RelationshipPage": {
     "back": "← 戻る",
@@ -311,7 +315,10 @@
     "genusLevelEvidence": "属レベルの根拠",
     "fundedBy": "研究の資金提供者",
     "community": "コミュニティ",
-    "unknownUser": "匿名"
+    "unknownUser": "匿名",
+    "conflicting": "矛盾する証拠",
+    "unreviewed": "未レビュー",
+    "uncertain": "不確実"
   },
   "GardenPage": {
     "backHome": "← {brand}",

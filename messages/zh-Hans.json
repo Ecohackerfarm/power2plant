@@ -171,7 +171,9 @@
     "plantHasNoData": "No companion data yet for this plant",
     "ATTRACTS": "Attracts",
     "NURSE": "Nurse crop",
-    "TRAP_CROP": "Trap crop"
+    "TRAP_CROP": "Trap crop",
+    "conflicting": "有争议",
+    "unreviewed": "未审核"
   },
   "Contribute": {
     "title": "提交观察",
@@ -257,7 +259,9 @@
     "inheritedFrom": "来自 {genus}",
     "wikiReadMore": "维基百科 →",
     "wikiAttribution": "来源：维基百科（CC BY-SA）",
-    "contributeObservation": "添加发现 →"
+    "contributeObservation": "添加发现 →",
+    "conflicting": "有争议",
+    "unreviewed": "未审核"
   },
   "RelationshipPage": {
     "back": "← 返回",
@@ -311,7 +315,10 @@
     "genusLevelEvidence": "属级证据",
     "fundedBy": "研究资助方",
     "community": "社区",
-    "unknownUser": "匿名"
+    "unknownUser": "匿名",
+    "conflicting": "证据相互矛盾",
+    "unreviewed": "未审核",
+    "uncertain": "不确定"
   },
   "GardenPage": {
     "backHome": "← {brand}",

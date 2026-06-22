@@ -12,6 +12,7 @@ import { detectRank } from '@/lib/crop-rank'
 type RelationshipRow = {
   relId: string; type: string; reasons: Array<{ type: string; explanation: string }>; confidence: number
   notes: string | null; direction: string
+  conflict?: boolean; unreviewed?: boolean
   cropAId: string; cropAName: string; cropABotanical: string; cropACommonNames: string[]
   cropANitrogen: boolean
   cropBId: string; cropBName: string; cropBBotanical: string; cropBCommonNames: string[]
@@ -152,6 +153,19 @@ export default function RelationshipPage() {
           <dt className="w-32 text-muted-foreground shrink-0">{t('relationship')}</dt>
           <dd className="font-medium">{translateKey(rel.type, rel.type)}</dd>
         </div>
+        {(rel.conflict || rel.unreviewed) && (
+          <div className="flex gap-3">
+            <dt className="w-32 shrink-0" />
+            <dd className="flex flex-wrap gap-1">
+              {rel.conflict && (
+                <Badge variant="destructive" className="text-xs">{t('conflicting')}</Badge>
+              )}
+              {rel.unreviewed && (
+                <Badge variant="outline" className="text-xs text-muted-foreground">{t('unreviewed')}</Badge>
+              )}
+            </dd>
+          </div>
+        )}
         {rel.reasons?.length > 0 && (
           <div className="flex gap-3" data-feedback-target="relationship:reason">
             <dt className="w-32 text-muted-foreground shrink-0">
