@@ -13,7 +13,8 @@ const NAV_ITEMS = [
   { key: 'lookup' as const, href: '/relationships' },
   { key: 'plan' as const, href: '/plan' },
   { key: 'garden' as const, href: '/garden' },
-] satisfies { key: 'lookup' | 'plan' | 'garden'; href: string }[]
+  { key: 'leaderboard' as const, href: '/leaderboard' },
+] satisfies { key: 'lookup' | 'plan' | 'garden' | 'leaderboard'; href: string }[]
 
 const ADMIN_ITEMS = [
   { href: '/admin/feedback', label: 'Feedback' },

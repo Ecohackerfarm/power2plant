@@ -75,7 +75,8 @@
     "lookup": "Buscar planta compañera",
     "plan": "Planificar bancales",
     "garden": "Mi huerto",
-    "admin": "Administración"
+    "admin": "Administración",
+    "leaderboard": "Clasificación"
   },
   "ZoneDetector": {
     "title": "Paso 1 — Tu zona de cultivo",
@@ -439,5 +440,20 @@
     "noBadges": "Aún sin insignias.",
     "plantsResearched": "{count} plantas",
     "pairsResearched": "{count} pares"
+  },
+  "Leaderboard": {
+    "title": "Clasificación de investigación",
+    "allTime": "Todo el tiempo",
+    "yearly": "Este año",
+    "monthly": "Este mes",
+    "weekly": "Esta semana",
+    "daily": "Hoy",
+    "rank": "Rango",
+    "researcher": "Investigador",
+    "researches": "Investigaciones",
+    "badge": "Insignia",
+    "community": "Comunidad",
+    "noData": "Todavía no hay datos para este período.",
+    "fundedBy": "financiado por el fondo comunitario"
   }
 }

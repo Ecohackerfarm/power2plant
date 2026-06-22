@@ -75,7 +75,8 @@
     "lookup": "Begleitpflanze finden",
     "plan": "Beete planen",
     "garden": "Mein Garten",
-    "admin": "Admin"
+    "admin": "Admin",
+    "leaderboard": "Bestenliste"
   },
   "ZoneDetector": {
     "title": "Schritt 1 — Deine Klimazone",
@@ -481,5 +482,20 @@
     "noBadges": "Noch keine Abzeichen.",
     "plantsResearched": "{count} Pflanzen",
     "pairsResearched": "{count} Paare"
+  },
+  "Leaderboard": {
+    "title": "Forschungs-Bestenliste",
+    "allTime": "Gesamt",
+    "yearly": "Dieses Jahr",
+    "monthly": "Diesen Monat",
+    "weekly": "Diese Woche",
+    "daily": "Heute",
+    "rank": "Rang",
+    "researcher": "Forscher",
+    "researches": "Recherchen",
+    "badge": "Abzeichen",
+    "community": "Community",
+    "noData": "Noch keine Daten für diesen Zeitraum.",
+    "fundedBy": "finanziert durch den Community-Topf"
   }
 }

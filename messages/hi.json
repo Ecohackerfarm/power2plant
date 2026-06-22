@@ -75,7 +75,8 @@
     "lookup": "साथी पौधा खोजें",
     "plan": "क्यारियां योजना बनाएं",
     "garden": "मेरा बगीचा",
-    "admin": "प्रशासन"
+    "admin": "प्रशासन",
+    "leaderboard": "लीडरबोर्ड"
   },
   "ZoneDetector": {
     "title": "चरण 1 — आपका उगाने का क्षेत्र",
@@ -439,5 +440,20 @@
     "noBadges": "अभी तक कोई बैज नहीं।",
     "plantsResearched": "{count} पौधे",
     "pairsResearched": "{count} जोड़े"
+  },
+  "Leaderboard": {
+    "title": "शोध लीडरबोर्ड",
+    "allTime": "सभी समय",
+    "yearly": "इस वर्ष",
+    "monthly": "इस महीने",
+    "weekly": "इस सप्ताह",
+    "daily": "आज",
+    "rank": "रैंक",
+    "researcher": "शोधकर्ता",
+    "researches": "शोध",
+    "badge": "बैज",
+    "community": "समुदाय",
+    "noData": "इस अवधि के लिए अभी तक कोई डेटा नहीं है।",
+    "fundedBy": "सामुदायिक कोष द्वारा वित्त पोषित"
   }
 }
