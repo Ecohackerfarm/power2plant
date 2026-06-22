@@ -417,5 +417,16 @@
     "title": "充值解锁更多功能",
     "moreBeds": "最多 100 个床位（免费：最多 20 个）",
     "topUp": "充值 →"
+  },
+  "UserProfile": {
+    "notFound": "未找到用户。",
+    "loading": "加载中…",
+    "badges": "徽章",
+    "incrementalBadges": "研究里程碑",
+    "plantBadges": "已研究植物",
+    "pairBadges": "已研究配对",
+    "noBadges": "暂无徽章。",
+    "plantsResearched": "{count} 种植物",
+    "pairsResearched": "{count} 对"
   }
 }

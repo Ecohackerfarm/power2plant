@@ -459,5 +459,16 @@
     "title": "Unlock more with a top-up",
     "moreBeds": "Up to 100 beds (free accounts: up to 20)",
     "topUp": "Top up →"
+  },
+  "UserProfile": {
+    "notFound": "User not found.",
+    "loading": "Loading…",
+    "badges": "Badges",
+    "incrementalBadges": "Research Milestones",
+    "plantBadges": "Plants Researched",
+    "pairBadges": "Pairs Researched",
+    "noBadges": "No badges yet.",
+    "plantsResearched": "{count} plants",
+    "pairsResearched": "{count} pairs"
   }
 }

@@ -417,5 +417,16 @@
     "title": "Débloquez plus avec une recharge",
     "moreBeds": "Jusqu'à 100 carrés (gratuit : jusqu'à 20)",
     "topUp": "Recharger →"
+  },
+  "UserProfile": {
+    "notFound": "Utilisateur introuvable.",
+    "loading": "Chargement…",
+    "badges": "Badges",
+    "incrementalBadges": "Jalons de recherche",
+    "plantBadges": "Plantes étudiées",
+    "pairBadges": "Paires étudiées",
+    "noBadges": "Pas encore de badges.",
+    "plantsResearched": "{count} plantes",
+    "pairsResearched": "{count} paires"
   }
 }

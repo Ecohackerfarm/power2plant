@@ -417,5 +417,16 @@
     "title": "チャージでさらに機能を解放",
     "moreBeds": "最大100区画（無料: 最大20）",
     "topUp": "チャージする →"
+  },
+  "UserProfile": {
+    "notFound": "ユーザーが見つかりません。",
+    "loading": "読み込み中…",
+    "badges": "バッジ",
+    "incrementalBadges": "研究マイルストーン",
+    "plantBadges": "調査済み植物",
+    "pairBadges": "調査済みペア",
+    "noBadges": "まだバッジがありません。",
+    "plantsResearched": "{count} 種の植物",
+    "pairsResearched": "{count} ペア"
   }
 }

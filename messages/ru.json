@@ -417,5 +417,16 @@
     "title": "Разблокируйте больше с пополнением",
     "moreBeds": "До 100 грядок (бесплатно: до 20)",
     "topUp": "Пополнить →"
+  },
+  "UserProfile": {
+    "notFound": "Пользователь не найден.",
+    "loading": "Загрузка…",
+    "badges": "Значки",
+    "incrementalBadges": "Исследовательские вехи",
+    "plantBadges": "Исследованные растения",
+    "pairBadges": "Исследованные пары",
+    "noBadges": "Значков пока нет.",
+    "plantsResearched": "{count} растений",
+    "pairsResearched": "{count} пар"
   }
 }
