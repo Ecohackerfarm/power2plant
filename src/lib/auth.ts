@@ -3,13 +3,20 @@ import { prismaAdapter } from 'better-auth/adapters/prisma'
 import prisma from '@/lib/prisma'
 import { clientEnv } from '@/lib/client-env'
 
+// Runtime env is injected at container start, not at build time, so these
+// checks must not fire during `next build` (NODE_ENV=production but secrets
+// absent). Next sets NEXT_PHASE=phase-production-build during the build.
+const isProdRuntime =
+  process.env.NODE_ENV === 'production' &&
+  process.env.NEXT_PHASE !== 'phase-production-build'
+
 const secret = process.env.BETTER_AUTH_SECRET
-  ?? (process.env.NODE_ENV === 'production'
+  ?? (isProdRuntime
     ? (() => { throw new Error('BETTER_AUTH_SECRET env var is required in production') })()
     : 'dev-secret-change-in-production')
 
 const baseURL = process.env.BETTER_AUTH_URL
-  ?? (process.env.NODE_ENV === 'production'
+  ?? (isProdRuntime
     ? (() => { throw new Error('BETTER_AUTH_URL env var is required in production') })()
     : 'http://localhost:3000')
 
