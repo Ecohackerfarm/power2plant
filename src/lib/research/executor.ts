@@ -1,5 +1,6 @@
 import prisma from '@/lib/prisma'
 import { RelationshipType, Direction, RelationshipReasonType } from '@prisma/client'
+import { clientEnv } from '@/lib/client-env'
 import {
   buildPrompt,
   stripCodeFences,
@@ -312,7 +313,7 @@ export async function processQueueItem(queueId: string): Promise<void> {
   const balance = await checkOpenRouterBalance()
   if (balance !== null && balance < threshold) {
     await sendAdminAlert(
-      'Power2Plant: OpenRouter balance low',
+      `${clientEnv.brand()}: OpenRouter balance low`,
       `OpenRouter balance is $${balance.toFixed(2)}, below the $${threshold} threshold.\n\nResearch job for "${item.cropA.botanicalName} + ${item.cropB.botanicalName}" was paused.`,
     )
     if (balance <= 0) {

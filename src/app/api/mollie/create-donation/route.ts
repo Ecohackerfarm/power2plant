@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getMollieClient, centsToCurrencyString } from '@/lib/mollie'
+import { clientEnv } from '@/lib/client-env'
 
 const MIN_DONATION_CENTS = 100 // €1.00
 
@@ -28,7 +29,7 @@ export async function POST(req: Request) {
 
   const payment = await getMollieClient().payments.create({
     amount: { currency: 'EUR', value: centsToCurrencyString(amountCents) },
-    description: 'Power2Plant research pot donation',
+    description: `${clientEnv.brand()} research pot donation`,
     redirectUrl: `${base}/donate?mollie=success`,
     webhookUrl: `${base}/api/mollie/webhook`,
     metadata: { type: 'donation' },

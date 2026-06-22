@@ -310,13 +310,13 @@
     "appliesToAllSpecies": "{genus}のすべての種に適用されます。"
   },
   "GardenPage": {
-    "backHome": "← power2plant",
+    "backHome": "← {brand}",
     "title": "マイガーデン",
     "subtitle": "保存した花壇を管理します。",
     "signInPrompt": "花壇を管理するにはサインインしてください。"
   },
   "SharePage": {
-    "backHome": "← power2plant",
+    "backHome": "← {brand}",
     "title": "共有ガーデンプラン",
     "subtitle": "これは読み取り専用のスナップショットです。{date}まで有効。",
     "emptyBed": "空の花壇"

@@ -7,6 +7,7 @@ import { LocaleSwitcher } from '@/components/locale-switcher'
 import { AuthPanel } from '@/components/auth-panel'
 import { FeedbackButton } from '@/components/feedback-button'
 import { Menu, X, ChevronDown } from 'lucide-react'
+import { clientEnv } from '@/lib/client-env'
 
 const NAV_ITEMS = [
   { key: 'lookup' as const, href: '/relationships' },
@@ -116,7 +117,7 @@ export function SiteHeader({ isAdmin = false, version }: { isAdmin?: boolean; ve
               className="font-semibold text-sm min-[400px]:text-xl text-[#F7F3E8] leading-none"
               style={{ fontFamily: 'var(--font-fraunces), ui-serif, serif', fontWeight: 300 }}
             >
-              power2plant
+              {clientEnv.brand()}
             </span>
             {version && (
               <span className="text-[10px] text-[#F7F3E8]/40 leading-none">v{version}</span>

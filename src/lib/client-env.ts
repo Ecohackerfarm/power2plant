@@ -2,6 +2,7 @@ type PublicEnv = {
   APP_URL: string
   STRIPE_PUBLISHABLE_KEY: string | undefined
   KOFI_URL: string | undefined
+  BRAND_NAME: string | undefined
 }
 
 declare global {
@@ -22,4 +23,5 @@ export const clientEnv = {
   appUrl:               (): string        => runtimeEnv('APP_URL') ?? 'http://localhost:3000',
   stripePublishableKey: (): string | undefined => runtimeEnv('STRIPE_PUBLISHABLE_KEY'),
   kofiUrl:              (): string | undefined => runtimeEnv('KOFI_URL'),
+  brand:                (): string        => runtimeEnv('BRAND_NAME') || 'power2plant',
 } as const

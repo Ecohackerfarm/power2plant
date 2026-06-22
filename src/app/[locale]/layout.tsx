@@ -5,6 +5,7 @@ import { getMessages } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 import { Toaster } from 'sonner'
 import { routing, RTL_LOCALES } from '@/i18n/routing'
+import { clientEnv } from '@/lib/client-env'
 import '../globals.css'
 
 const dmSans = DM_Sans({
@@ -20,7 +21,7 @@ const fraunces = Fraunces({
 })
 
 export const metadata: Metadata = {
-  title: 'power2plant',
+  title: clientEnv.brand(),
   description: 'Companion planting garden planner',
   manifest: '/manifest.webmanifest',
 }
@@ -45,6 +46,7 @@ export default async function LocaleLayout({
     APP_URL:                 process.env['APP_URL'] ?? '',
     STRIPE_PUBLISHABLE_KEY:  process.env['STRIPE_PUBLISHABLE_KEY'] ?? '',
     KOFI_URL:                process.env['KOFI_URL'] ?? '',
+    BRAND_NAME:              process.env['BRAND_NAME'] ?? '',
   }
 
   return (

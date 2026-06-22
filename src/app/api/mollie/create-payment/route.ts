@@ -3,6 +3,7 @@ import { headers } from 'next/headers'
 import { auth } from '@/lib/auth'
 import { MIN_TOPUP_CENTS } from '@/lib/credits'
 import { getMollieClient, centsToCurrencyString } from '@/lib/mollie'
+import { clientEnv } from '@/lib/client-env'
 
 export async function POST(req: Request) {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -39,7 +40,7 @@ export async function POST(req: Request) {
 
   const payment = await mollieClient.payments.create({
     amount: { currency: 'EUR', value: centsToCurrencyString(amountCents) },
-    description: 'Power2Plant credit top-up',
+    description: `${clientEnv.brand()} credit top-up`,
     redirectUrl: `${base}/account?mollie=success`,
     webhookUrl: `${base}/api/mollie/webhook`,
     metadata: { userId: session.user.id, type: 'topup' },

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { isTrustedResearcher, getSessionUser } from '@/lib/admin-auth'
+import { clientEnv } from '@/lib/client-env'
 
 export async function GET() {
   if (!(await isTrustedResearcher())) {
@@ -26,7 +27,7 @@ export async function GET() {
   const baseUrl = process.env['APP_URL'] ?? 'https://power2plant.app'
   const modelList = allowedModels.map(m => `  - ${m.id} (${m.label}, score ${m.score}/100)`).join('\n')
 
-  const instructions = `You are a research contributor for power2plant.
+  const instructions = `You are a research contributor for ${clientEnv.brand()}.
 Your task: find open plant research tasks, claim one, research the companion planting relationship using your tools, and submit findings.
 
 API base: ${baseUrl}/api/research/tasks

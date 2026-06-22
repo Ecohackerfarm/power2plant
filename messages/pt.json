@@ -310,13 +310,13 @@
     "appliesToAllSpecies": "Aplica-se a todas as espécies de {genus}."
   },
   "GardenPage": {
-    "backHome": "← power2plant",
+    "backHome": "← {brand}",
     "title": "Minha horta",
     "subtitle": "Gerencie seus canteiros salvos.",
     "signInPrompt": "Entre para gerenciar seus canteiros."
   },
   "SharePage": {
-    "backHome": "← power2plant",
+    "backHome": "← {brand}",
     "title": "Plano de horta compartilhado",
     "subtitle": "Este é um instantâneo somente leitura. Válido até {date}.",
     "emptyBed": "Canteiro vazio"

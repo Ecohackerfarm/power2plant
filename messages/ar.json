@@ -310,13 +310,13 @@
     "appliesToAllSpecies": "تنطبق على جميع أنواع {genus}."
   },
   "GardenPage": {
-    "backHome": "→ power2plant",
+    "backHome": "→ {brand}",
     "title": "حديقتي",
     "subtitle": "أدِر أحواضك المحفوظة.",
     "signInPrompt": "سجّل دخولك لإدارة أحواض حديقتك."
   },
   "SharePage": {
-    "backHome": "→ power2plant",
+    "backHome": "→ {brand}",
     "title": "خطة الحديقة المشتركة",
     "subtitle": "هذه لقطة للقراءة فقط. صالحة حتى {date}.",
     "emptyBed": "حوض فارغ"

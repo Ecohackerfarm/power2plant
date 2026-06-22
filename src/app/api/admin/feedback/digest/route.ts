@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import nodemailer from 'nodemailer'
 import prisma from '@/lib/prisma'
+import { clientEnv } from '@/lib/client-env'
 
 export async function POST(req: Request) {
   const cronSecret = process.env.CRON_SECRET
@@ -58,7 +59,7 @@ export async function POST(req: Request) {
     auth: { user: smtpUser, pass: smtpPass },
   })
 
-  const subject = `[power2plant] ${items.length} new feedback report${items.length === 1 ? '' : 's'}`
+  const subject = `[${clientEnv.brand()}] ${items.length} new feedback report${items.length === 1 ? '' : 's'}`
 
   const textLines = items.map(item => {
     const date = item.createdAt.toISOString().slice(0, 10)

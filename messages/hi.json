@@ -310,13 +310,13 @@
     "appliesToAllSpecies": "सभी {genus} प्रजातियों पर लागू होता है।"
   },
   "GardenPage": {
-    "backHome": "← power2plant",
+    "backHome": "← {brand}",
     "title": "मेरा बगीचा",
     "subtitle": "अपनी सहेजी हुई क्यारियां प्रबंधित करें।",
     "signInPrompt": "अपनी क्यारियां प्रबंधित करने के लिए साइन इन करें।"
   },
   "SharePage": {
-    "backHome": "← power2plant",
+    "backHome": "← {brand}",
     "title": "साझा बगीचा योजना",
     "subtitle": "यह एक पठन-मात्र स्नैपशॉट है। {date} तक वैध।",
     "emptyBed": "खाली क्यारी"

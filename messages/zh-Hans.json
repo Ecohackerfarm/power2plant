@@ -310,13 +310,13 @@
     "appliesToAllSpecies": "适用于所有 {genus} 物种。"
   },
   "GardenPage": {
-    "backHome": "← power2plant",
+    "backHome": "← {brand}",
     "title": "我的花园",
     "subtitle": "管理您已保存的花圃。",
     "signInPrompt": "请登录以管理您的花圃。"
   },
   "SharePage": {
-    "backHome": "← power2plant",
+    "backHome": "← {brand}",
     "title": "共享花园方案",
     "subtitle": "这是一个只读快照，有效期至 {date}。",
     "emptyBed": "空花圃"
