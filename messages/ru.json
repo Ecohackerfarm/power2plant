@@ -310,13 +310,13 @@
     "appliesToAllSpecies": "Применяется ко всем видам {genus}."
   },
   "GardenPage": {
-    "backHome": "← power2plant",
+    "backHome": "← {brand}",
     "title": "Мой огород",
     "subtitle": "Управляйте сохранёнными грядками.",
     "signInPrompt": "Войдите для управления грядками."
   },
   "SharePage": {
-    "backHome": "← power2plant",
+    "backHome": "← {brand}",
     "title": "Общий план огорода",
     "subtitle": "Это снимок только для чтения. Действителен до {date}.",
     "emptyBed": "Пустая грядка"

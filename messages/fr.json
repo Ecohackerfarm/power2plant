@@ -310,13 +310,13 @@
     "appliesToAllSpecies": "S'applique à toutes les espèces de {genus}."
   },
   "GardenPage": {
-    "backHome": "← power2plant",
+    "backHome": "← {brand}",
     "title": "Mon jardin",
     "subtitle": "Gérez vos planches sauvegardées.",
     "signInPrompt": "Connectez-vous pour gérer vos planches de jardin."
   },
   "SharePage": {
-    "backHome": "← power2plant",
+    "backHome": "← {brand}",
     "title": "Plan de jardin partagé",
     "subtitle": "C'est un instantané en lecture seule. Valide jusqu'au {date}.",
     "emptyBed": "Planche vide"

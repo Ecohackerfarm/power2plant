@@ -1,6 +1,7 @@
 import { betterAuth } from 'better-auth'
 import { prismaAdapter } from 'better-auth/adapters/prisma'
 import prisma from '@/lib/prisma'
+import { clientEnv } from '@/lib/client-env'
 
 const secret = process.env.BETTER_AUTH_SECRET
   ?? (process.env.NODE_ENV === 'production'
@@ -46,7 +47,7 @@ export const auth = betterAuth({
     sendResetPassword: async ({ user, url }) => {
       await sendEmail(
         user.email,
-        'Reset your power2plant password',
+        `Reset your ${clientEnv.brand()} password`,
         `Hi ${user.name},\n\nClick the link below to reset your password:\n\n${url}\n\nThe link expires in 1 hour. If you did not request this, ignore this email.`,
         `<p>Hi ${user.name},</p><p>Click the link below to reset your password:</p><p><a href="${url}">${url}</a></p><p>The link expires in 1 hour. If you did not request this, ignore this email.</p>`,
       )
@@ -56,7 +57,7 @@ export const auth = betterAuth({
     sendVerificationEmail: async ({ user, url }) => {
       await sendEmail(
         user.email,
-        'Verify your power2plant account',
+        `Verify your ${clientEnv.brand()} account`,
         `Hi ${user.name},\n\nClick the link below to verify your email address:\n\n${url}\n\nThe link expires in 24 hours.`,
         `<p>Hi ${user.name},</p><p>Click the link below to verify your email address:</p><p><a href="${url}">${url}</a></p><p>The link expires in 24 hours.</p>`,
       )

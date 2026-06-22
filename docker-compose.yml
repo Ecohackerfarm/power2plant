@@ -26,6 +26,7 @@ services:
       APP_URL: ${APP_URL}
       STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY}
       KOFI_URL: ${KOFI_URL}
+      BRAND_NAME: ${BRAND_NAME:-power2plant}
       SMTP_HOST: ${SMTP_HOST}
       SMTP_PORT: ${SMTP_PORT}
       SMTP_USER: ${SMTP_USER}

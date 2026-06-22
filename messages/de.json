@@ -322,7 +322,7 @@
     "researchAttemptNoRelationship": "Keine Beziehungsdaten gefunden."
   },
   "GardenPage": {
-    "backHome": "← power2plant",
+    "backHome": "← {brand}",
     "title": "Mein Garten",
     "subtitle": "Verwalte deine gespeicherten Gartenbeete.",
     "signInPrompt": "Anmelden, um deinen Garten zu verwalten.",
@@ -346,7 +346,7 @@
     "remove": "Entfernen"
   },
   "SharePage": {
-    "backHome": "← power2plant",
+    "backHome": "← {brand}",
     "title": "Geteilter Gartenplan",
     "subtitle": "Dies ist ein schreibgeschützter Snapshot. Gültig bis {date}.",
     "emptyBed": "Leeres Beet"

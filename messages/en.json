@@ -322,7 +322,7 @@
     "researchAttemptNoRelationship": "No relationship data found."
   },
   "GardenPage": {
-    "backHome": "← power2plant",
+    "backHome": "← {brand}",
     "title": "My Garden",
     "subtitle": "Manage your saved garden beds.",
     "signInPrompt": "Sign in to manage your garden.",
@@ -346,7 +346,7 @@
     "remove": "Remove"
   },
   "SharePage": {
-    "backHome": "← power2plant",
+    "backHome": "← {brand}",
     "title": "Shared garden plan",
     "subtitle": "This is a read-only snapshot. Valid until {date}.",
     "emptyBed": "Empty bed"

@@ -310,13 +310,13 @@
     "appliesToAllSpecies": "Se aplica a todas las especies de {genus}."
   },
   "GardenPage": {
-    "backHome": "← power2plant",
+    "backHome": "← {brand}",
     "title": "Mi huerto",
     "subtitle": "Gestiona tus bancales guardados.",
     "signInPrompt": "Inicia sesión para gestionar tus bancales."
   },
   "SharePage": {
-    "backHome": "← power2plant",
+    "backHome": "← {brand}",
     "title": "Plan de huerto compartido",
     "subtitle": "Esta es una instantánea de solo lectura. Válida hasta {date}.",
     "emptyBed": "Bancal vacío"
