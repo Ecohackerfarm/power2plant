@@ -68,6 +68,8 @@ async function callLLM(cropA: string, cropB: string): Promise<{ entries: Extract
     ...(!isSonar && { plugins: [{ id: 'web' }] }),
     // json_object forces compliant JSON output; skip for Anthropic (unsupported/narrates anyway)
     ...(!isSonar && !isAnthropic && { response_format: { type: 'json_object' } }),
+    // ask OpenRouter to report actual USD cost in usage.cost
+    usage: { include: true },
   }
 
   const res = await fetch(`${BASE_URL}/chat/completions`, {
@@ -83,7 +85,7 @@ async function callLLM(cropA: string, cropB: string): Promise<{ entries: Extract
 
   const data = await res.json() as {
     choices: Array<{ message: { content: string } }>
-    usage?: { prompt_tokens?: number; completion_tokens?: number }
+    usage?: { prompt_tokens?: number; completion_tokens?: number; cost?: number }
   }
 
   const content = data.choices[0]?.message?.content ?? ''
@@ -130,7 +132,7 @@ async function callLLM(cropA: string, cropB: string): Promise<{ entries: Extract
     usage: {
       promptTokens: data.usage?.prompt_tokens ?? 0,
       completionTokens: data.usage?.completion_tokens ?? 0,
-      costUsd: 0,
+      costUsd: data.usage?.cost ?? 0,
       requestJson: requestBody,
       responseJson: data,
     },
