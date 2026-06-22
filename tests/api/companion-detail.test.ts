@@ -6,6 +6,7 @@ vi.mock('@/lib/prisma', () => ({
     $queryRaw: vi.fn(),
     relationshipSource: { findMany: vi.fn() },
     relationshipResearchAttempt: { findMany: vi.fn() },
+    researchQueue: { findFirst: vi.fn() },
   },
 }))
 
@@ -28,6 +29,7 @@ describe('GET /api/plants/[id]/companions/[companionId]', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(prisma.relationshipResearchAttempt.findMany).mockResolvedValue([])
+    vi.mocked(prisma.researchQueue.findFirst).mockResolvedValue(null)
   })
 
   it('returns 404 when relationship not found', async () => {
@@ -159,6 +161,7 @@ describe('GET /api/plants/[id]/companions/[companionId] — genus fallback', () 
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(prisma.relationshipResearchAttempt.findMany).mockResolvedValue([])
+    vi.mocked(prisma.researchQueue.findFirst).mockResolvedValue(null)
   })
 
   const annuum = { id: 'crop-annuum', botanicalName: 'Capsicum annuum' }
