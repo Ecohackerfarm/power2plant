@@ -40,8 +40,6 @@ PRESERVED_EMAILS=()
 ADMIN_EMAILS=$(read_env ADMIN_EMAILS "$TARGET_ENV")
 [[ -z "$ADMIN_EMAILS" ]] && ADMIN_EMAILS=$(read_env ADMIN_EMAIL "$TARGET_ENV")
 TEST_USER_EMAIL=$(read_env TEST_USER_EMAIL "$TARGET_ENV")
-# Optional: force a known admin login into the restored DB (see set-admin-credentials.ts)
-DUMP_ADMIN_PASSWORD=$(read_env DUMP_ADMIN_PASSWORD "$TARGET_ENV")
 
 # Split ADMIN_EMAILS on commas, trim whitespace, preserve each
 IFS=',' read -ra _admin_arr <<< "$ADMIN_EMAILS"
@@ -133,24 +131,24 @@ SET
   "refreshTokenExpiresAt" = NULL
 WHERE "userId" NOT IN (SELECT id FROM "user" WHERE email IN ${PRESERVE_IN});
 
-DELETE FROM "UserApiToken"
-WHERE "userId" NOT IN (SELECT id FROM "user" WHERE email IN ${PRESERVE_IN});
+-- UserApiToken may not exist yet: the restore loads prod's schema, which can
+-- lag staging (the app applies pending migrations only after this restore).
+-- Guard so a missing table doesn't abort the anonymize.
+DO \$\$ BEGIN
+  IF to_regclass('"UserApiToken"') IS NOT NULL THEN
+    DELETE FROM "UserApiToken"
+    WHERE "userId" NOT IN (SELECT id FROM "user" WHERE email IN ${PRESERVE_IN});
+  END IF;
+END \$\$;
 
 DELETE FROM verification
 WHERE identifier NOT IN ${PRESERVE_IN};
 SQL
 
-if [[ -n "$DUMP_ADMIN_PASSWORD" && -n "$ADMIN_EMAILS" ]]; then
-  echo "==> Setting known admin login for: ${ADMIN_EMAILS}..."
-  # The scripts image bakes source in at build time (COPY . .) and is profile-gated,
-  # so a normal `compose up --build` deploy never rebuilds it. Build it explicitly
-  # here, else this step runs stale code (e.g. missing set-admin-credentials.ts).
-  docker compose -f "$TARGET_COMPOSE" build scripts
-  docker compose -f "$TARGET_COMPOSE" run --rm -T \
-    -e ADMIN_EMAILS="$ADMIN_EMAILS" \
-    -e DUMP_ADMIN_PASSWORD="$DUMP_ADMIN_PASSWORD" \
-    scripts npx tsx scripts/set-admin-credentials.ts
-fi
+# NOTE: forcing a known admin login (DUMP_ADMIN_PASSWORD) is NOT done here. It
+# uses the typed Prisma client, which needs the app's full current schema, but
+# this restore loads prod's schema, which may lag staging. staging-dump-refresh.sh
+# runs that step after it restarts the app (which applies pending migrations).
 
 echo "==> Done. ${TARGET} DB restored + anonymized."
 [[ ${#PRESERVED_EMAILS[@]} -eq 0 ]] && echo "    All sessions cleared — register a fresh account to log in." \

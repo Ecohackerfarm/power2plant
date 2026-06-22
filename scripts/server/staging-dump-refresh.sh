@@ -56,6 +56,24 @@ if [[ "$status" != "healthy" ]]; then
   exit 1
 fi
 
+# Step 1c: optionally force a known admin login into the restored DB.
+# Done HERE, after the app restart applied pending migrations, because
+# set-admin-credentials.ts uses the typed Prisma client and needs the full
+# current schema — the prod dump restored above can lag staging. Runs before
+# step 2 so the known password is baked into the saved staging dump.
+read_env() { grep -E "^${1}=" "${PROJECT_PATH}/.env" 2>/dev/null | head -1 | cut -d= -f2- | tr -d '"' || true; }
+DUMP_ADMIN_PASSWORD=$(read_env DUMP_ADMIN_PASSWORD)
+ADMIN_EMAILS=$(read_env ADMIN_EMAILS)
+[[ -z "$ADMIN_EMAILS" ]] && ADMIN_EMAILS=$(read_env ADMIN_EMAIL)
+if [[ -n "$DUMP_ADMIN_PASSWORD" && -n "$ADMIN_EMAILS" ]]; then
+  echo "[dump-refresh] setting known admin login for: ${ADMIN_EMAILS}"
+  sudo -u "$DEPLOY_USERNAME" docker compose -f "${PROJECT_PATH}/docker-compose.yml" \
+    run --rm -T \
+    -e ADMIN_EMAILS="$ADMIN_EMAILS" \
+    -e DUMP_ADMIN_PASSWORD="$DUMP_ADMIN_PASSWORD" \
+    scripts npx tsx scripts/set-admin-credentials.ts
+fi
+
 # Step 2 (staging only): pg_dump the anonymized staging DB → save for deploys.
 if [[ "$TARGET" == "staging" ]]; then
   mkdir -p "$(dirname "$STAGING_DUMP_FILE")"
