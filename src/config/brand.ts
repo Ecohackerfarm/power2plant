@@ -1,14 +1,9 @@
 // Brand identity as a design/theme constant — intentionally NOT an env var.
-// The wordmark image already spells the brand name, so the header renders it
-// directly. The BRAND_NAME env var still drives *text* contexts (page <title>,
-// auth emails, payment descriptions, feedback digests) via lib/client-env.ts.
+// The header renders the name as a typographic logotype in Fraunces (the page's
+// own serif) plus a small botanical mark, so the logo shares the site's type
+// system instead of clashing as an illustration. The BRAND_NAME env var still
+// drives *text* contexts (page <title>, auth emails, payment descriptions,
+// feedback digests) via lib/client-env.ts.
 export const brand = {
-  // Cream wordmark, sized to read on the dark-moss header background.
-  // Source: assets/raw/graphics/Harmonic Garden - font.png (trimmed + recolored).
-  wordmark: {
-    src: '/wordmark.png',
-    alt: 'Harmonic Garden',
-    width: 286,
-    height: 96,
-  },
+  name: 'Harmonic Garden',
 } as const

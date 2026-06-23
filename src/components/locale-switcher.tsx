@@ -16,7 +16,7 @@ const LOCALE_LABELS: Record<string, string> = {
   ja: '日本語',
 }
 
-export function LocaleSwitcher() {
+export function LocaleSwitcher({ variant = 'header' }: { variant?: 'header' | 'menu' }) {
   const locale = useLocale()
   const router = useRouter()
   const pathname = usePathname()
@@ -25,11 +25,16 @@ export function LocaleSwitcher() {
     router.replace(pathname, { locale: next })
   }
 
+  const className =
+    variant === 'menu'
+      ? 'w-full bg-transparent border border-[#EDE8DC] rounded-lg px-3 py-2 text-sm text-[#2D4A3E] cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7BAE7F]'
+      : 'text-sm bg-transparent border-none cursor-pointer text-[#F7F3E8]/70 hover:text-[#F7F3E8] focus:outline-none'
+
   return (
     <select
       value={locale}
       onChange={(e) => switchLocale(e.target.value)}
-      className="text-sm bg-transparent border-none cursor-pointer text-[#F7F3E8]/70 hover:text-[#F7F3E8] focus:outline-none"
+      className={className}
       aria-label="Language"
     >
       {routing.locales.map((l) => (
