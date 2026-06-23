@@ -7,7 +7,7 @@ import { LocaleSwitcher } from '@/components/locale-switcher'
 import { AuthPanel } from '@/components/auth-panel'
 import { FeedbackButton } from '@/components/feedback-button'
 import { Menu, X, ChevronDown } from 'lucide-react'
-import { clientEnv } from '@/lib/client-env'
+import { brand } from '@/config/brand'
 
 const NAV_ITEMS = [
   { key: 'lookup' as const, href: '/relationships' },
@@ -114,12 +114,14 @@ export function SiteHeader({ isAdmin = false, version }: { isAdmin?: boolean; ve
             <Image src="/logo.png" alt="" width={32} height={32} />
           </div>
           <div className="flex flex-col leading-none gap-0.5">
-            <span
-              className="font-semibold text-sm min-[400px]:text-xl text-[#F7F3E8] leading-none"
-              style={{ fontFamily: 'var(--font-fraunces), ui-serif, serif', fontWeight: 300 }}
-            >
-              {clientEnv.brand()}
-            </span>
+            <Image
+              src={brand.wordmark.src}
+              alt={brand.wordmark.alt}
+              width={brand.wordmark.width}
+              height={brand.wordmark.height}
+              priority
+              className="h-6 min-[400px]:h-7 w-auto"
+            />
             {version && (
               <span className="text-[10px] text-[#F7F3E8]/40 leading-none">v{version}</span>
             )}
