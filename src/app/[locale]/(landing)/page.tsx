@@ -1,6 +1,5 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
-import Image from 'next/image'
 import { useTranslations } from 'next-intl'
 import { ArrowRight, ChevronLeft, ChevronRight, Leaf, LayoutGrid, Search, Users } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -92,60 +91,31 @@ export default function LandingPage() {
   const t = useTranslations('Landing')
   const [active, setActive] = useState(0)
   const [paused, setPaused] = useState(false)
+  const [direction, setDirection] = useState<'next' | 'prev'>('next')
   const slide = SLIDES[active]
 
   const goTo = useCallback((index: number) => {
-    setActive((index + SLIDES.length) % SLIDES.length)
+    const len = SLIDES.length
+    const next = (index + len) % len
+    setDirection(next === (active - 1 + len) % len ? 'prev' : 'next')
+    setActive(next)
     setPaused(true)
-  }, [])
+  }, [active])
 
   useEffect(() => {
     if (paused) return
     const timer = setInterval(() => {
+      setDirection('next')
       setActive((current) => (current + 1) % SLIDES.length)
     }, AUTO_ADVANCE_MS)
     return () => clearInterval(timer)
   }, [paused])
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#F7F3E8] px-4 py-8">
-      {/* Fixed decorative plants — corners, behind content, non-moving */}
-      <Image
-        src="/deco_left-2.png"
-        alt=""
-        width={596}
-        height={715}
-        aria-hidden="true"
-        className="pointer-events-none fixed left-0 top-0 z-0 hidden h-auto w-[clamp(180px,22vw,340px)] select-none opacity-30 md:block"
-      />
-      <Image
-        src="/deco_right-2.png"
-        alt=""
-        width={540}
-        height={708}
-        aria-hidden="true"
-        className="pointer-events-none fixed right-0 top-0 z-0 hidden h-auto w-[clamp(180px,22vw,340px)] select-none opacity-30 md:block"
-      />
-      <Image
-        src="/deco_left.png"
-        alt=""
-        width={384}
-        height={384}
-        aria-hidden="true"
-        className="pointer-events-none fixed bottom-0 left-0 z-0 hidden h-auto w-[clamp(180px,22vw,340px)] select-none opacity-30 md:block"
-      />
-      <Image
-        src="/deco_right.png"
-        alt=""
-        width={384}
-        height={384}
-        aria-hidden="true"
-        className="pointer-events-none fixed bottom-0 right-0 z-0 hidden h-auto w-[clamp(180px,22vw,340px)] select-none opacity-30 md:block"
-      />
-
-      <div className="relative z-10 mx-auto max-w-5xl">
-        {/* Hero — changes with the active slide */}
-        <div className="mb-12 flex flex-col items-center py-6 text-center">
+    <main className="relative min-h-screen overflow-hidden px-4 py-8">
+      <div data-intro-fade className="relative z-10 mx-auto max-w-5xl">
+        {/* Heading — changes with the active slide, sits above the carousel */}
+        <div className="mb-8 flex flex-col items-center py-6 text-center">
           <p
             className="mb-3 text-xs font-semibold uppercase tracking-[0.2em]"
             style={{ color: slide.accent }}
@@ -156,28 +126,10 @@ export default function LandingPage() {
             {t(`slides.${slide.id}.heading`)}
           </h1>
           <Underline color={slide.underline} />
-          <p className="mt-6 max-w-xl text-lg leading-relaxed text-[#5A6E60]">
-            {t(`slides.${slide.id}.description`)}
-          </p>
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link
-              href={slide.href}
-              className="inline-flex items-center gap-2 rounded-full px-7 py-3 text-sm font-semibold shadow-sm transition-opacity hover:opacity-90"
-              style={{ backgroundColor: slide.primaryBg, color: slide.primaryText }}
-            >
-              {t(`slides.${slide.id}.cta`)} <ArrowRight className="h-4 w-4" />
-            </Link>
-            <Link
-              href={slide.href}
-              className="inline-flex items-center rounded-full border-2 border-[#2D4A3E] px-7 py-3 text-sm font-semibold text-[#2D4A3E] transition-colors hover:bg-[#EDE8DC]"
-            >
-              {t('learnMore')}
-            </Link>
-          </div>
         </div>
 
-        {/* Tab pills double as carousel navigation */}
-        <div role="tablist" className="mb-8 flex flex-wrap justify-center gap-2">
+        {/* Tab pills double as carousel navigation — stack on mobile, row when they fit */}
+        <div role="tablist" className="mb-8 flex flex-col items-stretch gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center">
           {SLIDES.map((s, index) => {
             const isActive = index === active
             return (
@@ -186,7 +138,7 @@ export default function LandingPage() {
                 role="tab"
                 aria-selected={isActive}
                 onClick={() => goTo(index)}
-                className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                className={`w-full rounded-full px-4 py-2 text-center text-sm font-medium transition-colors sm:w-auto ${
                   isActive
                     ? 'bg-[#2D4A3E] text-white'
                     : 'bg-[#2D4A3E]/10 text-[#5A6E60] hover:bg-[#2D4A3E]/20'
@@ -223,7 +175,9 @@ export default function LandingPage() {
 
           <div
             key={slide.id}
-            className="mx-auto max-w-4xl animate-[fadeIn_0.4s_ease] rounded-3xl p-8 sm:p-12"
+            className={`mx-auto flex min-h-[19rem] max-w-4xl flex-col rounded-3xl p-8 sm:min-h-[17rem] sm:p-12 ${
+              direction === 'prev' ? 'animate-slide-in-left' : 'animate-slide-in-right'
+            }`}
             style={{ backgroundColor: slide.cardBg }}
           >
             <div
@@ -235,15 +189,12 @@ export default function LandingPage() {
             <p className="mb-2 text-xs font-semibold uppercase tracking-[0.15em] text-[#5A6E60]">
               {t(`slides.${slide.id}.tab`)}
             </p>
-            <h2 className="mb-4 text-3xl text-[#2D4A3E]" style={serif}>
-              {t(`slides.${slide.id}.heading`)}
-            </h2>
             <p className="max-w-xl text-base leading-relaxed text-[#5A6E60]">
               {t(`slides.${slide.id}.description`)}
             </p>
             <Link
               href={slide.href}
-              className="mt-6 inline-flex items-center gap-2 text-sm font-semibold"
+              className="mt-auto inline-flex items-center gap-2 pt-6 text-sm font-semibold"
               style={{ color: slide.accent }}
             >
               {t(`slides.${slide.id}.cta`)} <ArrowRight className="h-4 w-4" />
