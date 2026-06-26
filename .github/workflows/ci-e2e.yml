@@ -30,6 +30,10 @@ jobs:
       BETTER_AUTH_URL: http://localhost:3000
       NEXT_PUBLIC_APP_URL: http://localhost:3000
       ADMIN_EMAILS: e2e-admin@test.local
+      # Dummy shared secret — Ko-fi webhook does a plain string compare, no external
+      # call. App and the e2e spec read the same value from this env. Not a real
+      # credential, so it lives in plaintext (matches BETTER_AUTH_SECRET above).
+      KOFI_VERIFICATION_TOKEN: e2e-kofi-token
 
     steps:
       - uses: actions/checkout@v4
