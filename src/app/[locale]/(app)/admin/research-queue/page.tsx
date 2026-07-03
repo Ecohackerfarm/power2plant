@@ -117,6 +117,7 @@ export default function AdminResearchQueuePage() {
   const [enqueuing, setEnqueuing] = useState(false)
   const [cropA, setCropA] = useState<Crop | null>(null)
   const [cropB, setCropB] = useState<Crop | null>(null)
+  const [pickerKey, setPickerKey] = useState(0)
   const [error, setError] = useState<string | null>(null)
 
   const load = useCallback(() => {
@@ -149,6 +150,7 @@ export default function AdminResearchQueuePage() {
     } else {
       setCropA(null)
       setCropB(null)
+      setPickerKey(k => k + 1)
       load()
     }
     setEnqueuing(false)
@@ -179,8 +181,8 @@ export default function AdminResearchQueuePage() {
       <div className="border rounded-md p-4 mb-6 space-y-3">
         <p className="text-sm font-medium">Manually enqueue pair</p>
         <div className="flex gap-2 flex-wrap items-start">
-          <CropPicker label="Search crop A…" value={cropA} onChange={setCropA} />
-          <CropPicker label="Search crop B…" value={cropB} onChange={setCropB} />
+          <CropPicker key={`a-${pickerKey}`} label="Search crop A…" value={cropA} onChange={setCropA} />
+          <CropPicker key={`b-${pickerKey}`} label="Search crop B…" value={cropB} onChange={setCropB} />
           <Button
             size="sm"
             disabled={enqueuing || !cropA || !cropB}
