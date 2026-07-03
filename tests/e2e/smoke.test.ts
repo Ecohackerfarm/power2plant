@@ -1,20 +1,21 @@
 import { test, expect } from '@playwright/test'
 
+// Disable the desktop intro animation, which otherwise fades in the fixed header
+// corners over several seconds and races these header assertions.
+test.use({ reducedMotion: 'reduce' })
+
 test('landing page shows site header and hero', async ({ page }) => {
   await page.goto('/')
-  // SiteHeader is rendered on the landing page (same banner as the rest of the app).
-  const banner = page.getByRole('banner')
-  await expect(banner).toBeVisible()
-  await expect(banner.getByRole('link', { name: /power2plant/i })).toBeVisible()
-  // Hero carousel renders a slide heading.
+  // Redesigned header: no role="banner"; a fixed account control renders in the
+  // top-right corner on every page. Hero still renders an <h1>.
+  await expect(page.locator('div.fixed.right-0.top-0').getByRole('button').first()).toBeVisible()
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
 })
 
 test('plan page has site header with nav', async ({ page }) => {
   await page.goto('/plan')
-  await expect(page.getByRole('banner')).toBeVisible()
-  // Hamburger nav: the toggle button is always visible; its presence proves the nav is mounted.
-  await expect(page.getByRole('banner').getByRole('button', { name: /toggle menu/i })).toBeVisible()
+  // The menu toggle is always present on app pages; its presence proves the nav is mounted.
+  await expect(page.getByRole('button', { name: /toggle menu/i })).toBeVisible()
 })
 
 test('contribute page shows sign-in gate when unauthenticated', async ({ page }) => {
@@ -118,22 +119,24 @@ test('plan page shows plant search', async ({ page }) => {
 
 test('sign-in panel: opens as dropdown without shifting header layout', async ({ page }) => {
   await page.goto('/plan')
-  const header = page.getByRole('banner')
-  const headerBox = await header.boundingBox()
-  expect(headerBox).not.toBeNull()
+  // Anchor the no-shift check on the always-present menu toggle (far from the
+  // right-corner sign-in dropdown, which is absolutely positioned and must not
+  // push page chrome around when it opens).
+  const toggle = page.getByRole('button', { name: /toggle menu/i })
+  await expect(toggle).toBeVisible()
+  const before = await toggle.boundingBox()
 
   await page.getByRole('button', { name: /sign in/i }).click()
 
   const form = page.getByLabel(/email/i).first()
   await expect(form).toBeVisible()
 
-  // Header height must not change
-  const headerBoxAfter = await header.boundingBox()
-  expect(headerBoxAfter!.height).toBe(headerBox!.height)
+  // Opening the dropdown must not move the toggle.
+  const after = await toggle.boundingBox()
+  expect(after!.y).toBe(before!.y)
 
-  // Form must be fully within viewport
-  const formCard = page.getByLabel(/email/i).first()
-  const cardBox = await formCard.boundingBox()
+  // Form must be fully within the viewport.
+  const cardBox = await form.boundingBox()
   expect(cardBox).not.toBeNull()
   const viewport = page.viewportSize()!
   expect(cardBox!.x).toBeGreaterThanOrEqual(0)
@@ -143,21 +146,21 @@ test('sign-in panel: opens as dropdown without shifting header layout', async ({
 
 test('sign-in panel: opens on landing page without layout shift', async ({ page }) => {
   await page.goto('/')
-  // Sign-in lives in the header now; anchor the no-shift check on the banner.
-  const banner = page.getByRole('banner')
-  const bannerBoxBefore = await banner.boundingBox()
-  expect(bannerBoxBefore).not.toBeNull()
+  // Sign-in is the top-right account control now; anchor the no-shift check on it.
+  const account = page.locator('div.fixed.right-0.top-0').getByRole('button').first()
+  await expect(account).toBeVisible()
+  const before = await account.boundingBox()
 
-  await page.getByRole('button', { name: /sign in/i }).click()
+  await account.click()
   await expect(page.getByLabel(/email/i).first()).toBeVisible()
 
-  const bannerBoxAfter = await banner.boundingBox()
-  expect(bannerBoxAfter!.y).toBe(bannerBoxBefore!.y)
+  const after = await account.boundingBox()
+  expect(after!.y).toBe(before!.y)
 })
 
-test('garden page has back link to home', async ({ page }) => {
+test('garden page renders the site header', async ({ page }) => {
   await page.goto('/garden')
-  const link = page.getByRole('link', { name: /power2plant/i })
-  await expect(link).toBeVisible()
-  await expect(link).toHaveAttribute('href', /^\/(en|de)?\/?$/)
+  // The redesigned header dropped the wordmark home link; assert the header
+  // chrome (menu toggle) mounts on app pages instead.
+  await expect(page.getByRole('button', { name: /toggle menu/i })).toBeVisible()
 })

@@ -71,7 +71,7 @@ export function SiteHeader({ isAdmin = false, version }: { isAdmin?: boolean; ve
           </button>
 
           {menuOpen && (
-            <div className="absolute ltr:left-2 rtl:right-2 top-14 z-50 w-56 bg-[#F7F3E8] border border-[#EDE8DC] rounded-2xl shadow-lg py-1 overflow-hidden">
+            <div className="absolute left-2 top-14 z-50 w-56 bg-[#F7F3E8] border border-[#EDE8DC] rounded-2xl shadow-lg py-1 overflow-hidden">
               {NAV_ITEMS.map(({ key, href }) => (
                 <Link
                   key={key}
