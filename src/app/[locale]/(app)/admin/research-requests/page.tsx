@@ -10,12 +10,12 @@ type Crop = { id: string; name: string; botanicalName: string; commonNames: stri
 type ResearchRequestItem = {
   id: string
   cropAId: string
-  cropBId: string
+  cropBId: string | null
   voteCount: number
   funded: boolean
   createdAt: string
   cropA: Crop
-  cropB: Crop
+  cropB: Crop | null
   _count: { votes: number }
 }
 
@@ -74,7 +74,9 @@ export default function AdminResearchRequestsPage() {
         <div className="space-y-2">
           {items.map(item => {
             const nameA = getDisplayName(item.cropA)
-            const nameB = getDisplayName(item.cropB)
+            // cropB is optional — single-crop requests have cropBId null.
+            const nameB = item.cropB ? getDisplayName(item.cropB) : null
+            const isPair = item.cropB !== null
             const result = enqueueResult[item.id]
             return (
               <div
@@ -82,22 +84,27 @@ export default function AdminResearchRequestsPage() {
                 className="flex items-center justify-between gap-4 border rounded-md px-4 py-3"
               >
                 <div className="min-w-0">
-                  <p className="font-medium text-sm">{nameA} &amp; {nameB}</p>
+                  <p className="font-medium text-sm">{nameB ? `${nameA} & ${nameB}` : nameA}</p>
                   <p className="text-xs text-muted-foreground italic">
-                    {item.cropA.botanicalName} × {item.cropB.botanicalName}
+                    {item.cropB
+                      ? `${item.cropA.botanicalName} × ${item.cropB.botanicalName}`
+                      : item.cropA.botanicalName}
                   </p>
                 </div>
                 <div className="flex items-center gap-3 shrink-0 flex-wrap justify-end">
                   <Badge variant="secondary">{item.voteCount} vote{item.voteCount !== 1 ? 's' : ''}</Badge>
                   {item.funded && <Badge variant="default">Funded</Badge>}
-                  <ResearchFundButton
-                    cropAName={nameA}
-                    cropBName={nameB}
-                    cropAId={item.cropAId}
-                    cropBId={item.cropBId}
-                    signedIn
-                    onRequireSignIn={() => {}}
-                  />
+                  {!isPair && <Badge variant="outline">Single crop</Badge>}
+                  {isPair && item.cropBId && nameB && (
+                    <ResearchFundButton
+                      cropAName={nameA}
+                      cropBName={nameB}
+                      cropAId={item.cropAId}
+                      cropBId={item.cropBId}
+                      signedIn
+                      onRequireSignIn={() => {}}
+                    />
+                  )}
                   <Button
                     size="sm"
                     variant={item.funded ? 'outline' : 'secondary'}
@@ -106,13 +113,15 @@ export default function AdminResearchRequestsPage() {
                   >
                     {item.funded ? 'Unmark funded' : 'Mark funded'}
                   </Button>
-                  <Button
-                    size="sm"
-                    disabled={enqueueing === item.id}
-                    onClick={() => enqueue(item)}
-                  >
-                    {enqueueing === item.id ? 'Enqueueing…' : 'Enqueue'}
-                  </Button>
+                  {isPair && (
+                    <Button
+                      size="sm"
+                      disabled={enqueueing === item.id}
+                      onClick={() => enqueue(item)}
+                    >
+                      {enqueueing === item.id ? 'Enqueueing…' : 'Enqueue'}
+                    </Button>
+                  )}
                   {result === 'queued' && <span className="text-xs text-green-600">Queued ✓</span>}
                   {result === 'exists' && <span className="text-xs text-muted-foreground">Already queued</span>}
                   {result === 'error' && <span className="text-xs text-destructive">Failed</span>}
