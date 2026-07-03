@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Link } from '@/i18n/navigation'
+import { Link, useRouter } from '@/i18n/navigation'
 import { signIn, signUp, signOut, useSession, authClient } from '@/lib/auth-client'
 import { TopUpModal } from '@/components/top-up-modal'
 
@@ -21,6 +21,7 @@ export function AuthPanel() {
   const t = useTranslations('Auth')
   const locale = useLocale()
   const { data: session, isPending } = useSession()
+  const router = useRouter()
   const [mode, setMode] = useState<Mode>('signin')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -102,7 +103,7 @@ export function AuthPanel() {
                 Account settings
               </Link>
               <button
-                onClick={() => { setMenuOpen(false); signOut() }}
+                onClick={async () => { setMenuOpen(false); await signOut(); router.refresh() }}
                 className="block w-full text-left px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
               >
                 {t('signOut')}
@@ -155,6 +156,8 @@ export function AuthPanel() {
         }
       }
       setOpen(false)
+      // Re-run server components so session-dependent UI (e.g. admin nav) updates without a manual reload.
+      router.refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error')
     } finally {
