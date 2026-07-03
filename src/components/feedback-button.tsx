@@ -202,7 +202,13 @@ function AnnotationCanvas({
   )
 }
 
-export function FeedbackButton() {
+export function FeedbackButton({
+  variant = 'header',
+  onOpen,
+}: {
+  variant?: 'header' | 'menu'
+  onOpen?: () => void
+} = {}) {
   const t = useTranslations('FeedbackButton')
   const [mode, setMode] = useState<Mode>('idle')
   const [ctx, setCtx] = useState<FeedbackContext | null>(null)
@@ -338,6 +344,17 @@ export function FeedbackButton() {
   }
 
   if (mode === 'idle') {
+    if (variant === 'menu') {
+      return (
+        <button
+          onClick={() => { onOpen?.(); setMode('modal') }}
+          className="flex w-full items-center gap-2 px-4 py-2 text-sm text-[#5A6E60] hover:text-[#2D4A3E] hover:bg-[#EDE8DC] rounded-lg transition-colors"
+        >
+          <Flag className="w-4 h-4 shrink-0" />
+          {t('label')}
+        </button>
+      )
+    }
     return (
       <button
         onClick={() => setMode('modal')}

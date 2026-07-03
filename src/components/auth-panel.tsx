@@ -186,9 +186,14 @@ export function AuthPanel() {
 
   return (
     <div className="relative">
-      <Button variant="outline" size="sm" onClick={() => setOpen(o => !o)}>
-        {t('signIn')}
-      </Button>
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="flex items-center justify-center text-[#F7F3E8]/80 hover:text-[#F7F3E8] transition-colors"
+        aria-label={t('signIn')}
+        title={t('signIn')}
+      >
+        <User size={20} />
+      </button>
       {open && (
         <div className="absolute right-0 top-full mt-1 z-50">
           <Card className="w-80 shadow-lg">

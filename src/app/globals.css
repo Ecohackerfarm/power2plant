@@ -179,6 +179,10 @@
   html {
     @apply font-sans;
   }
+  /* The faded centerpiece can exceed the viewport width on mobile (full-bleed) */
+  body {
+    overflow-x: hidden;
+  }
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-fraunces), ui-serif, Georgia, serif;
     line-height: 1.2;
@@ -187,6 +191,17 @@
   h2 { font-size: 1.5rem; font-weight: 300; }
   h3 { font-size: 1.125rem; font-weight: 600; font-family: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif; }
 }
+
+/* Landing intro animation — coordinated via html[data-intro="running"], which
+   the landing layout sets before first paint. Backdrop pieces ([data-intro-fx])
+   are driven by React inline styles; the chrome and white wash are CSS-only. */
+[data-intro-fade] { transition: opacity 1100ms ease; }
+html[data-intro="running"] [data-intro-fade] { opacity: 0; pointer-events: none; }
+
+[data-intro-white] { opacity: 0; transition: opacity 1000ms ease; }
+html[data-intro="running"] [data-intro-white] { opacity: 1; }
+
+html[data-intro="running"] [data-intro-fx] { opacity: 0; }
 
 /* Feedback element selection mode */
 [data-feedback-selecting] [data-feedback-target] {

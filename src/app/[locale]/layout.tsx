@@ -50,7 +50,7 @@ export default async function LocaleLayout({
   }
 
   return (
-    <html lang={locale} dir={RTL_LOCALES.has(locale) ? 'rtl' : 'ltr'}>
+    <html lang={locale} dir={RTL_LOCALES.has(locale) ? 'rtl' : 'ltr'} suppressHydrationWarning>
       <head>
         {/* Injected at request time so client code reads runtime env without build-time baking */}
         <script dangerouslySetInnerHTML={{ __html: `window.__ENV__=${JSON.stringify(publicEnv)}` }} />

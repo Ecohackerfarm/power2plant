@@ -1,13 +1,11 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
-import Image from 'next/image'
 import { Link, usePathname } from '@/i18n/navigation'
 import { useTranslations } from 'next-intl'
 import { LocaleSwitcher } from '@/components/locale-switcher'
 import { AuthPanel } from '@/components/auth-panel'
 import { FeedbackButton } from '@/components/feedback-button'
 import { Menu, X, ChevronDown } from 'lucide-react'
-import { clientEnv } from '@/lib/client-env'
 
 const NAV_ITEMS = [
   { key: 'lookup' as const, href: '/relationships' },
@@ -56,21 +54,24 @@ export function SiteHeader({ isAdmin = false, version }: { isAdmin?: boolean; ve
   }, [menuOpen])
 
   return (
-    <header className="border-b bg-[#2D4A3E] text-[#F7F3E8] sticky top-0 z-40 shadow-sm">
-      <div className="max-w-5xl mx-auto px-4 h-14 flex items-center gap-3">
-
-        {/* Left: hamburger + dropdown */}
+    <>
+      {/* Left: green quarter-circle corner — menu */}
+      <div data-intro-fade className="fixed left-0 top-0 z-40">
         <div ref={menuRef} className="relative">
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute left-0 top-0 h-16 w-16 rounded-br-full bg-[#2D4A3E] shadow-md"
+          />
           <button
             onClick={() => setMenuOpen(o => !o)}
-            className="p-1.5 rounded text-[#F7F3E8]/70 hover:text-[#F7F3E8] transition-colors"
+            className="relative flex h-12 w-12 items-start justify-start p-3 text-[#F7F3E8]/80 hover:text-[#F7F3E8] transition-colors"
             aria-label="Toggle menu"
           >
             {menuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
 
           {menuOpen && (
-            <div className="absolute ltr:left-0 rtl:right-0 top-full mt-1 z-50 w-56 bg-[#F7F3E8] border border-[#EDE8DC] rounded-2xl shadow-lg py-1 overflow-hidden">
+            <div className="absolute ltr:left-2 rtl:right-2 top-14 z-50 w-56 bg-[#F7F3E8] border border-[#EDE8DC] rounded-2xl shadow-lg py-1 overflow-hidden">
               {NAV_ITEMS.map(({ key, href }) => (
                 <Link
                   key={key}
@@ -104,35 +105,36 @@ export function SiteHeader({ isAdmin = false, version }: { isAdmin?: boolean; ve
                   ))}
                 </>
               )}
+
+              {/* Utilities pinned to the bottom of the menu */}
+              <div className="border-t border-[#EDE8DC] my-1" />
+              <FeedbackButton variant="menu" onOpen={() => setMenuOpen(false)} />
+              <div className="px-4 py-2">
+                <LocaleSwitcher variant="menu" />
+              </div>
+              {version && (
+                <>
+                  <div className="border-t border-[#EDE8DC] my-1" />
+                  <div className="px-4 py-2 text-[11px] text-[#5A6E60]/60 leading-none">v{version}</div>
+                </>
+              )}
             </div>
           )}
         </div>
+      </div>
 
-        {/* Logo + name — inline after hamburger */}
-        <Link href="/" className="flex items-center gap-2" onClick={() => setMenuOpen(false)}>
-          <div className="bg-[#F7F3E8] rounded-full p-1 shrink-0">
-            <Image src="/logo.png" alt="" width={32} height={32} />
+      {/* Right: green quarter-circle corner — account */}
+      <div data-intro-fade className="fixed right-0 top-0 z-40">
+        <div className="relative">
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute right-0 top-0 h-16 w-16 rounded-bl-full bg-[#2D4A3E] shadow-md"
+          />
+          <div className="relative flex justify-end p-3">
+            <AuthPanel />
           </div>
-          <div className="flex flex-col leading-none gap-0.5">
-            <span
-              className="font-semibold text-sm min-[400px]:text-xl text-[#F7F3E8] leading-none"
-              style={{ fontFamily: 'var(--font-fraunces), ui-serif, serif', fontWeight: 300 }}
-            >
-              {clientEnv.brand()}
-            </span>
-            {version && (
-              <span className="text-[10px] text-[#F7F3E8]/40 leading-none">v{version}</span>
-            )}
-          </div>
-        </Link>
-
-        {/* Right: actions */}
-        <div className="flex items-center gap-3 ml-auto">
-          <FeedbackButton />
-          <LocaleSwitcher />
-          <AuthPanel />
         </div>
       </div>
-    </header>
+    </>
   )
 }
