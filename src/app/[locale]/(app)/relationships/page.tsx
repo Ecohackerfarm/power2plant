@@ -203,6 +203,7 @@ function RelationshipsInner() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(false)
   const [search, setSearch] = useState(searchParams.get('q') ?? '')
+  const [page, setPage] = useState(0)
 
   const fetchResults = useCallback(async (q: string) => {
     if (!q.trim()) {
@@ -253,6 +254,17 @@ function RelationshipsInner() {
   const hasAnyResults = plants.length > 0 || noDataPlants.length > 0
   const searched = search.trim().length > 0
 
+  // Paginate the combined result set — a broad term (e.g. "corn") can match up
+  // to 100 crops; show them in relevance order a page at a time.
+  const PAGE_SIZE = 20
+  const items = [...plants, ...noDataPlants]
+  const pageCount = Math.ceil(items.length / PAGE_SIZE)
+  const clampedPage = Math.min(page, Math.max(0, pageCount - 1))
+  const pageItems = items.slice(clampedPage * PAGE_SIZE, clampedPage * PAGE_SIZE + PAGE_SIZE)
+
+  // Reset to the first page whenever the query changes.
+  useEffect(() => { setPage(0) }, [search])
+
   return (
     <main className="max-w-3xl mx-auto px-4 py-8 space-y-6">
       <div className="flex items-start justify-between gap-4">
@@ -290,12 +302,36 @@ function RelationshipsInner() {
         <p className="text-muted-foreground text-sm">{t('noObservations')}</p>
       ) : (
         <div className="space-y-4">
-          {plants.map(plant => (
-            <PlantCard key={plant.id} plant={plant} t={t} />
+          {pageItems.map(item => (
+            'companions' in item
+              ? <PlantCard key={item.id} plant={item} t={t} />
+              : <NoDataCard key={item.id} plant={item} t={t} onVoted={handleVoted} />
           ))}
-          {noDataPlants.map(plant => (
-            <NoDataCard key={plant.id} plant={plant} t={t} onVoted={handleVoted} />
-          ))}
+          {pageCount > 1 && (
+            <div className="flex items-center justify-center gap-4 pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={clampedPage === 0}
+                onClick={() => setPage(p => Math.max(0, p - 1))}
+                aria-label="Previous page"
+              >
+                ‹
+              </Button>
+              <span className="text-sm text-muted-foreground tabular-nums">
+                {clampedPage + 1} / {pageCount}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={clampedPage >= pageCount - 1}
+                onClick={() => setPage(p => Math.min(pageCount - 1, p + 1))}
+                aria-label="Next page"
+              >
+                ›
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </main>

@@ -176,6 +176,11 @@ export async function GET(req: Request) {
 
   const requestByCropId = new Map(existingRequests.map(r => [r.cropAId, r]))
 
+  // Preserve the relevance ranking from findMatchingCropIds — findMany does not
+  // guarantee input order, and losing it would bury exact/common-name matches.
+  const rankOf = new Map(cropIds.map((id, i) => [id, i]))
+  crops.sort((a, b) => (rankOf.get(a.id) ?? 0) - (rankOf.get(b.id) ?? 0))
+
   // Build results
   const plants = crops
     .filter(c => byPlant.has(c.id))
