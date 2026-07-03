@@ -37,8 +37,15 @@ type RelationshipRow = {
 }
 
 async function findMatchingCropIds(term: string, locale: string): Promise<string[]> {
-  if (!term.trim()) return []
-  const like = `%${term.toLowerCase()}%`
+  const t = term.trim().toLowerCase()
+  if (!t) return []
+  const exact = t
+  const prefix = `${t}%`
+  const like = `%${t}%`
+  // Rank matches so exact / common-name hits rank above incidental substring
+  // matches inside unrelated botanical names (e.g. "corn" ⊂ "Cornus"). Without
+  // this, LIMIT truncates before the real crop when the term is a common
+  // substring of many Latin names.
   const rows = await prisma.$queryRaw<{ id: string }[]>`
     SELECT c.id FROM "Crop" c
     LEFT JOIN "CropTranslation" t ON t."cropId" = c.id AND t.locale = ${locale}
@@ -49,6 +56,24 @@ async function findMatchingCropIds(term: string, locale: string): Promise<string
       OR EXISTS (SELECT 1 FROM unnest(c."commonNames") cn WHERE lower(cn) LIKE ${like})
       OR EXISTS (SELECT 1 FROM unnest(COALESCE(t."commonNames", ARRAY[]::TEXT[])) cn WHERE lower(cn) LIKE ${like})
       OR EXISTS (SELECT 1 FROM "BotanicalSynonym" bs WHERE bs."cropId" = c.id AND lower(bs.name) LIKE ${like})
+    ORDER BY (
+      CASE
+        WHEN lower(c.name) = ${exact}
+          OR lower(c."botanicalName") = ${exact}
+          OR EXISTS (SELECT 1 FROM unnest(c."commonNames") cn WHERE lower(cn) = ${exact})
+          OR EXISTS (SELECT 1 FROM unnest(COALESCE(t."commonNames", ARRAY[]::TEXT[])) cn WHERE lower(cn) = ${exact})
+        THEN 0
+        WHEN lower(c.name) LIKE ${prefix}
+          OR lower(c."botanicalName") LIKE ${prefix}
+          OR EXISTS (SELECT 1 FROM unnest(c."commonNames") cn WHERE lower(cn) LIKE ${prefix})
+          OR EXISTS (SELECT 1 FROM unnest(COALESCE(t."commonNames", ARRAY[]::TEXT[])) cn WHERE lower(cn) LIKE ${prefix})
+        THEN 1
+        WHEN EXISTS (SELECT 1 FROM unnest(c."commonNames") cn WHERE lower(cn) LIKE ${like})
+          OR EXISTS (SELECT 1 FROM unnest(COALESCE(t."commonNames", ARRAY[]::TEXT[])) cn WHERE lower(cn) LIKE ${like})
+        THEN 2
+        ELSE 3
+      END
+    ), lower(c.name)
     LIMIT 100
   `
   return rows.map(r => r.id)
@@ -150,6 +175,11 @@ export async function GET(req: Request) {
     : []
 
   const requestByCropId = new Map(existingRequests.map(r => [r.cropAId, r]))
+
+  // Preserve the relevance ranking from findMatchingCropIds — findMany does not
+  // guarantee input order, and losing it would bury exact/common-name matches.
+  const rankOf = new Map(cropIds.map((id, i) => [id, i]))
+  crops.sort((a, b) => (rankOf.get(a.id) ?? 0) - (rankOf.get(b.id) ?? 0))
 
   // Build results
   const plants = crops
