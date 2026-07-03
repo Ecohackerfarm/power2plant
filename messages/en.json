@@ -136,7 +136,9 @@
     "conflictItem": "{a} and {b} should not share a bed",
     "conflictsHint": "Add more beds to separate these plants.",
     "noDataTitle": "We don't have data for these pairs yet — but you can vote or fund the research",
-    "requestResearch": "Request research →"
+    "requestResearch": "Request research →",
+    "researchInProgressTitle": "Secondary research in progress",
+    "researchedNoDataTitle": "Secondary research done — no studies found"
   },
   "Relationships": {
     "title": "Community findings",
@@ -396,7 +398,9 @@
     "searchPlants": "Search plants to add…",
     "searching": "Searching…",
     "alreadyAdded": "Added",
-    "mustHaveOnePlant": "A bed must have at least 1 plant."
+    "mustHaveOnePlant": "A bed must have at least 1 plant.",
+    "researchInProgressPairs": "{count} pair{count, plural, one {} other {s}} · secondary research in progress",
+    "researchedNoDataPairs": "{count} pair{count, plural, one {} other {s}} · researched, no studies found"
   },
   "AddBedForm": {
     "title": "Add a bed",
@@ -431,7 +435,8 @@
     "empty": "No research requests yet. When our data is missing for a plant pair, it will appear here.",
     "loginToVote": "Sign in to vote for the pairs you'd like researched.",
     "vote": "Vote",
-    "voted": "Voted"
+    "voted": "Voted",
+    "singlePlantUnavailable": "Single-plant research not yet available"
   },
   "FeedbackButton": {
     "label": "Report an issue",

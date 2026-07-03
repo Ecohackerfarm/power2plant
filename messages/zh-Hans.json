@@ -134,7 +134,9 @@
     "conflictItem": "{a} 和 {b} 不应种植在同一花圃",
     "conflictsHint": "添加更多花圃以分开这些植物。",
     "noDataTitle": "暂无这些植物组合的数据 — 但您可以投票或资助研究",
-    "requestResearch": "请求研究 →"
+    "requestResearch": "请求研究 →",
+    "researchInProgressTitle": "Secondary research in progress",
+    "researchedNoDataTitle": "Secondary research done — no studies found"
   },
   "Relationships": {
     "title": "社区观察",
@@ -354,7 +356,9 @@
     "companions": "{count, plural, other {# 对伴生}}",
     "antagonists": "{count, plural, other {# 个冲突}}",
     "unknownPairs": "{count, plural, other {# 对未知}}",
-    "addMoreForAnalysis": "添加更多植物以查看关系。"
+    "addMoreForAnalysis": "添加更多植物以查看关系。",
+    "researchInProgressPairs": "{count} pair{count, plural, one {} other {s}} · secondary research in progress",
+    "researchedNoDataPairs": "{count} pair{count, plural, one {} other {s}} · researched, no studies found"
   },
   "AddBedForm": {
     "title": "添加花圃",
@@ -389,7 +393,8 @@
     "empty": "暂无研究请求。当我们缺少某植物组合的数据时，会在此显示。",
     "loginToVote": "请登录以为您希望研究的组合投票。",
     "vote": "投票",
-    "voted": "已投票"
+    "voted": "已投票",
+    "singlePlantUnavailable": "Single-plant research not yet available"
   },
   "FeedbackButton": {
     "label": "报告问题",

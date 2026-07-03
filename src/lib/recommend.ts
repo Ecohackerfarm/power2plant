@@ -53,11 +53,21 @@ export type NoDataPair = {
   pairLabel: string       // "Tomato & Pepper"
 }
 
+// Per-pair secondary-research state, keyed by pairKey(). Only non-FAILED terminal/active
+// states are tracked — FAILED pairs stay re-offerable.
+export type ResearchStatus = 'PENDING' | 'IN_PROGRESS' | 'DONE'
+export type ResearchStateMap = Map<string, ResearchStatus>
+
 export type BedResult = {
   index: number
   crops: CropInput[]
   hints: BedHint[]
   noDataPairs: NoDataPair[]
+  // Pairs with no relationship where secondary research already completed but found
+  // nothing (DONE) — surfaced as muted text, not a research invite.
+  researchedNoDataPairs: NoDataPair[]
+  // Pairs with no relationship whose secondary research is queued/running.
+  researchInProgressPairs: NoDataPair[]
 }
 
 export type RecommendResult = {
@@ -111,7 +121,7 @@ function buildHint(rel: RelationshipInput): { details: string; confidenceLevel: 
 const POSITIVE_TYPES = new Set(['COMPANION', 'ATTRACTS', 'REPELS', 'NURSE', 'TRAP_CROP'])
 const NEGATIVE_TYPES = new Set(['AVOID'])
 
-function pairKey(idA: string, idB: string): string {
+export function pairKey(idA: string, idB: string): string {
   return idA < idB ? `${idA}|${idB}` : `${idB}|${idA}`
 }
 
@@ -184,6 +194,7 @@ function runPlacement(
   bedCount: number,
   bedCapacity: number,
   existingBeds?: string[][],
+  researchState: ResearchStateMap = new Map(),
 ): RecommendResult {
   const lockedIds = new Set<string>()
   const beds: CropInput[][] = Array.from({ length: bedCount }, (_, i) => {
@@ -259,18 +270,26 @@ function runPlacement(
   const bedResults: BedResult[] = beds.map((bedCrops, index) => {
     const hints: BedHint[] = []
     const noDataPairs: NoDataPair[] = []
+    const researchedNoDataPairs: NoDataPair[] = []
+    const researchInProgressPairs: NoDataPair[] = []
     for (let i = 0; i < bedCrops.length; i++) {
       for (let j = i + 1; j < bedCrops.length; j++) {
         const a = bedCrops[i]
         const b = bedCrops[j]
         const key = pairKey(a.id, b.id)
         if (!weights.has(key)) {
-          noDataPairs.push({
+          const pair: NoDataPair = {
             cropAId: a.id < b.id ? a.id : b.id,
             cropBId: a.id < b.id ? b.id : a.id,
             // pairLabel is user-supplied — sanitize before passing to any LLM call (prompt injection risk)
             pairLabel: `${getDisplayName(a)} & ${getDisplayName(b)}`,
-          })
+          }
+          // No relationship row: bucket by secondary-research state so we don't re-invite
+          // research for a pair already researched (or in flight).
+          const state = researchState.get(key)
+          if (state === 'DONE') researchedNoDataPairs.push(pair)
+          else if (state === 'PENDING' || state === 'IN_PROGRESS') researchInProgressPairs.push(pair)
+          else noDataPairs.push(pair)
           continue
         }
         if (getWeight(weights, a.id, b.id) > 0) {
@@ -288,7 +307,7 @@ function runPlacement(
         }
       }
     }
-    return { index, crops: bedCrops, hints, noDataPairs }
+    return { index, crops: bedCrops, hints, noDataPairs, researchedNoDataPairs, researchInProgressPairs }
   })
 
   return { beds: bedResults, overflow, conflicts, duplicatedCropIds: [...duplicatedIds] }
@@ -301,11 +320,12 @@ export function recommend(
   bedCapacity: number,
   userMinTempC: number,
   existingBeds?: string[][],
+  researchState: ResearchStateMap = new Map(),
 ): RecommendResult {
   const eligible = crops.filter(c => c.minTempC === null || c.minTempC <= userMinTempC)
   const { weights, relMap } = buildWeightMaps(relationships)
   const sorted = sortByAffinity(eligible, weights)
-  return runPlacement(sorted, crops, weights, relMap, bedCount, bedCapacity, existingBeds)
+  return runPlacement(sorted, crops, weights, relMap, bedCount, bedCapacity, existingBeds, researchState)
 }
 
 // Returns a canonical string that identifies a bed arrangement for deduplication.
@@ -324,13 +344,14 @@ export function recommendAlternatives(
   bedCount: number,
   bedCapacity: number,
   userMinTempC: number,
+  researchState: ResearchStateMap = new Map(),
   n = 3,
 ): RecommendResult[] {
   const eligible = crops.filter(c => c.minTempC === null || c.minTempC <= userMinTempC)
   const { weights, relMap } = buildWeightMaps(relationships)
   const sorted = sortByAffinity(eligible, weights)
 
-  const primary = runPlacement(sorted, crops, weights, relMap, bedCount, bedCapacity)
+  const primary = runPlacement(sorted, crops, weights, relMap, bedCount, bedCapacity, undefined, researchState)
   const seen = new Set<string>([arrangementKey(primary.beds)])
   const results: RecommendResult[] = [primary]
 
@@ -347,7 +368,7 @@ export function recommendAlternatives(
 
   for (const order of candidates) {
     if (results.length > n) break
-    const alt = runPlacement(order, crops, weights, relMap, bedCount, bedCapacity)
+    const alt = runPlacement(order, crops, weights, relMap, bedCount, bedCapacity, undefined, researchState)
     const key = arrangementKey(alt.beds)
     if (!seen.has(key)) {
       seen.add(key)

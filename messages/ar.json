@@ -134,7 +134,9 @@
     "conflictItem": "لا ينبغي أن يتشارك {a} و{b} الحوض ذاته",
     "conflictsHint": "أضف أحواضاً لفصل هذه النباتات.",
     "noDataTitle": "لا تتوفر بيانات لهذه الأزواج بعد — لكن يمكنك التصويت أو تمويل البحث",
-    "requestResearch": "طلب بحث ←"
+    "requestResearch": "طلب بحث ←",
+    "researchInProgressTitle": "Secondary research in progress",
+    "researchedNoDataTitle": "Secondary research done — no studies found"
   },
   "Relationships": {
     "title": "ملاحظات المجتمع",
@@ -354,7 +356,9 @@
     "companions": "{count, plural, zero {لا أزواج مرافقة} one {زوج مرافق واحد} two {زوجان مرافقان} few {# أزواج مرافقة} many {# زوجاً مرافقاً} other {# زوج مرافق}}",
     "antagonists": "{count, plural, zero {لا تعارضات} one {تعارض واحد} two {تعارضان} few {# تعارضات} many {# تعارضاً} other {# تعارض}}",
     "unknownPairs": "{count, plural, zero {لا أزواج مجهولة} one {زوج مجهول واحد} two {زوجان مجهولان} few {# أزواج مجهولة} many {# زوجاً مجهولاً} other {# زوج مجهول}}",
-    "addMoreForAnalysis": "أضف مزيداً من النباتات لعرض العلاقات."
+    "addMoreForAnalysis": "أضف مزيداً من النباتات لعرض العلاقات.",
+    "researchInProgressPairs": "{count} pair{count, plural, one {} other {s}} · secondary research in progress",
+    "researchedNoDataPairs": "{count} pair{count, plural, one {} other {s}} · researched, no studies found"
   },
   "AddBedForm": {
     "title": "إضافة حوض",
@@ -389,7 +393,8 @@
     "empty": "لا توجد طلبات بحث بعد. عندما تكون بياناتنا مفقودة لزوج من النباتات، ستظهر هنا.",
     "loginToVote": "سجّل دخولك للتصويت على الأزواج التي تريد بحثها.",
     "vote": "تصويت",
-    "voted": "تم التصويت"
+    "voted": "تم التصويت",
+    "singlePlantUnavailable": "Single-plant research not yet available"
   },
   "FeedbackButton": {
     "label": "الإبلاغ عن مشكلة",

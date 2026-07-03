@@ -134,7 +134,9 @@
     "conflictItem": "{a}と{b}は同じ花壇に植えるべきではありません",
     "conflictsHint": "これらの植物を分けるには花壇を追加してください。",
     "noDataTitle": "これらのペアのデータはまだありません — ただし、研究に投票または資金提供できます",
-    "requestResearch": "調査をリクエスト →"
+    "requestResearch": "調査をリクエスト →",
+    "researchInProgressTitle": "Secondary research in progress",
+    "researchedNoDataTitle": "Secondary research done — no studies found"
   },
   "Relationships": {
     "title": "コミュニティの観察",
@@ -354,7 +356,9 @@
     "companions": "{count, plural, other {# 組のコンパニオン}}",
     "antagonists": "{count, plural, other {# 件の競合}}",
     "unknownPairs": "{count, plural, other {# 組の不明}}",
-    "addMoreForAnalysis": "関係を確認するには植物を追加してください。"
+    "addMoreForAnalysis": "関係を確認するには植物を追加してください。",
+    "researchInProgressPairs": "{count} pair{count, plural, one {} other {s}} · secondary research in progress",
+    "researchedNoDataPairs": "{count} pair{count, plural, one {} other {s}} · researched, no studies found"
   },
   "AddBedForm": {
     "title": "花壇を追加",
@@ -389,7 +393,8 @@
     "empty": "調査リクエストはまだありません。植物ペアのデータがない場合、ここに表示されます。",
     "loginToVote": "調査してほしいペアに投票するにはサインインしてください。",
     "vote": "投票する",
-    "voted": "投票済み"
+    "voted": "投票済み",
+    "singlePlantUnavailable": "Single-plant research not yet available"
   },
   "FeedbackButton": {
     "label": "問題を報告する",

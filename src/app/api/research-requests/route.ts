@@ -21,22 +21,35 @@ export async function GET() {
     },
   })
 
-  // Attach queue entry info for funded pairs
-  const fundedPairs = requests.filter(r => r.funded && r.cropBId)
-  const queueEntries = fundedPairs.length > 0
-    ? await prisma.researchQueue.findMany({
-        where: {
-          OR: fundedPairs.map(r => ({ cropAId: r.cropAId, cropBId: r.cropBId! })),
-        },
+  // Attach queue entry info for every pair (not just `funded` ones) — the credit and
+  // admin funding paths create a ResearchQueue row without ever setting `funded`, so
+  // gating on `funded` hid their status. Also flag whether a relationship exists, so
+  // the UI can distinguish "Researched" from "Researched · no studies found".
+  const pairRequests = requests.filter(r => r.cropBId)
+  const pairFilter = pairRequests.map(r => ({ cropAId: r.cropAId, cropBId: r.cropBId! }))
+  let queueEntries: { id: string; status: string; cropAId: string; cropBId: string }[] = []
+  let relPairs: { cropAId: string; cropBId: string }[] = []
+  if (pairRequests.length > 0) {
+    [queueEntries, relPairs] = await Promise.all([
+      prisma.researchQueue.findMany({
+        where: { OR: pairFilter },
         select: { id: true, status: true, cropAId: true, cropBId: true },
-      })
-    : []
+      }),
+      prisma.cropRelationship.findMany({
+        where: { OR: pairFilter },
+        select: { cropAId: true, cropBId: true },
+      }),
+    ])
+  }
 
   return NextResponse.json(
     requests.map(r => {
       const queueEntry = r.cropBId
         ? queueEntries.find(q => q.cropAId === r.cropAId && q.cropBId === r.cropBId)
         : undefined
+      const hasStudies = r.cropBId
+        ? relPairs.some(p => p.cropAId === r.cropAId && p.cropBId === r.cropBId)
+        : false
       return {
         id: r.id,
         cropAId: r.cropAId,
@@ -49,6 +62,7 @@ export async function GET() {
         hasVoted: session ? (r.votes?.length ?? 0) > 0 : false,
         queueId: queueEntry?.id ?? null,
         queueStatus: queueEntry?.status ?? null,
+        hasStudies,
       }
     })
   )

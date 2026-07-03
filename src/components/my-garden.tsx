@@ -33,6 +33,10 @@ interface BedAnalysis {
   companions: { id: string; cropAName: string; cropBName: string; confidence: number }[]
   antagonists: { id: string; cropAName: string; cropBName: string }[]
   unknownPairs: UnknownPair[]
+  // No relationship + secondary research already DONE with no studies found.
+  researchedNoDataPairs: UnknownPair[]
+  // No relationship + secondary research queued/running.
+  researchInProgressPairs: UnknownPair[]
 }
 
 interface Bed {
@@ -420,6 +424,34 @@ export const MyGarden = forwardRef<MyGardenRef, MyGardenProps>(function MyGarden
                                       </li>
                                     )
                                   })}
+                                </ul>
+                              </details>
+                            )}
+                            {analysis.researchInProgressPairs.length > 0 && (
+                              <details className="text-xs">
+                                <summary className="text-muted-foreground cursor-pointer">
+                                  {(t as (k: string, v: Record<string, unknown>) => string)('researchInProgressPairs', { count: analysis.researchInProgressPairs.length })}
+                                </summary>
+                                <ul className="mt-1 ml-3 space-y-1">
+                                  {analysis.researchInProgressPairs.map(pair => (
+                                    <li key={[pair.cropAId, pair.cropBId].sort().join(':')} className="text-muted-foreground">
+                                      {pair.cropAName} × {pair.cropBName}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </details>
+                            )}
+                            {analysis.researchedNoDataPairs.length > 0 && (
+                              <details className="text-xs">
+                                <summary className="text-muted-foreground cursor-pointer">
+                                  {(t as (k: string, v: Record<string, unknown>) => string)('researchedNoDataPairs', { count: analysis.researchedNoDataPairs.length })}
+                                </summary>
+                                <ul className="mt-1 ml-3 space-y-1">
+                                  {analysis.researchedNoDataPairs.map(pair => (
+                                    <li key={[pair.cropAId, pair.cropBId].sort().join(':')} className="text-muted-foreground">
+                                      {pair.cropAName} × {pair.cropBName}
+                                    </li>
+                                  ))}
                                 </ul>
                               </details>
                             )}

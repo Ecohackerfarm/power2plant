@@ -134,7 +134,9 @@
     "conflictItem": "{a} y {b} no deben compartir bancal",
     "conflictsHint": "Añade más bancales para separar estas plantas.",
     "noDataTitle": "Aún no tenemos datos para estos pares — pero puedes votar o financiar la investigación",
-    "requestResearch": "Solicitar investigación →"
+    "requestResearch": "Solicitar investigación →",
+    "researchInProgressTitle": "Secondary research in progress",
+    "researchedNoDataTitle": "Secondary research done — no studies found"
   },
   "Relationships": {
     "title": "Observaciones de la comunidad",
@@ -354,7 +356,9 @@
     "companions": "{count, plural, one {# par compañero} other {# pares compañeros}}",
     "antagonists": "{count, plural, one {# conflicto} other {# conflictos}}",
     "unknownPairs": "{count, plural, one {# par desconocido} other {# pares desconocidos}}",
-    "addMoreForAnalysis": "Añade más plantas para ver las relaciones."
+    "addMoreForAnalysis": "Añade más plantas para ver las relaciones.",
+    "researchInProgressPairs": "{count} pair{count, plural, one {} other {s}} · secondary research in progress",
+    "researchedNoDataPairs": "{count} pair{count, plural, one {} other {s}} · researched, no studies found"
   },
   "AddBedForm": {
     "title": "Añadir un bancal",
@@ -389,7 +393,8 @@
     "empty": "Aún no hay solicitudes de investigación. Cuando falten datos para un par de plantas, aparecerán aquí.",
     "loginToVote": "Inicia sesión para votar por los pares que quieres investigar.",
     "vote": "Votar",
-    "voted": "Votado"
+    "voted": "Votado",
+    "singlePlantUnavailable": "Single-plant research not yet available"
   },
   "FeedbackButton": {
     "label": "Reportar un problema",

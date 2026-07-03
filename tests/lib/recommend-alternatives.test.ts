@@ -72,7 +72,7 @@ describe('recommendAlternatives', () => {
 
   it('n=0 returns only the primary result', () => {
     const crops = [crop('a'), crop('b'), crop('c'), crop('d')]
-    const results = recommendAlternatives(crops, [], 2, 2, 0, 0)
+    const results = recommendAlternatives(crops, [], 2, 2, 0, new Map(), 0)
     expect(results.length).toBe(1)
   })
 

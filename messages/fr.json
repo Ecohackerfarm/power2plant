@@ -134,7 +134,9 @@
     "conflictItem": "{a} et {b} ne doivent pas partager la même planche",
     "conflictsHint": "Ajoutez plus de planches pour séparer ces plantes.",
     "noDataTitle": "Nous n'avons pas encore de données pour ces paires — mais vous pouvez voter ou financer la recherche",
-    "requestResearch": "Demander une recherche →"
+    "requestResearch": "Demander une recherche →",
+    "researchInProgressTitle": "Secondary research in progress",
+    "researchedNoDataTitle": "Secondary research done — no studies found"
   },
   "Relationships": {
     "title": "Découvertes de la communauté",
@@ -354,7 +356,9 @@
     "companions": "{count, plural, one {# paire compagne} other {# paires compagnes}}",
     "antagonists": "{count, plural, one {# conflit} other {# conflits}}",
     "unknownPairs": "{count, plural, one {# paire inconnue} other {# paires inconnues}}",
-    "addMoreForAnalysis": "Ajoutez plus de plantes pour voir les relations."
+    "addMoreForAnalysis": "Ajoutez plus de plantes pour voir les relations.",
+    "researchInProgressPairs": "{count} pair{count, plural, one {} other {s}} · secondary research in progress",
+    "researchedNoDataPairs": "{count} pair{count, plural, one {} other {s}} · researched, no studies found"
   },
   "AddBedForm": {
     "title": "Ajouter une planche",
@@ -389,7 +393,8 @@
     "empty": "Pas encore de demandes de recherche. Quand nos données manquent pour une paire de plantes, elle apparaîtra ici.",
     "loginToVote": "Connectez-vous pour voter sur les paires que vous souhaitez voir étudiées.",
     "vote": "Voter",
-    "voted": "Voté"
+    "voted": "Voté",
+    "singlePlantUnavailable": "Single-plant research not yet available"
   },
   "FeedbackButton": {
     "label": "Signaler un problème",
