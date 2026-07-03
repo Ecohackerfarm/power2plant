@@ -4,6 +4,7 @@ import { useTranslations, useLocale } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useRouter } from '@/i18n/navigation'
 import { signIn, signUp, authClient } from '@/lib/auth-client'
 
 type Mode = 'signin' | 'signup' | 'forgot' | 'forgot-sent' | 'verify-sent'
@@ -16,6 +17,7 @@ type Props = {
 export function SignInModal({ onClose, onSuccess }: Props) {
   const t = useTranslations('Auth')
   const locale = useLocale()
+  const router = useRouter()
   const [mode, setMode] = useState<Mode>('signin')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -73,6 +75,8 @@ export function SignInModal({ onClose, onSuccess }: Props) {
       }
       onSuccess?.()
       onClose()
+      // Re-run server components so session-dependent UI (e.g. admin nav) updates without a manual reload.
+      router.refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error')
     } finally {
