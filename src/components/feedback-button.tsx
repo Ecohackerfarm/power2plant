@@ -202,7 +202,13 @@ function AnnotationCanvas({
   )
 }
 
-export function FeedbackButton() {
+export function FeedbackButton({
+  variant = 'header',
+  onOpen,
+}: {
+  variant?: 'header' | 'menu'
+  onOpen?: () => void
+} = {}) {
   const t = useTranslations('FeedbackButton')
   const [mode, setMode] = useState<Mode>('idle')
   const [ctx, setCtx] = useState<FeedbackContext | null>(null)
@@ -338,10 +344,21 @@ export function FeedbackButton() {
   }
 
   if (mode === 'idle') {
+    if (variant === 'menu') {
+      return (
+        <button
+          onClick={() => { onOpen?.(); setMode('modal') }}
+          className="flex w-full items-center gap-2 px-4 py-2 text-sm text-[#5A6E60] hover:text-[#2D4A3E] hover:bg-[#EDE8DC] rounded-lg transition-colors"
+        >
+          <Flag className="w-4 h-4 shrink-0" />
+          {t('label')}
+        </button>
+      )
+    }
     return (
       <button
         onClick={() => setMode('modal')}
-        className="text-muted-foreground hover:text-foreground transition-colors"
+        className="text-[#F7F3E8]/70 hover:text-[#F7F3E8] transition-colors"
         aria-label={t('label')}
         title={t('label')}
       >
@@ -412,7 +429,7 @@ export function FeedbackButton() {
                 value={message}
                 onChange={e => setMessage(e.target.value)}
                 placeholder={t('messagePlaceholder')}
-                className="w-full border rounded p-2 text-sm min-h-[80px] resize-none"
+                className="w-full border rounded p-2 text-sm min-h-[80px] resize-none placeholder:text-muted-foreground/50"
                 maxLength={2000}
               />
             </div>
@@ -443,7 +460,7 @@ export function FeedbackButton() {
                 value={message}
                 onChange={e => setMessage(e.target.value)}
                 placeholder={t('messagePlaceholder')}
-                className="w-full border rounded p-2 text-sm min-h-[80px] resize-none"
+                className="w-full border rounded p-2 text-sm min-h-[80px] resize-none placeholder:text-muted-foreground/50"
                 maxLength={2000}
               />
             </div>

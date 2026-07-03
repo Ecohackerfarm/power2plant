@@ -71,7 +71,7 @@ async function modeUnreviewed(limit?: number): Promise<Pair[]> {
 
 async function modeVoted(minVotes: number, limit?: number): Promise<Pair[]> {
   const requests = await prisma.researchRequest.findMany({
-    where: { voteCount: { gte: minVotes } },
+    where: { voteCount: { gte: minVotes }, cropBId: { not: null } },
     orderBy: { voteCount: 'desc' },
     ...(limit ? { take: limit } : {}),
     select: {
@@ -82,9 +82,9 @@ async function modeVoted(minVotes: number, limit?: number): Promise<Pair[]> {
   })
   process.stderr.write(`voted: ${requests.length} research requests (min votes: ${minVotes})\n`)
   requests.forEach(r =>
-    process.stderr.write(`  ${r.cropA.botanicalName} + ${r.cropB.botanicalName} (${r.voteCount} votes)\n`)
+    process.stderr.write(`  ${r.cropA.botanicalName} + ${r.cropB!.botanicalName} (${r.voteCount} votes)\n`)
   )
-  return requests.map(r => ({ cropA: r.cropA.botanicalName, cropB: r.cropB.botanicalName }))
+  return requests.map(r => ({ cropA: r.cropA.botanicalName, cropB: r.cropB!.botanicalName }))
 }
 
 async function modePlants(names: string[], limit?: number): Promise<Pair[]> {

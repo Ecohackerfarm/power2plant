@@ -1,8 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { useTranslations } from 'next-intl'
-import { useRouter } from '@/i18n/navigation'
+import { useTranslations, useLocale } from 'next-intl'
+import { useRouter, Link } from '@/i18n/navigation'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { ConfidenceBadge } from '@/components/confidence-badge'
@@ -10,8 +10,9 @@ import { getDisplayName, confidenceLabel } from '@/lib/recommend'
 import { detectRank } from '@/lib/crop-rank'
 
 type RelationshipRow = {
-  relId: string; type: string; reason: string | null; reasons: string[]; confidence: number
+  relId: string; type: string; reasons: Array<{ type: string; explanation: string }>; confidence: number
   notes: string | null; direction: string
+  conflict?: boolean; unreviewed?: boolean
   cropAId: string; cropAName: string; cropABotanical: string; cropACommonNames: string[]
   cropANitrogen: boolean
   cropBId: string; cropBName: string; cropBBotanical: string; cropBCommonNames: string[]
@@ -32,6 +33,8 @@ type ResearchAttempt = {
   id: string; model: string; result: string; confidence: number | null; notes: string | null; attemptedAt: string
 }
 
+type Funder = { userId: string | null; name: string | null; source: 'PERSONAL' | 'POT' }
+
 function CropCard({ name, botanical, commonNames, isNitrogen, nitrogenLabel }: {
   name: string; botanical: string; commonNames: string[]; isNitrogen: boolean; nitrogenLabel: string
 }) {
@@ -47,23 +50,28 @@ function CropCard({ name, botanical, commonNames, isNitrogen, nitrogenLabel }: {
 
 export default function RelationshipPage() {
   const t = useTranslations('RelationshipPage')
+  const locale = useLocale()
   const { id, companionId } = useParams<{ id: string; companionId: string }>()
   const router = useRouter()
   const [rel, setRel] = useState<RelationshipRow | null>(null)
   const [sources, setSources] = useState<Source[]>([])
+  const [genusSources, setGenusSources] = useState<Source[]>([])
   const [researchAttempts, setResearchAttempts] = useState<ResearchAttempt[]>([])
+  const [funders, setFunders] = useState<Funder[]>([])
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [expandedAttempt, setExpandedAttempt] = useState<string | null>(null)
 
   useEffect(() => {
-    fetch(`/api/plants/${id}/companions/${companionId}`)
+    fetch(`/api/plants/${id}/companions/${companionId}?locale=${locale}`)
       .then(r => r.json().then(body => ({ ok: r.ok, body })))
       .then(({ ok, body }) => {
         if (!ok && !body.researchAttempts?.length) { setNotFound(true); return }
         setRel(body.relationship ?? null)
         setSources(body.sources ?? [])
+        setGenusSources(body.genusSources ?? [])
         setResearchAttempts(body.researchAttempts ?? [])
+        setFunders(body.funders ?? [])
         if (!body.relationship) setNotFound(false)
       })
       .finally(() => setLoading(false))
@@ -145,16 +153,32 @@ export default function RelationshipPage() {
           <dt className="w-32 text-muted-foreground shrink-0">{t('relationship')}</dt>
           <dd className="font-medium">{translateKey(rel.type, rel.type)}</dd>
         </div>
-        {(rel.reasons?.length > 0 || rel.reason) && (
+        {(rel.conflict || rel.unreviewed) && (
+          <div className="flex gap-3">
+            <dt className="w-32 shrink-0" />
+            <dd className="flex flex-wrap gap-1">
+              {rel.conflict && (
+                <Badge variant="destructive" className="text-xs">{t('conflicting')}</Badge>
+              )}
+              {rel.unreviewed && (
+                <Badge variant="outline" className="text-xs text-muted-foreground">{t('unreviewed')}</Badge>
+              )}
+            </dd>
+          </div>
+        )}
+        {rel.reasons?.length > 0 && (
           <div className="flex gap-3" data-feedback-target="relationship:reason">
             <dt className="w-32 text-muted-foreground shrink-0">
-              {(rel.reasons?.length ?? 0) > 1 ? t('reasons') : t('reason')}
+              {rel.reasons.length > 1 ? t('reasons') : t('reason')}
             </dt>
-            <dd className="flex flex-wrap gap-1">
-              {(rel.reasons?.length > 0 ? rel.reasons : [rel.reason!]).map(r => (
-                <span key={r} className="inline-block bg-muted rounded px-2 py-0.5 text-xs">
-                  {translateKey(r, r)}
-                </span>
+            <dd className="space-y-1">
+              {rel.reasons.map((r: { type: string; explanation: string }) => (
+                <div key={r.type}>
+                  <span className="inline-block bg-muted rounded px-2 py-0.5 text-xs mr-2">
+                    {translateKey(r.type, r.type)}
+                  </span>
+                  <span className="text-xs text-muted-foreground">{r.explanation}</span>
+                </div>
               ))}
             </dd>
           </div>
@@ -249,6 +273,54 @@ export default function RelationshipPage() {
             </ul>
           </div>
         </>
+      )}
+
+      {genusSources.length > 0 && (
+        <>
+          <Separator />
+          <div>
+            <h3 className="font-semibold text-sm text-muted-foreground mb-2">{t('genusLevelEvidence')}</h3>
+            <ul className="space-y-3">
+              {genusSources.map((s, i) => {
+                const sourceLabel = translateKey(s.source, s.source)
+                const sourceConf = translateKey(s.confidence, s.confidence)
+                const isDerived = s.notes?.startsWith('Derived from')
+                return (
+                  <li key={i} className="text-sm flex items-start gap-2">
+                    <span className="font-medium shrink-0">{sourceLabel}</span>
+                    <span className="text-muted-foreground">
+                      — <ConfidenceBadge level={sourceConf} />
+                      {s.url && (s.url.startsWith('http://') || s.url.startsWith('https://')) && (
+                        <> · <a href={s.url} target="_blank" rel="noopener noreferrer" className="underline">{t('link')}</a></>
+                      )}
+                      {s.sourceType && (
+                        <span className="ml-1 text-xs bg-muted rounded px-1.5 py-0.5">
+                          {translateKey(s.sourceType, s.sourceType)}
+                        </span>
+                      )}
+                      {s.notes && <> · <span className={isDerived ? 'italic' : ''}>{s.notes}</span></>}
+                    </span>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+        </>
+      )}
+
+      {funders.length > 0 && (
+        <div className="text-sm text-muted-foreground">
+          <span className="font-medium">{t('fundedBy')}:</span>{' '}
+          {funders.map((f, i) => (
+            <span key={i}>
+              {i > 0 && ', '}
+              {f.source === 'POT' || !f.userId
+                ? t('community')
+                : <Link href={`/users/${f.userId}`}>{f.name ?? t('unknownUser')}</Link>
+              }
+            </span>
+          ))}
+        </div>
       )}
     </main>
   )

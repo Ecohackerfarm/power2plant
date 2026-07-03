@@ -1,0 +1,90 @@
+# design-sync notes — power2plant
+
+Durable gotchas for future syncs of this repo. Config values live in
+`config.json`; everything that isn't a `cfg.*` field is here.
+
+## Project
+
+- Claude Design project: `power2plant`, id `045d5399-040c-4f9c-b1a6-1f768947c823`
+  (https://claude.ai/design/p/045d5399-040c-4f9c-b1a6-1f768947c823).
+- Shape: `package` (no Storybook). Synth entry at `.design-sync/ds-entry.ts`
+  re-exports the scoped components so esbuild emits one IIFE on `window.Power2Plant`.
+
+## Build environment
+
+- Run the converter from a worktree (CLAUDE.md mandates it), with
+  `--node-modules /app/node_modules`. This also avoids the unreadable
+  `/app/data/postgres` (uid 70, mode 700) that trips repo-root globs.
+- `buildCmd` compiles Tailwind v4 via `@tailwindcss/cli` — install it under
+  `.ds-sync/node_modules` first (it is not a repo dependency).
+- Render verification (the user's chosen path): deps for headless Chromium are
+  installed in this container; `package-validate.mjs` runs the render check here.
+
+## Fonts
+
+- The `extraFonts` parser ships only the `@font-face` rules from
+  `fonts.css` and DROPS its `:root` block, so the brand font-family vars
+  (`--font-dm-sans`, `--font-fraunces`) go missing and headings fall back to
+  Times. Fix: `.design-sync/font-vars.css` redefines them and `buildCmd`
+  appends it to the compiled stylesheet (cssEntry). Don't delete it.
+- Only weight-300 Fraunces and weight-400 DM Sans woff2 actually ship; other
+  `@font-face` weights point at those files (family/serif correct, weights
+  synthesized) — acceptable.
+
+## d.ts
+
+- The shadcn primitives declare no named `*Props` interface (they use
+  `ComponentProps<'button'> & VariantProps<…>`), so the converter can't extract
+  them and emits a `[key: string]: unknown` stub. This is expected for all 6
+  primitives and passes validate.
+- The two feature components DO have a real, non-obvious contract, so their
+  d.ts bodies are pinned explicitly in `cfg.dtsPropsFor` (self-contained inline
+  shapes — no external type refs, which would dangle in the emitted .d.ts).
+
+## Feature components (PlantSearch, RecommendationDisplay)
+
+Added after the initial 6-primitive sync. They are stateful app features, not
+primitives, and don't render standalone without help. The machinery:
+
+- **Provider + data shim.** `.design-sync/feature-exports.tsx` wraps each export
+  in `NextIntlClientProvider` (locale `en`, bundled `shims/messages.json`
+  subset: PlantSearch / ConfidenceBadge / Recommendations) and defaults the
+  required props so the component renders with zero props in the picker.
+  `ds-entry.ts` re-exports from there.
+- **Module shims via tsconfig paths.** `cfg.tsconfig` points at
+  `.design-sync/tsconfig.shim.json`, which redirects `@/i18n/navigation` →
+  `shims/navigation.tsx` (plain `<a>` + no-op router; the real one needs a
+  mounted Next app-router and throws "invariant expected app router to be
+  mounted") and `@/lib/auth-client` → `shims/auth-client.tsx` (a signed-in demo
+  session so the save/accept actions render). Everything else stays `@/* →
+  ./src/*`.
+- **Two ordering traps that cost real time:**
+  1. The converter's esbuild paths plugin is **first-match-wins**, NOT
+     longest-match — the exact shim keys MUST come before the `@/*` wildcard in
+     the `paths` object.
+  2. The plugin parses tsconfig with a naive comment-stripper
+     (`/(^|[^:])\/\/.*$/`). A `"//"` JSON *key* matches it and corrupts the
+     file, so `JSON.parse` throws, the plugin silently returns null, and BOTH
+     shims are ignored (real modules resolve via the wildcard → router crash).
+     Keep `tsconfig.shim.json` free of `//` comment keys / inline `//`.
+- **Mock backend.** `shims/install-fetch.ts` wraps `window.fetch` to answer
+  `/api/*` from a seed crop list (PlantSearch's live `/api/crops` has no backend
+  in the sandbox); all other URLs pass through. Production wires the real API.
+- **`process` polyfill.** next-intl reads a bare `process` at module load and
+  esbuild only substitutes `process.env.NODE_ENV`, so the whole IIFE throws
+  "process is not defined" and NO exports bind (all components render empty).
+  `install-fetch.ts` polyfills `globalThis.process` and is imported FIRST in
+  `feature-exports.tsx` so esbuild evaluates it before next-intl.
+- Adding these pulled the inlined-npm-package count to 22 and the bundle to
+  ~594 KB (was ~6 primitives only before).
+
+## Misc
+
+- `guidelines/docs/server-setup.md` is auto-picked from the repo's `docs/`; it's
+  an infra doc, not design — harmless, shipped.
+- `tokens/` is empty: tokens are inline in `_ds_bundle.css` (Tailwind v4
+  `@theme inline`), reachable from designs via the `styles.css` import closure.
+- Re-sync into this (now non-empty) project takes the **atomic path**: full
+  idempotent re-upload + delete reconciliation, anchored by `_ds_sync.json`.
+  App-owned files (`_ds_manifest.json`, `_adherence.oxlintrc.json`,
+  `.thumbnail`) are regenerated by the app — never delete them.

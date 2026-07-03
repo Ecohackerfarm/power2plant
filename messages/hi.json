@@ -10,7 +10,22 @@
     "pleaseWait": "कृपया प्रतीक्षा करें…",
     "noAccount": "खाता नहीं है? साइन अप करें",
     "haveAccount": "खाता है? साइन इन करें",
-    "cancel": "रद्द करें"
+    "cancel": "रद्द करें",
+    "checkYourEmail": "अपना ईमेल जांचें",
+    "verifyEmailSent": "हमने आपके ईमेल पर एक सत्यापन लिंक भेजा है। अपना खाता सक्रिय करने के लिए उस पर क्लिक करें।",
+    "forgotPassword": "पासवर्ड भूल गए?",
+    "resetPasswordTitle": "पासवर्ड रीसेट करें",
+    "sendResetLink": "रीसेट लिंक भेजें",
+    "resetLinkSent": "पासवर्ड रीसेट लिंक के लिए अपना ईमेल जांचें।",
+    "resendVerification": "सत्यापन ईमेल पुनः भेजें",
+    "verificationResent": "सत्यापन ईमेल भेजा गया!",
+    "newPassword": "नया पासवर्ड",
+    "confirmPassword": "पासवर्ड की पुष्टि करें",
+    "setPassword": "नया पासवर्ड सेट करें",
+    "passwordResetSuccess": "पासवर्ड रीसेट हो गया! अब आप साइन इन कर सकते हैं।",
+    "passwordMismatch": "पासवर्ड मेल नहीं खाते",
+    "invalidResetToken": "यह लिंक अमान्य है या समाप्त हो गया है।",
+    "backToSignIn": "साइन इन पर वापस जाएं"
   },
   "Home": {
     "subtitle": "आपकी क्यारियों के लिए साथी रोपण की सिफारिशें।",
@@ -25,20 +40,43 @@
     "addAtLeast2": "इच्छा सूची में कम से कम 2 पौधे जोड़ें।"
   },
   "Landing": {
-    "title": "power2plant",
-    "subtitle": "साथी रोपण गार्डन प्लानर",
-    "lookupTitle": "साथी पौधा खोजें",
-    "lookupDesc": "किसी भी पौधे के लिए साथी और प्रतिकूल पौधे खोजें",
-    "planTitle": "क्यारियां योजना बनाएं",
-    "planDesc": "जानें कि आप क्या उगाना चाहते हैं — जो एक साथ उगें वो खोजें",
-    "gardenTitle": "मेरा बगीचा",
-    "gardenDesc": "देखें कि आपकी क्यारियों के पौधे कैसे मिलते हैं"
+    "eyebrow": "Choose your path",
+    "learnMore": "Learn more",
+    "previous": "Previous",
+    "next": "Next",
+    "slides": {
+      "explore": {
+        "tab": "Explore Companion Plants",
+        "heading": "Find who your plants love.",
+        "description": "Search any plant to discover its best companions — and the ones to keep apart. Backed by traditional knowledge and community observations.",
+        "cta": "Start exploring"
+      },
+      "plan": {
+        "tab": "Plan Garden Beds",
+        "heading": "Know what fits together.",
+        "description": "Map out your beds with plants that support each other. Catch conflicts before they happen and make the most of every square metre.",
+        "cta": "Plan your beds"
+      },
+      "evaluate": {
+        "tab": "Evaluate Your Garden",
+        "heading": "See how your beds get along.",
+        "description": "Check the health of your existing garden layout. Get suggestions to improve harmony, yield, and soil over time.",
+        "cta": "Evaluate now"
+      },
+      "community": {
+        "tab": "Join Community to Research",
+        "heading": "Be part of the science.",
+        "description": "Collaborate with researchers and curious growers worldwide. Share your own garden observations, add useful sources you discover, or help fund the collection of peer-reviewed research through advanced scientific research AI. Every contribution strengthens our shared understanding of companion planting.",
+        "cta": "Join the community"
+      }
+    }
   },
   "Nav": {
     "lookup": "साथी पौधा खोजें",
     "plan": "क्यारियां योजना बनाएं",
     "garden": "मेरा बगीचा",
-    "admin": "प्रशासन"
+    "admin": "प्रशासन",
+    "leaderboard": "लीडरबोर्ड"
   },
   "ZoneDetector": {
     "title": "चरण 1 — आपका उगाने का क्षेत्र",
@@ -87,6 +125,7 @@
     "acceptSaving": "सहेजा जा रहा है…",
     "planSaved": "योजना बगीचे में सहेजी गई!",
     "bedSaved": "\"{name}\" बगीचे में सहेजी गई!",
+    "viewGarden": "बगीचा देखें →",
     "noBeds": "सहेजने के लिए पौधों वाली कोई क्यारी नहीं।",
     "gardenFull": "बगीचा भरा है — अधिकतम 20 क्यारियां।",
     "overflow": "ओवरफ्लो — क्यारी की जगह नहीं ({count} पौधे)",
@@ -94,14 +133,14 @@
     "conflicts": "विवाद — एक ही क्यारी में असंगत पौधे",
     "conflictItem": "{a} और {b} एक ही क्यारी में नहीं होने चाहिए",
     "conflictsHint": "इन पौधों को अलग करने के लिए अधिक क्यारियां जोड़ें।",
-    "noDataTitle": "इन जोड़ों के लिए अभी तक डेटा नहीं है",
+    "noDataTitle": "इन जोड़ों के लिए अभी तक डेटा नहीं है — लेकिन आप शोध के लिए वोट या फंड कर सकते हैं",
     "requestResearch": "शोध का अनुरोध करें →"
   },
   "Relationships": {
     "title": "समुदाय के अवलोकन",
     "backHome": "← होम",
     "searchPlaceholder": "फ़सल के नाम से खोजें…",
-    "noObservations": "अभी तक कोई अवलोकन नहीं",
+    "noObservations": "अभी तक कोई खोज नहीं",
     "loadMore": "और लोड करें",
     "loading": "लोड हो रहा है…",
     "companion": "साथी",
@@ -111,7 +150,7 @@
     "sourceCount": "{count, plural, one {# स्रोत} other {# स्रोत}}",
     "companions": "साथी पौधे",
     "antagonists": "प्रतिकूल पौधे",
-    "contributeObservation": "अवलोकन जोड़ें →",
+    "contributeObservation": "खोज जोड़ें →",
     "COMPANION": "साथी",
     "AVOID": "बचें",
     "PEST_CONTROL": "कीट नियंत्रण",
@@ -124,7 +163,18 @@
     "TRADITIONAL": "पारंपरिक",
     "OBSERVED": "अवलोकित",
     "PEER_REVIEWED": "सहकर्मी-समीक्षित",
-    "loadError": "संबंध लोड करने में विफल। कृपया पुनः प्रयास करें।"
+    "loadError": "संबंध लोड करने में विफल। कृपया पुनः प्रयास करें।",
+    "noData": "No data yet",
+    "voteForResearch": "Vote for research",
+    "voted": "Voted",
+    "signInToVote": "Sign in to vote",
+    "noResults": "No plants found",
+    "plantHasNoData": "No companion data yet for this plant",
+    "ATTRACTS": "Attracts",
+    "NURSE": "Nurse crop",
+    "TRAP_CROP": "Trap crop",
+    "conflicting": "विरोधाभासी",
+    "unreviewed": "अनीक्षित"
   },
   "Contribute": {
     "title": "अवलोकन साझा करें",
@@ -135,7 +185,7 @@
     "success": "धन्यवाद! आपका अवलोकन दर्ज कर लिया गया है।",
     "rateLimit": "आपने आज इस जोड़े के लिए पहले ही संबंध सबमिट कर दिया है।",
     "error": "कुछ गलत हुआ। कृपया पुनः प्रयास करें।",
-    "newObservation": "नया अवलोकन",
+    "newObservation": "नई खोज",
     "plantA": "पौधा A",
     "plantB": "पौधा B",
     "relationship": "संबंध",
@@ -210,7 +260,9 @@
     "inheritedFrom": "{genus} से",
     "wikiReadMore": "Wikipedia →",
     "wikiAttribution": "स्रोत: Wikipedia (CC BY-SA)",
-    "contributeObservation": "अवलोकन जोड़ें →"
+    "contributeObservation": "खोज जोड़ें →",
+    "conflicting": "विरोधाभासी",
+    "unreviewed": "अनीक्षित"
   },
   "RelationshipPage": {
     "back": "← वापस",
@@ -260,16 +312,23 @@
     "RESEARCH": "शोध",
     "link": "लिंक",
     "genusLevelBanner": "संबंध वंश स्तर पर परिभाषित ({genusA} ↔ {genusB}) — सभी {genus} प्रजातियों पर लागू होता है।",
-    "appliesToAllSpecies": "सभी {genus} प्रजातियों पर लागू होता है।"
+    "appliesToAllSpecies": "सभी {genus} प्रजातियों पर लागू होता है।",
+    "genusLevelEvidence": "वंश स्तर के प्रमाण",
+    "fundedBy": "शोध वित्त पोषित",
+    "community": "समुदाय",
+    "unknownUser": "अज्ञात",
+    "conflicting": "विरोधाभासी साक्ष्य",
+    "unreviewed": "अनीक्षित",
+    "uncertain": "अनिश्चित"
   },
   "GardenPage": {
-    "backHome": "← power2plant",
+    "backHome": "← {brand}",
     "title": "मेरा बगीचा",
     "subtitle": "अपनी सहेजी हुई क्यारियां प्रबंधित करें।",
     "signInPrompt": "अपनी क्यारियां प्रबंधित करने के लिए साइन इन करें।"
   },
   "SharePage": {
-    "backHome": "← power2plant",
+    "backHome": "← {brand}",
     "title": "साझा बगीचा योजना",
     "subtitle": "यह एक पठन-मात्र स्नैपशॉट है। {date} तक वैध।",
     "emptyBed": "खाली क्यारी"
@@ -352,5 +411,49 @@
     "error": "कुछ गलत हुआ। कृपया पुनः प्रयास करें।",
     "drawAnnotation": "समस्या क्षेत्र को हाइलाइट करने के लिए खींचें।",
     "screenshotCapturing": "स्क्रीनशॉट कैप्चर हो रहा है…"
+  },
+  "Plan": {
+    "step": "चरण {n} में से 4",
+    "back": "← वापस",
+    "continue": "जारी रखें →",
+    "skip": "छोड़ें",
+    "getRecommendations": "सिफारिशें प्राप्त करें",
+    "recompute": "पुनः गणना करें",
+    "calculating": "गणना हो रही है…",
+    "detectZoneFirst": "पहले अपना क्षेत्र पहचानें।",
+    "addAtLeast2": "कम से कम 2 पौधे जोड़ें।",
+    "addingToGarden": "मौजूदा बगीचे में जोड़ रहे हैं।",
+    "startFresh": "नए सिरे से शुरू करें"
+  },
+  "PaidFeatures": {
+    "title": "टॉप-अप से अधिक सुविधाएँ अनलॉक करें",
+    "moreBeds": "100 तक क्यारियाँ (निःशुल्क: 20 तक)",
+    "topUp": "टॉप-अप करें →"
+  },
+  "UserProfile": {
+    "notFound": "उपयोगकर्ता नहीं मिला।",
+    "loading": "लोड हो रहा है…",
+    "badges": "बैज",
+    "incrementalBadges": "शोध मील के पत्थर",
+    "plantBadges": "शोधित पौधे",
+    "pairBadges": "शोधित जोड़े",
+    "noBadges": "अभी तक कोई बैज नहीं।",
+    "plantsResearched": "{count} पौधे",
+    "pairsResearched": "{count} जोड़े"
+  },
+  "Leaderboard": {
+    "title": "शोध लीडरबोर्ड",
+    "allTime": "सभी समय",
+    "yearly": "इस वर्ष",
+    "monthly": "इस महीने",
+    "weekly": "इस सप्ताह",
+    "daily": "आज",
+    "rank": "रैंक",
+    "researcher": "शोधकर्ता",
+    "researches": "शोध",
+    "badge": "बैज",
+    "community": "समुदाय",
+    "noData": "इस अवधि के लिए अभी तक कोई डेटा नहीं है।",
+    "fundedBy": "सामुदायिक कोष द्वारा वित्त पोषित"
   }
 }

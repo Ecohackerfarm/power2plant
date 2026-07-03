@@ -10,7 +10,22 @@
     "pleaseWait": "请稍候…",
     "noAccount": "没有账户？注册",
     "haveAccount": "已有账户？登录",
-    "cancel": "取消"
+    "cancel": "取消",
+    "checkYourEmail": "查看您的邮箱",
+    "verifyEmailSent": "我们已向您的邮箱发送了验证链接，请点击以激活您的账户。",
+    "forgotPassword": "忘记密码？",
+    "resetPasswordTitle": "重置密码",
+    "sendResetLink": "发送重置链接",
+    "resetLinkSent": "请查看您的邮箱中的密码重置链接。",
+    "resendVerification": "重新发送验证邮件",
+    "verificationResent": "验证邮件已发送！",
+    "newPassword": "新密码",
+    "confirmPassword": "确认密码",
+    "setPassword": "设置新密码",
+    "passwordResetSuccess": "密码已重置！您现在可以登录了。",
+    "passwordMismatch": "密码不匹配",
+    "invalidResetToken": "此链接无效或已过期。",
+    "backToSignIn": "返回登录"
   },
   "Home": {
     "subtitle": "为您的花圃提供伴生种植建议。",
@@ -25,20 +40,43 @@
     "addAtLeast2": "请至少添加 2 种植物到心愿单。"
   },
   "Landing": {
-    "title": "power2plant",
-    "subtitle": "伴生种植花园规划工具",
-    "lookupTitle": "查找伴生植物",
-    "lookupDesc": "为任意植物查找伴生或相克植物",
-    "planTitle": "规划花圃",
-    "planDesc": "了解您想种植什么——找出最佳搭配",
-    "gardenTitle": "我的花园",
-    "gardenDesc": "查看花圃中植物的相处情况"
+    "eyebrow": "Choose your path",
+    "learnMore": "Learn more",
+    "previous": "Previous",
+    "next": "Next",
+    "slides": {
+      "explore": {
+        "tab": "Explore Companion Plants",
+        "heading": "Find who your plants love.",
+        "description": "Search any plant to discover its best companions — and the ones to keep apart. Backed by traditional knowledge and community observations.",
+        "cta": "Start exploring"
+      },
+      "plan": {
+        "tab": "Plan Garden Beds",
+        "heading": "Know what fits together.",
+        "description": "Map out your beds with plants that support each other. Catch conflicts before they happen and make the most of every square metre.",
+        "cta": "Plan your beds"
+      },
+      "evaluate": {
+        "tab": "Evaluate Your Garden",
+        "heading": "See how your beds get along.",
+        "description": "Check the health of your existing garden layout. Get suggestions to improve harmony, yield, and soil over time.",
+        "cta": "Evaluate now"
+      },
+      "community": {
+        "tab": "Join Community to Research",
+        "heading": "Be part of the science.",
+        "description": "Collaborate with researchers and curious growers worldwide. Share your own garden observations, add useful sources you discover, or help fund the collection of peer-reviewed research through advanced scientific research AI. Every contribution strengthens our shared understanding of companion planting.",
+        "cta": "Join the community"
+      }
+    }
   },
   "Nav": {
     "lookup": "查找伴生植物",
     "plan": "规划花圃",
     "garden": "我的花园",
-    "admin": "管理"
+    "admin": "管理",
+    "leaderboard": "排行榜"
   },
   "ZoneDetector": {
     "title": "第 1 步 — 您的种植区",
@@ -87,6 +125,7 @@
     "acceptSaving": "保存中…",
     "planSaved": "方案已保存到花园！",
     "bedSaved": "「{name}」已保存到花园！",
+    "viewGarden": "查看花园 →",
     "noBeds": "没有需要保存的花圃。",
     "gardenFull": "花园已满——最多 20 个花圃。",
     "overflow": "超出容量——没有足够床位（{count} 种植物）",
@@ -94,14 +133,14 @@
     "conflicts": "冲突——同一花圃中有不相容的植物",
     "conflictItem": "{a} 和 {b} 不应种植在同一花圃",
     "conflictsHint": "添加更多花圃以分开这些植物。",
-    "noDataTitle": "暂无这些植物组合的数据",
+    "noDataTitle": "暂无这些植物组合的数据 — 但您可以投票或资助研究",
     "requestResearch": "请求研究 →"
   },
   "Relationships": {
     "title": "社区观察",
     "backHome": "← 首页",
     "searchPlaceholder": "按作物名称搜索…",
-    "noObservations": "暂无观察",
+    "noObservations": "暂无发现",
     "loadMore": "加载更多",
     "loading": "加载中…",
     "companion": "伴生",
@@ -111,7 +150,7 @@
     "sourceCount": "{count, plural, other {# 个来源}}",
     "companions": "伴生植物",
     "antagonists": "相克植物",
-    "contributeObservation": "添加观察 →",
+    "contributeObservation": "添加发现 →",
     "COMPANION": "伴生",
     "AVOID": "避开",
     "PEST_CONTROL": "防虫",
@@ -124,7 +163,18 @@
     "TRADITIONAL": "传统",
     "OBSERVED": "观察",
     "PEER_REVIEWED": "同行评审",
-    "loadError": "加载关系失败，请重试。"
+    "loadError": "加载关系失败，请重试。",
+    "noData": "No data yet",
+    "voteForResearch": "Vote for research",
+    "voted": "Voted",
+    "signInToVote": "Sign in to vote",
+    "noResults": "No plants found",
+    "plantHasNoData": "No companion data yet for this plant",
+    "ATTRACTS": "Attracts",
+    "NURSE": "Nurse crop",
+    "TRAP_CROP": "Trap crop",
+    "conflicting": "有争议",
+    "unreviewed": "未审核"
   },
   "Contribute": {
     "title": "提交观察",
@@ -135,7 +185,7 @@
     "success": "谢谢！您的观察已记录。",
     "rateLimit": "您今天已为这对植物提交过关系。",
     "error": "出现错误，请重试。",
-    "newObservation": "新观察",
+    "newObservation": "新发现",
     "plantA": "植物 A",
     "plantB": "植物 B",
     "relationship": "关系",
@@ -210,7 +260,9 @@
     "inheritedFrom": "来自 {genus}",
     "wikiReadMore": "维基百科 →",
     "wikiAttribution": "来源：维基百科（CC BY-SA）",
-    "contributeObservation": "添加观察 →"
+    "contributeObservation": "添加发现 →",
+    "conflicting": "有争议",
+    "unreviewed": "未审核"
   },
   "RelationshipPage": {
     "back": "← 返回",
@@ -260,16 +312,23 @@
     "RESEARCH": "研究",
     "link": "链接",
     "genusLevelBanner": "关系定义于属级（{genusA} ↔ {genusB}）——适用于所有 {genus} 物种。",
-    "appliesToAllSpecies": "适用于所有 {genus} 物种。"
+    "appliesToAllSpecies": "适用于所有 {genus} 物种。",
+    "genusLevelEvidence": "属级证据",
+    "fundedBy": "研究资助方",
+    "community": "社区",
+    "unknownUser": "匿名",
+    "conflicting": "证据相互矛盾",
+    "unreviewed": "未审核",
+    "uncertain": "不确定"
   },
   "GardenPage": {
-    "backHome": "← power2plant",
+    "backHome": "← {brand}",
     "title": "我的花园",
     "subtitle": "管理您已保存的花圃。",
     "signInPrompt": "请登录以管理您的花圃。"
   },
   "SharePage": {
-    "backHome": "← power2plant",
+    "backHome": "← {brand}",
     "title": "共享花园方案",
     "subtitle": "这是一个只读快照，有效期至 {date}。",
     "emptyBed": "空花圃"
@@ -352,5 +411,49 @@
     "error": "出现错误，请重试。",
     "drawAnnotation": "拖动以高亮问题区域。",
     "screenshotCapturing": "截屏中…"
+  },
+  "Plan": {
+    "step": "第 {n} 步，共 4 步",
+    "back": "← 返回",
+    "continue": "继续 →",
+    "skip": "跳过",
+    "getRecommendations": "获取建议",
+    "recompute": "重新计算",
+    "calculating": "计算中…",
+    "detectZoneFirst": "请先检测您的区域。",
+    "addAtLeast2": "至少添加 2 种植物。",
+    "addingToGarden": "添加到您现有的花园。",
+    "startFresh": "重新开始"
+  },
+  "PaidFeatures": {
+    "title": "充值解锁更多功能",
+    "moreBeds": "最多 100 个床位（免费：最多 20 个）",
+    "topUp": "充值 →"
+  },
+  "UserProfile": {
+    "notFound": "未找到用户。",
+    "loading": "加载中…",
+    "badges": "徽章",
+    "incrementalBadges": "研究里程碑",
+    "plantBadges": "已研究植物",
+    "pairBadges": "已研究配对",
+    "noBadges": "暂无徽章。",
+    "plantsResearched": "{count} 种植物",
+    "pairsResearched": "{count} 对"
+  },
+  "Leaderboard": {
+    "title": "研究排行榜",
+    "allTime": "全部时间",
+    "yearly": "今年",
+    "monthly": "本月",
+    "weekly": "本周",
+    "daily": "今天",
+    "rank": "排名",
+    "researcher": "研究者",
+    "researches": "研究数",
+    "badge": "徽章",
+    "community": "社区",
+    "noData": "该时段暂无数据。",
+    "fundedBy": "由社区基金资助"
   }
 }

@@ -10,12 +10,27 @@
     "pleaseWait": "Bitte warten…",
     "noAccount": "Noch kein Konto? Registrieren",
     "haveAccount": "Schon ein Konto? Anmelden",
-    "cancel": "Abbrechen"
+    "cancel": "Abbrechen",
+    "checkYourEmail": "E-Mail prüfen",
+    "verifyEmailSent": "Wir haben einen Bestätigungslink an deine E-Mail-Adresse gesendet. Klicke ihn, um dein Konto zu aktivieren.",
+    "forgotPassword": "Passwort vergessen?",
+    "resetPasswordTitle": "Passwort zurücksetzen",
+    "sendResetLink": "Reset-Link senden",
+    "resetLinkSent": "Prüfe deine E-Mails für einen Link zum Zurücksetzen des Passworts.",
+    "resendVerification": "Bestätigungs-E-Mail erneut senden",
+    "verificationResent": "Bestätigungs-E-Mail gesendet!",
+    "newPassword": "Neues Passwort",
+    "confirmPassword": "Passwort bestätigen",
+    "setPassword": "Neues Passwort setzen",
+    "passwordResetSuccess": "Passwort zurückgesetzt! Du kannst dich jetzt anmelden.",
+    "passwordMismatch": "Passwörter stimmen nicht überein",
+    "invalidResetToken": "Dieser Link ist ungültig oder abgelaufen.",
+    "backToSignIn": "Zurück zur Anmeldung"
   },
   "Home": {
     "subtitle": "Mischkulturempfehlungen für deine Gartenbeete.",
-    "contributeLink": "Beobachtung beitragen →",
-    "browseLink": "Beobachtungen durchsuchen →",
+    "contributeLink": "Ergebnis beitragen →",
+    "browseLink": "Ergebnisse durchsuchen →",
     "myGarden": "Mein Garten →",
     "addingToGarden": "Wird zu deinem bestehenden Garten hinzugefügt.",
     "startFresh": "Neu beginnen",
@@ -25,20 +40,43 @@
     "addAtLeast2": "Mindestens 2 Pflanzen zur Wunschliste hinzufügen."
   },
   "Landing": {
-    "title": "power2plant",
-    "subtitle": "Begleitpflanzung — Gartenplaner",
-    "lookupTitle": "Begleitpflanze finden",
-    "lookupDesc": "Begleiter und Antagonisten für jede Pflanze finden",
-    "planTitle": "Beete planen",
-    "planDesc": "Du weißt, was du anbauen willst — finde, was zusammenpasst",
-    "gardenTitle": "Mein Garten",
-    "gardenDesc": "Schau, wie die Pflanzen in deinen Beeten miteinander auskommen"
+    "eyebrow": "Choose your path",
+    "learnMore": "Learn more",
+    "previous": "Previous",
+    "next": "Next",
+    "slides": {
+      "explore": {
+        "tab": "Explore Companion Plants",
+        "heading": "Find who your plants love.",
+        "description": "Search any plant to discover its best companions — and the ones to keep apart. Backed by traditional knowledge and community observations.",
+        "cta": "Start exploring"
+      },
+      "plan": {
+        "tab": "Plan Garden Beds",
+        "heading": "Know what fits together.",
+        "description": "Map out your beds with plants that support each other. Catch conflicts before they happen and make the most of every square metre.",
+        "cta": "Plan your beds"
+      },
+      "evaluate": {
+        "tab": "Evaluate Your Garden",
+        "heading": "See how your beds get along.",
+        "description": "Check the health of your existing garden layout. Get suggestions to improve harmony, yield, and soil over time.",
+        "cta": "Evaluate now"
+      },
+      "community": {
+        "tab": "Join Community to Research",
+        "heading": "Be part of the science.",
+        "description": "Collaborate with researchers and curious growers worldwide. Share your own garden observations, add useful sources you discover, or help fund the collection of peer-reviewed research through advanced scientific research AI. Every contribution strengthens our shared understanding of companion planting.",
+        "cta": "Join the community"
+      }
+    }
   },
   "Nav": {
     "lookup": "Begleitpflanze finden",
     "plan": "Beete planen",
     "garden": "Mein Garten",
-    "admin": "Admin"
+    "admin": "Admin",
+    "leaderboard": "Bestenliste"
   },
   "ZoneDetector": {
     "title": "Schritt 1 — Deine Klimazone",
@@ -89,6 +127,7 @@
     "acceptSaving": "Wird gespeichert…",
     "planSaved": "Plan im Garten gespeichert!",
     "bedSaved": "\"{name}\" im Garten gespeichert!",
+    "viewGarden": "Zum Garten →",
     "noBeds": "Keine Beete mit Pflanzen zum Speichern.",
     "gardenFull": "Garten voll — max. 20 Beete.",
     "overflow": "Überlauf — kein Beetplatz ({count} Pflanzen)",
@@ -96,14 +135,14 @@
     "conflicts": "Konflikte — unverträgliche Pflanzen im selben Beet",
     "conflictItem": "{a} und {b} sollten nicht im selben Beet stehen",
     "conflictsHint": "Mehr Beete hinzufügen, um diese Pflanzen zu trennen.",
-    "noDataTitle": "Für diese Paare haben wir noch keine Daten",
+    "noDataTitle": "Für diese Paare haben wir noch keine Daten — aber Sie können die Forschung unterstützen oder finanzieren",
     "requestResearch": "Forschung anfragen →"
   },
   "Relationships": {
-    "title": "Community-Beobachtungen",
+    "title": "Community-Ergebnisse",
     "backHome": "← Startseite",
     "searchPlaceholder": "Nach Pflanzenname suchen…",
-    "noObservations": "Noch keine Beobachtungen",
+    "noObservations": "Noch keine Ergebnisse",
     "loadMore": "Mehr laden",
     "loading": "Wird geladen…",
     "companion": "Gute Nachbarn",
@@ -113,7 +152,7 @@
     "sourceCount": "{count, plural, one {# Quelle} other {# Quellen}}",
     "companions": "Mischkulturpartner",
     "antagonists": "Schlechte Nachbarn",
-    "contributeObservation": "Beobachtung hinzufügen →",
+    "contributeObservation": "Ergebnis hinzufügen →",
     "COMPANION": "Mischkultur",
     "AVOID": "Schlechte Nachbarn",
     "PEST_CONTROL": "Schädlingsbekämpfung",
@@ -126,18 +165,29 @@
     "TRADITIONAL": "traditionell",
     "OBSERVED": "beobachtet",
     "PEER_REVIEWED": "peer-reviewed",
-    "loadError": "Laden fehlgeschlagen. Bitte erneut versuchen."
+    "loadError": "Laden fehlgeschlagen. Bitte erneut versuchen.",
+    "noData": "No data yet",
+    "voteForResearch": "Vote for research",
+    "voted": "Voted",
+    "signInToVote": "Sign in to vote",
+    "noResults": "No plants found",
+    "plantHasNoData": "No companion data yet for this plant",
+    "ATTRACTS": "Attracts",
+    "NURSE": "Nurse crop",
+    "TRAP_CROP": "Trap crop",
+    "conflicting": "Widersprüchlich",
+    "unreviewed": "Ungeprüft"
   },
   "Contribute": {
-    "title": "Beobachtung beitragen",
+    "title": "Ergebnis beitragen",
     "back": "← Zurück",
-    "subtitle": "Teile, was du in deinem Garten beobachtet hast. Deine Beobachtungen helfen allen.",
-    "signInPrompt": "Anmelden, um Mischkultur-Beobachtungen beizutragen.",
+    "subtitle": "Teile, was du in deinem Garten entdeckt hast. Deine Ergebnisse helfen allen.",
+    "signInPrompt": "Anmelden, um Mischkultur-Ergebnisse beizutragen.",
     "signInLink": "Anmelden",
-    "success": "Danke! Deine Beobachtung wurde gespeichert.",
+    "success": "Danke! Dein Ergebnis wurde gespeichert.",
     "rateLimit": "Du hast heute bereits eine Beziehung für dieses Paar eingereicht.",
     "error": "Etwas ist schiefgelaufen. Bitte erneut versuchen.",
-    "newObservation": "Neue Beobachtung",
+    "newObservation": "Neues Ergebnis",
     "plantA": "Pflanze A",
     "plantB": "Pflanze B",
     "relationship": "Beziehung",
@@ -149,7 +199,7 @@
     "notesOptional": "(optional, max. 2000 Zeichen)",
     "notesPlaceholder": "z. B. Zusammen gepflanzt für 3 Saisons, weniger Blattläuse beobachtet…",
     "evidenceLevel": "Beweislage",
-    "evidenceLevelHint": "Wähle die beste verfügbare Beweislage für deine Beobachtung.",
+    "evidenceLevelHint": "Wähle die beste verfügbare Beweislage für dieses Ergebnis.",
     "sources": "Quellen",
     "sourcesHint": "doi.org- und PubMed-Links werden automatisch als wissenschaftliche Artikel erkannt.",
     "sourcesOptional": "(optional)",
@@ -157,7 +207,7 @@
     "remove": "entfernen",
     "autoDetected": "Automatisch erkannt",
     "submitting": "Wird eingereicht…",
-    "submit": "Beobachtung einreichen",
+    "submit": "Ergebnis einreichen",
     "genusHint": "Gattungseinträge (z. B. Ocimum L.) stehen für die gesamte Pflanzenfamilie — wähle eine Art für genauere Empfehlungen.",
     "change": "ändern",
     "searchFor": "Nach {label} suchen…",
@@ -177,7 +227,7 @@
     "BLOG_FORUM": "Blog / Forum",
     "PERSONAL_OBSERVATION": "Persönliche Beobachtung",
     "sourcePosition": "Was sagt deine Quelle?",
-    "sourcePositionHint": "Wähle, wenn deine Quelle zu einem anderen Schluss kommt als deine Beobachtung."
+    "sourcePositionHint": "Wähle, wenn deine Quelle zu einem anderen Schluss kommt als dein Ergebnis."
   },
   "PlantPage": {
     "backToPlan": "← Zurück zum Plan",
@@ -212,7 +262,9 @@
     "inheritedFrom": "über {genus}",
     "wikiReadMore": "Wikipedia →",
     "wikiAttribution": "Quelle: Wikipedia (CC BY-SA)",
-    "contributeObservation": "Beobachtung hinzufügen →"
+    "contributeObservation": "Ergebnis hinzufügen →",
+    "conflicting": "Widersprüchlich",
+    "unreviewed": "Ungeprüft"
   },
   "RelationshipPage": {
     "back": "← Zurück",
@@ -272,10 +324,17 @@
     "NOT_FOUND": "Kein Beleg gefunden",
     "LOW_CONFIDENCE": "Unzureichende Belege",
     "researchAttemptClose": "Schließen",
-    "researchAttemptNoRelationship": "Keine Beziehungsdaten gefunden."
+    "researchAttemptNoRelationship": "Keine Beziehungsdaten gefunden.",
+    "genusLevelEvidence": "Belege auf Gattungsebene",
+    "fundedBy": "Forschung finanziert von",
+    "community": "Gemeinschaft",
+    "unknownUser": "Anonym",
+    "conflicting": "Widersprüchliche Belege",
+    "unreviewed": "Ungeprüft",
+    "uncertain": "Unsicher"
   },
   "GardenPage": {
-    "backHome": "← power2plant",
+    "backHome": "← {brand}",
     "title": "Mein Garten",
     "subtitle": "Verwalte deine gespeicherten Gartenbeete.",
     "signInPrompt": "Anmelden, um deinen Garten zu verwalten.",
@@ -299,7 +358,7 @@
     "remove": "Entfernen"
   },
   "SharePage": {
-    "backHome": "← power2plant",
+    "backHome": "← {brand}",
     "title": "Geteilter Gartenplan",
     "subtitle": "Dies ist ein schreibgeschützter Snapshot. Gültig bis {date}.",
     "emptyBed": "Leeres Beet"
@@ -394,5 +453,49 @@
     "error": "Etwas ist schiefgelaufen. Bitte erneut versuchen.",
     "drawAnnotation": "Ziehe, um den Problembereich zu markieren.",
     "screenshotCapturing": "Screenshot wird erstellt…"
+  },
+  "Plan": {
+    "step": "Schritt {n} von 4",
+    "back": "← Zurück",
+    "continue": "Weiter →",
+    "skip": "Überspringen",
+    "getRecommendations": "Empfehlungen erhalten",
+    "recompute": "Neu berechnen",
+    "calculating": "Berechne…",
+    "detectZoneFirst": "Bitte zuerst Zone ermitteln.",
+    "addAtLeast2": "Mindestens 2 Pflanzen hinzufügen.",
+    "addingToGarden": "Zum bestehenden Garten hinzufügen.",
+    "startFresh": "Neu starten"
+  },
+  "PaidFeatures": {
+    "title": "Mehr mit Guthaben freischalten",
+    "moreBeds": "Bis zu 100 Beete (kostenlos: bis zu 20)",
+    "topUp": "Aufladen →"
+  },
+  "UserProfile": {
+    "notFound": "Benutzer nicht gefunden.",
+    "loading": "Laden…",
+    "badges": "Abzeichen",
+    "incrementalBadges": "Forschungs-Meilensteine",
+    "plantBadges": "Erforschte Pflanzen",
+    "pairBadges": "Erforschte Paare",
+    "noBadges": "Noch keine Abzeichen.",
+    "plantsResearched": "{count} Pflanzen",
+    "pairsResearched": "{count} Paare"
+  },
+  "Leaderboard": {
+    "title": "Forschungs-Bestenliste",
+    "allTime": "Gesamt",
+    "yearly": "Dieses Jahr",
+    "monthly": "Diesen Monat",
+    "weekly": "Diese Woche",
+    "daily": "Heute",
+    "rank": "Rang",
+    "researcher": "Forscher",
+    "researches": "Recherchen",
+    "badge": "Abzeichen",
+    "community": "Community",
+    "noData": "Noch keine Daten für diesen Zeitraum.",
+    "fundedBy": "finanziert durch den Community-Topf"
   }
 }

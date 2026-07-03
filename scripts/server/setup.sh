@@ -63,7 +63,8 @@ RemainAfterExit=yes
 User=${DEPLOY_USERNAME}
 Group=${DEPLOY_USERNAME}
 WorkingDirectory=${PROD_PATH}
-ExecStart=docker compose up -d --build
+ExecStart=docker compose pull
+ExecStart=docker compose up -d
 ExecStop=docker compose down
 TimeoutStartSec=300
 
@@ -108,7 +109,10 @@ RemainAfterExit=yes
 User=${DEPLOY_USERNAME}
 Group=${DEPLOY_USERNAME}
 WorkingDirectory=${STAGING_PATH}
-ExecStart=docker compose up -d --build
+Environment=IMAGE_TAG=staging
+Environment=SCRIPTS_IMAGE_TAG=scripts-staging
+ExecStart=docker compose pull
+ExecStart=docker compose up -d
 ExecStop=docker compose down
 TimeoutStartSec=300
 
@@ -129,6 +133,8 @@ Unit=${PROJECT}-staging-deploy.service
 WantedBy=multi-user.target
 EOF
 
+STAGING_DUMP_FILE="${VOLUME_PATH}/${PROJECT}/backups/staging-latest.sql"
+
 cat > "/etc/systemd/system/${PROJECT}-staging-deploy.service" <<EOF
 [Unit]
 Description=${PROJECT} staging deploy
@@ -138,10 +144,42 @@ Type=oneshot
 Environment=DEPLOY_USERNAME=${DEPLOY_USERNAME}
 Environment=PROJECT_PATH=${STAGING_PATH}
 Environment=PROD_PATH=${PROD_PATH}
+Environment=STAGING_DUMP_FILE=${STAGING_DUMP_FILE}
 ExecStart=${STAGING_PATH}/scripts/server/staging-deploy.sh
 TimeoutStartSec=600
 EOF
-echo "    wrote ${PROJECT}-staging-deploy.path and ${PROJECT}-staging-deploy.service"
+
+cat > "/etc/systemd/system/${PROJECT}-staging-dump-refresh.service" <<EOF
+[Unit]
+Description=${PROJECT} staging DB dump refresh (daily prod → anonymized dump)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+Environment=DEPLOY_USERNAME=${DEPLOY_USERNAME}
+Environment=PROJECT_PATH=${STAGING_PATH}
+Environment=PROD_PATH=${PROD_PATH}
+Environment=STAGING_DUMP_FILE=${STAGING_DUMP_FILE}
+ExecStart=${STAGING_PATH}/scripts/server/staging-dump-refresh.sh
+TimeoutStartSec=1800
+EOF
+
+cat > "/etc/systemd/system/${PROJECT}-staging-dump-refresh.timer" <<EOF
+[Unit]
+Description=Daily refresh of ${PROJECT} staging DB dump from prod
+
+[Timer]
+OnCalendar=*-*-* 02:00:00
+RandomizedDelaySec=600
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF
+
+echo "    wrote ${PROJECT}-staging-deploy.path, ${PROJECT}-staging-deploy.service"
+echo "    wrote ${PROJECT}-staging-dump-refresh.service and .timer"
 fi
 
 # ── Systemd: deploy trigger ───────────────────────────────────────────────────
@@ -397,7 +435,8 @@ echo "    wrote /etc/tmpfiles.d/p2p.conf and created /run/p2p"
 systemctl daemon-reload
 systemctl enable "${PROJECT}-prod" "${PROJECT}-dev" "${PROJECT}-deploy.path"
 if $SETUP_STAGING; then
-  systemctl enable "${PROJECT}-staging" "${PROJECT}-staging-deploy.path"
+  systemctl enable "${PROJECT}-staging" "${PROJECT}-staging-deploy.path" "${PROJECT}-staging-dump-refresh.timer"
+  systemctl start "${PROJECT}-staging-dump-refresh.timer"
 fi
 echo "    systemd units enabled"
 
@@ -407,6 +446,7 @@ echo "    nginx reloaded"
 echo ""
 echo "Done. Remaining manual steps:"
 echo "  1. Create/verify prod .env:  ${PROD_PATH}/.env"
+echo "       Incl. GHCR_TOKEN (classic PAT, read:packages) for private image pulls; GHCR_USER optional"
 echo "  2. Start services:           systemctl start ${PROJECT}-prod ${PROJECT}-dev"
 if [[ "$nginx_mode" == "http-bootstrap" ]]; then
 echo "  3. Get TLS cert (nginx is in HTTP-only bootstrap mode):"
@@ -426,7 +466,8 @@ echo ""
 echo "  Staging:"
 echo "  6. Create staging .env:      ${STAGING_PATH}/.env"
 echo "       Required: VOLUME_DATA_DIR, POSTGRES_PASSWORD, DATABASE_URL, APP_PORT=3001, DB_PORT=5433"
-echo "       BETTER_AUTH_SECRET, BETTER_AUTH_URL, NEXT_PUBLIC_APP_URL (pointing to ${STAGING_DOMAIN})"
+echo "       BETTER_AUTH_SECRET, BETTER_AUTH_URL, APP_URL (pointing to ${STAGING_DOMAIN})"
+echo "       GHCR_TOKEN (classic PAT, read:packages) for private image pulls; GHCR_USER optional"
 echo "       STAGING_DATA_SOURCE=prod  # or: seed"
 echo "  7. Start staging:            systemctl start ${PROJECT}-staging"
 if [[ "$staging_nginx_mode" == "http-bootstrap" ]]; then

@@ -2,12 +2,7 @@ import { NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import prisma from '@/lib/prisma'
 import { auth } from '@/lib/auth'
-
-function toTitleCase(str: string): string {
-  return str.replace(/\b\w/g, c => c.toUpperCase())
-}
-
-type CropLike = { commonNames: string[]; name: string; botanicalName: string }
+import { getDisplayName, applyTranslations } from '@/lib/recommend'
 
 async function buildTranslationMap(cropIds: string[], locale: string): Promise<Map<string, string[]>> {
   if (locale === 'en' || cropIds.length === 0) return new Map()
@@ -16,12 +11,6 @@ async function buildTranslationMap(cropIds: string[], locale: string): Promise<M
     select: { cropId: true, commonNames: true },
   })
   return new Map(rows.filter(r => r.commonNames.length > 0).map(r => [r.cropId, r.commonNames]))
-}
-
-function resolveName(crop: CropLike & { id: string }, tMap: Map<string, string[]>): string {
-  const translated = tMap.get(crop.id)
-  if (translated?.[0]) return translated[0]
-  return crop.commonNames?.[0] ?? (crop.name !== crop.botanicalName ? crop.name : crop.botanicalName)
 }
 
 async function getSession() {
@@ -56,16 +45,22 @@ export async function GET(request: Request) {
   const allCropIds = garden.beds.flatMap(b => b.plantings.map(p => p.cropId))
   const tMap = await buildTranslationMap(allCropIds, locale)
 
-  const beds = garden.beds.map((bed) => ({
-    id: bed.id,
-    name: bed.name,
-    plantings: bed.plantings.map((p) => ({
-      plantingId: p.id,
-      cropId: p.cropId,
-      cropName: toTitleCase(resolveName(p.crop, tMap)),
-      status: p.status,
-    })),
-  }))
+  const beds = garden.beds.map((bed) => {
+    const translatedPlantings = applyTranslations(
+      bed.plantings.map(p => ({ ...p.crop, plantingId: p.id, status: p.status })),
+      tMap,
+    )
+    return {
+      id: bed.id,
+      name: bed.name,
+      plantings: translatedPlantings.map(p => ({
+        plantingId: p.plantingId,
+        cropId: p.id,
+        cropName: getDisplayName(p),
+        status: p.status,
+      })),
+    }
+  })
 
   return NextResponse.json({ beds })
 }
@@ -169,16 +164,22 @@ export async function POST(request: Request) {
   const savedCropIds = result.flatMap(b => b.plantings.map(p => p.cropId))
   const tMap = await buildTranslationMap(savedCropIds, locale)
 
-  const responseBeds = result.map((bed) => ({
-    id: bed.id,
-    name: bed.name,
-    plantings: bed.plantings.map((p) => ({
-      plantingId: p.id,
-      cropId: p.cropId,
-      cropName: toTitleCase(resolveName(p.crop, tMap)),
-      status: p.status,
-    })),
-  }))
+  const responseBeds = result.map((bed) => {
+    const translatedPlantings = applyTranslations(
+      bed.plantings.map(p => ({ ...p.crop, plantingId: p.id, status: p.status })),
+      tMap,
+    )
+    return {
+      id: bed.id,
+      name: bed.name,
+      plantings: translatedPlantings.map(p => ({
+        plantingId: p.plantingId,
+        cropId: p.id,
+        cropName: getDisplayName(p),
+        status: p.status,
+      })),
+    }
+  })
 
   return NextResponse.json({ beds: responseBeds })
 }

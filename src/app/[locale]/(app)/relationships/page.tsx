@@ -1,26 +1,38 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
+import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { Link } from '@/i18n/navigation'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowRight } from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { ThumbsUp } from 'lucide-react'
 import { getDisplayName } from '@/lib/recommend'
-
-type Relationship = {
-  id: string
-  type: 'COMPANION' | 'AVOID' | 'ATTRACTS' | 'REPELS' | 'NURSE' | 'TRAP_CROP'
-  reason: string | null
-  confidence: string
-  notes: string | null
-  cropA: { id: string; name: string; botanicalName: string; commonNames: string[] }
-  cropB: { id: string; name: string; botanicalName: string; commonNames: string[] }
-  sourceCount: number
-}
+import { useSession } from '@/lib/auth-client'
 
 const COMPANION_TYPES = new Set(['COMPANION', 'ATTRACTS', 'NURSE', 'TRAP_CROP'])
+
+type CropRow = { id: string; name: string; botanicalName: string; commonNames: string[] }
+
+type RelRow = {
+  id: string; type: string; reason: string | null; confidence: number; notes: string | null
+  cropA: CropRow; cropB: CropRow
+  conflict?: boolean; unreviewed?: boolean
+}
+
+type PlantResult = CropRow & { companions: RelRow[]; antagonists: RelRow[] }
+
+type NoDataPlant = CropRow & {
+  researchRequestId: string | null; voteCount: number; hasVoted: boolean
+}
+
+function confidenceLabel(c: number): string {
+  if (c >= 0.875) return 'PEER_REVIEWED'
+  if (c >= 0.625) return 'OBSERVED'
+  if (c >= 0.375) return 'TRADITIONAL'
+  return 'ANECDOTAL'
+}
 
 function debounce<T extends (...args: string[]) => void>(fn: T, delay: number): T {
   let timeout: NodeJS.Timeout
@@ -30,122 +42,237 @@ function debounce<T extends (...args: string[]) => void>(fn: T, delay: number): 
   }) as T
 }
 
-function RelationshipCard({ rel, t }: { rel: Relationship; t: (k: string, opts?: Record<string, unknown>) => string }) {
+function CompanionRow({ rel, plantId, t }: {
+  rel: RelRow
+  plantId: string
+  t: ReturnType<typeof useTranslations<'Relationships'>>
+}) {
+  // The other crop in the relationship (not the matched plant)
+  const other = rel.cropA.id === plantId ? rel.cropB : rel.cropA
+  const variant = COMPANION_TYPES.has(rel.type) ? 'default' : 'destructive'
+  const clevel = confidenceLabel(rel.confidence)
+
   function tryT(key: string): string {
     try { return t(key as Parameters<typeof t>[0]) } catch { return key }
   }
+
+  const label = tryT(rel.type)
+
   return (
     <Link
-      key={rel.id}
       href={`/plants/${rel.cropA.id}/companions/${rel.cropB.id}`}
-      className="block group"
-      data-feedback-target={`relationship:${rel.id}`}
-      data-entity-type="relationship"
-      data-entity-id={rel.id}
+      className="flex items-center justify-between gap-3 py-2 px-3 rounded hover:bg-muted/60 transition-colors group"
     >
-      <Card className="transition-colors group-hover:border-foreground/30">
-        <CardHeader>
-          <div className="flex items-start justify-between gap-4">
-            <CardTitle className="text-base">
-              <span className="font-bold">{getDisplayName(rel.cropA)}</span>
-              {getDisplayName(rel.cropA) !== rel.cropA.botanicalName && (
-                <span className="font-normal italic text-muted-foreground text-xs ml-1">{rel.cropA.botanicalName}</span>
-              )}
-              {' + '}
-              <span className="font-bold">{getDisplayName(rel.cropB)}</span>
-              {getDisplayName(rel.cropB) !== rel.cropB.botanicalName && (
-                <span className="font-normal italic text-muted-foreground text-xs ml-1">{rel.cropB.botanicalName}</span>
-              )}
-            </CardTitle>
-            <div className="flex items-center gap-2 shrink-0">
-              <Badge variant={COMPANION_TYPES.has(rel.type) ? 'default' : 'destructive'}>
-                {COMPANION_TYPES.has(rel.type) ? t('companion') : t('avoid')}
-              </Badge>
-              <ArrowRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {rel.reason && (
-            <p className="text-sm">
-              <span className="text-muted-foreground">{t('reason')}:</span>{' '}
-              {tryT(rel.reason)}
-            </p>
-          )}
-          <p className="text-sm">
-            <span className="text-muted-foreground">{t('confidence')}:</span> {tryT(rel.confidence)}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {(t as (k: string, v: Record<string, unknown>) => string)('sourceCount', { count: rel.sourceCount })}
-          </p>
-        </CardContent>
-      </Card>
+      <span className="text-sm font-medium group-hover:underline">
+        {getDisplayName(other)}
+        {getDisplayName(other) !== other.botanicalName && (
+          <span className="font-normal italic text-muted-foreground text-xs ml-1">{other.botanicalName}</span>
+        )}
+      </span>
+      <div className="flex items-center gap-2 shrink-0">
+        <span className="text-xs text-muted-foreground">{tryT(clevel)}</span>
+        <Badge variant={variant} className="text-xs">{label}</Badge>
+        {rel.conflict && <Badge variant="destructive" className="text-xs">{tryT('conflicting')}</Badge>}
+        {rel.unreviewed && <Badge variant="outline" className="text-xs">{tryT('unreviewed')}</Badge>}
+      </div>
     </Link>
   )
 }
 
-export default function RelationshipsPage() {
-  const t = useTranslations('Relationships')
-  const locale = useLocale()
-  const [relationships, setRelationships] = useState<Relationship[]>([])
-  const [loading, setLoading] = useState(true)
-  const [loadingMore, setLoadingMore] = useState(false)
-  const [error, setError] = useState(false)
-  const [search, setSearch] = useState('')
-  const [nextCursor, setNextCursor] = useState<string | null>(null)
-  const [hasMore, setHasMore] = useState(false)
+function PlantCard({ plant, t }: {
+  plant: PlantResult
+  t: ReturnType<typeof useTranslations<'Relationships'>>
+}) {
+  return (
+    <Card>
+      <CardContent className="pt-4 space-y-3">
+        <Link href={`/plants/${plant.id}`} className="block group">
+          <p className="font-bold text-base group-hover:underline">{getDisplayName(plant)}</p>
+          {getDisplayName(plant) !== plant.botanicalName && (
+            <p className="italic text-muted-foreground text-sm">{plant.botanicalName}</p>
+          )}
+        </Link>
 
-  const fetchRelationships = useCallback(async (cursor?: string, q?: string, append = false) => {
-    const params = new URLSearchParams()
-    if (q) params.set('q', q)
-    if (cursor) params.set('cursor', cursor)
-    params.set('locale', locale)
-    params.set('limit', '20')
+        {plant.companions.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+              {t('companions')}
+            </p>
+            <div className="divide-y divide-muted">
+              {plant.companions.map(r => (
+                <CompanionRow key={r.id} rel={r} plantId={plant.id} t={t} />
+              ))}
+            </div>
+          </div>
+        )}
 
+        {plant.antagonists.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+              {t('antagonists')}
+            </p>
+            <div className="divide-y divide-muted">
+              {plant.antagonists.map(r => (
+                <CompanionRow key={r.id} rel={r} plantId={plant.id} t={t} />
+              ))}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+function NoDataCard({ plant, t, onVoted }: {
+  plant: NoDataPlant
+  t: ReturnType<typeof useTranslations<'Relationships'>>
+  onVoted: (id: string, newCount: number) => void
+}) {
+  const { data: session } = useSession()
+  const [voting, setVoting] = useState(false)
+  const [hasVoted, setHasVoted] = useState(plant.hasVoted)
+  const [voteCount, setVoteCount] = useState(plant.voteCount)
+
+  async function handleVote() {
+    if (!session || voting || hasVoted) return
+    setVoting(true)
     try {
-      const res = await fetch(`/api/relationships?${params}`)
+      const res = await fetch('/api/research-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cropAId: plant.id }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        if (!data.alreadyVoted) {
+          setHasVoted(true)
+          setVoteCount(data.voteCount)
+          onVoted(plant.id, data.voteCount)
+        }
+      }
+    } finally {
+      setVoting(false)
+    }
+  }
+
+  return (
+    <Card className="opacity-70">
+      <CardContent className="pt-4">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <Link href={`/plants/${plant.id}`} className="group">
+              <p className="font-medium text-sm group-hover:underline">{getDisplayName(plant)}</p>
+              {getDisplayName(plant) !== plant.botanicalName && (
+                <p className="italic text-muted-foreground text-xs">{plant.botanicalName}</p>
+              )}
+            </Link>
+            <p className="text-xs text-muted-foreground mt-1">{t('noData')}</p>
+          </div>
+          <div className="shrink-0">
+            {session ? (
+              <button
+                onClick={handleVote}
+                disabled={voting || hasVoted}
+                className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                  hasVoted
+                    ? 'bg-primary/10 border-primary/30 text-primary font-medium'
+                    : 'border-muted-foreground/30 text-muted-foreground hover:border-primary/50 hover:text-foreground'
+                }`}
+              >
+                <ThumbsUp className="w-3 h-3" />
+                {hasVoted ? t('voted') : t('voteForResearch')}
+                {voteCount > 0 && <span className="ml-1 tabular-nums">{voteCount}</span>}
+              </button>
+            ) : (
+              <span className="text-xs text-muted-foreground">{t('signInToVote')}</span>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function RelationshipsInner() {
+  const t = useTranslations('Relationships')
+  const tNav = useTranslations('Nav')
+  const locale = useLocale()
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
+
+  const [plants, setPlants] = useState<PlantResult[]>([])
+  const [noDataPlants, setNoDataPlants] = useState<NoDataPlant[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(false)
+  const [search, setSearch] = useState(searchParams.get('q') ?? '')
+  const [page, setPage] = useState(0)
+
+  const fetchResults = useCallback(async (q: string) => {
+    if (!q.trim()) {
+      setPlants([])
+      setNoDataPlants([])
+      return
+    }
+    setLoading(true)
+    setError(false)
+    try {
+      const params = new URLSearchParams({ q, locale })
+      const res = await fetch(`/api/plants/search?${params}`)
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
-      if (append) {
-        setRelationships((prev) => [...prev, ...data.relationships])
-      } else {
-        setRelationships(data.relationships ?? [])
-      }
-      setNextCursor(data.nextCursor)
-      setHasMore(!!data.nextCursor)
-      setError(false)
+      setPlants(data.plants ?? [])
+      setNoDataPlants(data.noDataPlants ?? [])
     } catch {
       setError(true)
+    } finally {
+      setLoading(false)
     }
   }, [locale])
 
-  useEffect(() => {
-    setLoading(true)
-    fetchRelationships(undefined, search, false).finally(() => setLoading(false))
-  }, [search, fetchRelationships])
-
   const handleSearch = useCallback(
-    debounce((value: string) => setSearch(value), 300),
-    []
+    debounce((value: string) => {
+      setSearch(value)
+      const params = new URLSearchParams(searchParams.toString())
+      if (value) {
+        params.set('q', value)
+      } else {
+        params.delete('q')
+      }
+      router.replace(`${pathname}?${params}`)
+    }, 300),
+    [searchParams, router, pathname]
   )
 
-  const loadMore = async () => {
-    if (!nextCursor || loadingMore) return
-    setLoadingMore(true)
-    await fetchRelationships(nextCursor, search, true)
-    setLoadingMore(false)
+  useEffect(() => {
+    fetchResults(search)
+  }, [search, fetchResults])
+
+  function handleVoted(plantId: string, newCount: number) {
+    setNoDataPlants(prev =>
+      prev.map(p => p.id === plantId ? { ...p, voteCount: newCount, hasVoted: true } : p)
+    )
   }
 
-  const companions = relationships.filter(r => COMPANION_TYPES.has(r.type))
-  const antagonists = relationships.filter(r => r.type === 'AVOID')
+  const hasAnyResults = plants.length > 0 || noDataPlants.length > 0
+  const searched = search.trim().length > 0
+
+  // Paginate the combined result set — a broad term (e.g. "corn") can match up
+  // to 100 crops; show them in relevance order a page at a time.
+  const PAGE_SIZE = 20
+  const items = [...plants, ...noDataPlants]
+  const pageCount = Math.ceil(items.length / PAGE_SIZE)
+  const clampedPage = Math.min(page, Math.max(0, pageCount - 1))
+  const pageItems = items.slice(clampedPage * PAGE_SIZE, clampedPage * PAGE_SIZE + PAGE_SIZE)
+
+  // Reset to the first page whenever the query changes.
+  useEffect(() => { setPage(0) }, [search])
 
   return (
     <main className="max-w-3xl mx-auto px-4 py-8 space-y-6">
-      <div className="flex items-start justify-end gap-4">
-        <Link
-          href="/contribute"
-          className="text-sm text-primary hover:underline shrink-0"
-        >
+      <div className="flex items-start justify-between gap-4">
+        <h1 className="text-3xl font-bold">{tNav('lookup')}</h1>
+        <Link href="/contribute" className="text-sm text-primary hover:underline shrink-0 mt-2">
           {t('contributeObservation')}
         </Link>
       </div>
@@ -162,50 +289,62 @@ export default function RelationshipsPage() {
         <p className="text-destructive text-sm">{t('loadError')}</p>
       ) : loading ? (
         <div className="space-y-4">
-          {Array.from({ length: 3 }).map((_, i) => (
+          {[0, 1, 2].map(i => (
             <Card key={i}>
-              <CardHeader>
-                <div className="h-5 bg-muted rounded animate-pulse" />
-              </CardHeader>
-              <CardContent>
-                <div className="h-4 bg-muted rounded animate-pulse w-3/4" />
+              <CardContent className="pt-4 space-y-2">
+                <div className="h-5 bg-muted rounded animate-pulse w-1/3" />
+                <div className="h-4 bg-muted rounded animate-pulse w-1/2" />
+                <div className="h-4 bg-muted rounded animate-pulse w-2/3" />
               </CardContent>
             </Card>
           ))}
         </div>
-      ) : relationships.length === 0 ? (
-        <p className="text-muted-foreground">{t('noObservations')}</p>
+      ) : searched && !hasAnyResults ? (
+        <p className="text-muted-foreground text-sm">{t('noResults')}</p>
+      ) : !searched ? (
+        <p className="text-muted-foreground text-sm">{t('noObservations')}</p>
       ) : (
-        <>
-          {companions.length > 0 && (
-            <section className="space-y-4">
-              <h2 className="font-semibold text-lg">
-                {t('companions')}
-                <span className="text-muted-foreground font-normal text-sm ml-2">({companions.length})</span>
-              </h2>
-              {companions.map(rel => <RelationshipCard key={rel.id} rel={rel} t={t as (k: string) => string} />)}
-            </section>
-          )}
-
-          {antagonists.length > 0 && (
-            <section className="space-y-4">
-              <h2 className="font-semibold text-lg">
-                {t('antagonists')}
-                <span className="text-muted-foreground font-normal text-sm ml-2">({antagonists.length})</span>
-              </h2>
-              {antagonists.map(rel => <RelationshipCard key={rel.id} rel={rel} t={t as (k: string) => string} />)}
-            </section>
-          )}
-
-          {hasMore && (
-            <div className="flex justify-center">
-              <Button variant="outline" onClick={loadMore} disabled={loadingMore}>
-                {loadingMore ? t('loading') : t('loadMore')}
+        <div className="space-y-4">
+          {pageItems.map(item => (
+            'companions' in item
+              ? <PlantCard key={item.id} plant={item} t={t} />
+              : <NoDataCard key={item.id} plant={item} t={t} onVoted={handleVoted} />
+          ))}
+          {pageCount > 1 && (
+            <div className="flex items-center justify-center gap-4 pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={clampedPage === 0}
+                onClick={() => setPage(p => Math.max(0, p - 1))}
+                aria-label="Previous page"
+              >
+                ‹
+              </Button>
+              <span className="text-sm text-muted-foreground tabular-nums">
+                {clampedPage + 1} / {pageCount}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={clampedPage >= pageCount - 1}
+                onClick={() => setPage(p => Math.min(pageCount - 1, p + 1))}
+                aria-label="Next page"
+              >
+                ›
               </Button>
             </div>
           )}
-        </>
+        </div>
       )}
     </main>
+  )
+}
+
+export default function RelationshipsPage() {
+  return (
+    <Suspense>
+      <RelationshipsInner />
+    </Suspense>
   )
 }

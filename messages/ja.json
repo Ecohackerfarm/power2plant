@@ -10,7 +10,22 @@
     "pleaseWait": "お待ちください…",
     "noAccount": "アカウントをお持ちでない方はこちら",
     "haveAccount": "アカウントをお持ちの方はこちら",
-    "cancel": "キャンセル"
+    "cancel": "キャンセル",
+    "checkYourEmail": "メールを確認してください",
+    "verifyEmailSent": "確認リンクをメールに送りました。アカウントを有効化するためにクリックしてください。",
+    "forgotPassword": "パスワードをお忘れですか？",
+    "resetPasswordTitle": "パスワードのリセット",
+    "sendResetLink": "リセットリンクを送信",
+    "resetLinkSent": "パスワードリセットリンクをメールで確認してください。",
+    "resendVerification": "確認メールを再送信",
+    "verificationResent": "確認メールを送信しました！",
+    "newPassword": "新しいパスワード",
+    "confirmPassword": "パスワードを確認",
+    "setPassword": "新しいパスワードを設定",
+    "passwordResetSuccess": "パスワードがリセットされました！サインインできます。",
+    "passwordMismatch": "パスワードが一致しません",
+    "invalidResetToken": "このリンクは無効または期限切れです。",
+    "backToSignIn": "サインインに戻る"
   },
   "Home": {
     "subtitle": "花壇のためのコンパニオンプランティング推薦。",
@@ -25,20 +40,43 @@
     "addAtLeast2": "ウィッシュリストに植物を2種類以上追加してください。"
   },
   "Landing": {
-    "title": "power2plant",
-    "subtitle": "コンパニオンプランティング・ガーデンプランナー",
-    "lookupTitle": "コンパニオン植物を探す",
-    "lookupDesc": "任意の植物のコンパニオンや相性の悪い植物を探す",
-    "planTitle": "花壇を計画する",
-    "planDesc": "育てたいものを決めて——相性の良い組み合わせを見つける",
-    "gardenTitle": "マイガーデン",
-    "gardenDesc": "花壇の植物の相性を確認する"
+    "eyebrow": "Choose your path",
+    "learnMore": "Learn more",
+    "previous": "Previous",
+    "next": "Next",
+    "slides": {
+      "explore": {
+        "tab": "Explore Companion Plants",
+        "heading": "Find who your plants love.",
+        "description": "Search any plant to discover its best companions — and the ones to keep apart. Backed by traditional knowledge and community observations.",
+        "cta": "Start exploring"
+      },
+      "plan": {
+        "tab": "Plan Garden Beds",
+        "heading": "Know what fits together.",
+        "description": "Map out your beds with plants that support each other. Catch conflicts before they happen and make the most of every square metre.",
+        "cta": "Plan your beds"
+      },
+      "evaluate": {
+        "tab": "Evaluate Your Garden",
+        "heading": "See how your beds get along.",
+        "description": "Check the health of your existing garden layout. Get suggestions to improve harmony, yield, and soil over time.",
+        "cta": "Evaluate now"
+      },
+      "community": {
+        "tab": "Join Community to Research",
+        "heading": "Be part of the science.",
+        "description": "Collaborate with researchers and curious growers worldwide. Share your own garden observations, add useful sources you discover, or help fund the collection of peer-reviewed research through advanced scientific research AI. Every contribution strengthens our shared understanding of companion planting.",
+        "cta": "Join the community"
+      }
+    }
   },
   "Nav": {
     "lookup": "コンパニオン植物を探す",
     "plan": "花壇を計画する",
     "garden": "マイガーデン",
-    "admin": "管理"
+    "admin": "管理",
+    "leaderboard": "リーダーボード"
   },
   "ZoneDetector": {
     "title": "ステップ 1 — 栽培ゾーン",
@@ -87,6 +125,7 @@
     "acceptSaving": "保存中…",
     "planSaved": "プランをガーデンに保存しました！",
     "bedSaved": "「{name}」をガーデンに保存しました！",
+    "viewGarden": "ガーデンを見る →",
     "noBeds": "保存する植物のある花壇がありません。",
     "gardenFull": "ガーデンが満杯です——最大20花壇。",
     "overflow": "オーバーフロー——花壇スペースが足りません（{count}種）",
@@ -94,14 +133,14 @@
     "conflicts": "競合——同じ花壇に相性の悪い植物があります",
     "conflictItem": "{a}と{b}は同じ花壇に植えるべきではありません",
     "conflictsHint": "これらの植物を分けるには花壇を追加してください。",
-    "noDataTitle": "これらのペアのデータはまだありません",
+    "noDataTitle": "これらのペアのデータはまだありません — ただし、研究に投票または資金提供できます",
     "requestResearch": "調査をリクエスト →"
   },
   "Relationships": {
     "title": "コミュニティの観察",
     "backHome": "← ホーム",
     "searchPlaceholder": "作物名で検索…",
-    "noObservations": "観察はまだありません",
+    "noObservations": "発見はまだありません",
     "loadMore": "もっと読み込む",
     "loading": "読み込み中…",
     "companion": "コンパニオン",
@@ -111,7 +150,7 @@
     "sourceCount": "{count, plural, other {# 件の出典}}",
     "companions": "コンパニオン植物",
     "antagonists": "相性の悪い植物",
-    "contributeObservation": "観察を追加する →",
+    "contributeObservation": "発見を追加する →",
     "COMPANION": "コンパニオン",
     "AVOID": "避ける",
     "PEST_CONTROL": "害虫防除",
@@ -124,7 +163,18 @@
     "TRADITIONAL": "伝統的",
     "OBSERVED": "観察済み",
     "PEER_REVIEWED": "査読済み",
-    "loadError": "関係の読み込みに失敗しました。もう一度お試しください。"
+    "loadError": "関係の読み込みに失敗しました。もう一度お試しください。",
+    "noData": "No data yet",
+    "voteForResearch": "Vote for research",
+    "voted": "Voted",
+    "signInToVote": "Sign in to vote",
+    "noResults": "No plants found",
+    "plantHasNoData": "No companion data yet for this plant",
+    "ATTRACTS": "Attracts",
+    "NURSE": "Nurse crop",
+    "TRAP_CROP": "Trap crop",
+    "conflicting": "矛盾",
+    "unreviewed": "未レビュー"
   },
   "Contribute": {
     "title": "観察を投稿する",
@@ -135,7 +185,7 @@
     "success": "ありがとうございます！観察が記録されました。",
     "rateLimit": "このペアの関係は今日すでに送信済みです。",
     "error": "エラーが発生しました。もう一度お試しください。",
-    "newObservation": "新しい観察",
+    "newObservation": "新しい発見",
     "plantA": "植物 A",
     "plantB": "植物 B",
     "relationship": "関係",
@@ -210,7 +260,9 @@
     "inheritedFrom": "{genus}より継承",
     "wikiReadMore": "Wikipedia →",
     "wikiAttribution": "出典：Wikipedia（CC BY-SA）",
-    "contributeObservation": "観察を追加する →"
+    "contributeObservation": "発見を追加する →",
+    "conflicting": "矛盾する証拠",
+    "unreviewed": "未レビュー"
   },
   "RelationshipPage": {
     "back": "← 戻る",
@@ -260,16 +312,23 @@
     "RESEARCH": "研究",
     "link": "リンク",
     "genusLevelBanner": "この関係は属レベルで定義されています（{genusA} ↔ {genusB}）——{genus}のすべての種に適用されます。",
-    "appliesToAllSpecies": "{genus}のすべての種に適用されます。"
+    "appliesToAllSpecies": "{genus}のすべての種に適用されます。",
+    "genusLevelEvidence": "属レベルの根拠",
+    "fundedBy": "研究の資金提供者",
+    "community": "コミュニティ",
+    "unknownUser": "匿名",
+    "conflicting": "矛盾する証拠",
+    "unreviewed": "未レビュー",
+    "uncertain": "不確実"
   },
   "GardenPage": {
-    "backHome": "← power2plant",
+    "backHome": "← {brand}",
     "title": "マイガーデン",
     "subtitle": "保存した花壇を管理します。",
     "signInPrompt": "花壇を管理するにはサインインしてください。"
   },
   "SharePage": {
-    "backHome": "← power2plant",
+    "backHome": "← {brand}",
     "title": "共有ガーデンプラン",
     "subtitle": "これは読み取り専用のスナップショットです。{date}まで有効。",
     "emptyBed": "空の花壇"
@@ -352,5 +411,49 @@
     "error": "エラーが発生しました。もう一度お試しください。",
     "drawAnnotation": "問題のある領域をハイライトするにはドラッグしてください。",
     "screenshotCapturing": "スクリーンショットを撮影中…"
+  },
+  "Plan": {
+    "step": "ステップ {n} / 4",
+    "back": "← 戻る",
+    "continue": "続ける →",
+    "skip": "スキップ",
+    "getRecommendations": "おすすめを取得",
+    "recompute": "再計算",
+    "calculating": "計算中…",
+    "detectZoneFirst": "まずゾーンを検出してください。",
+    "addAtLeast2": "植物を2つ以上追加してください。",
+    "addingToGarden": "既存のガーデンに追加中。",
+    "startFresh": "最初からやり直す"
+  },
+  "PaidFeatures": {
+    "title": "チャージでさらに機能を解放",
+    "moreBeds": "最大100区画（無料: 最大20）",
+    "topUp": "チャージする →"
+  },
+  "UserProfile": {
+    "notFound": "ユーザーが見つかりません。",
+    "loading": "読み込み中…",
+    "badges": "バッジ",
+    "incrementalBadges": "研究マイルストーン",
+    "plantBadges": "調査済み植物",
+    "pairBadges": "調査済みペア",
+    "noBadges": "まだバッジがありません。",
+    "plantsResearched": "{count} 種の植物",
+    "pairsResearched": "{count} ペア"
+  },
+  "Leaderboard": {
+    "title": "研究リーダーボード",
+    "allTime": "全期間",
+    "yearly": "今年",
+    "monthly": "今月",
+    "weekly": "今週",
+    "daily": "今日",
+    "rank": "順位",
+    "researcher": "研究者",
+    "researches": "研究数",
+    "badge": "バッジ",
+    "community": "コミュニティ",
+    "noData": "この期間のデータはまだありません。",
+    "fundedBy": "コミュニティポットから資金提供"
   }
 }

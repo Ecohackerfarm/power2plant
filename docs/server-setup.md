@@ -176,9 +176,22 @@ DATABASE_URL=postgresql://power2plant:<strong-db-password>@db:5432/power2plant
 POSTGRES_PASSWORD=<same-strong-db-password>
 BETTER_AUTH_SECRET=<min-32-char-random>
 BETTER_AUTH_URL=https://power2plant.ecohackerfarm.org
-NEXT_PUBLIC_APP_URL=https://power2plant.ecohackerfarm.org
+APP_URL=https://power2plant.ecohackerfarm.org
 VOLUME_DATA_DIR=$VOLUME_PATH/power2plant/prod/data
+# Private ghcr.io image pulls (classic PAT, read:packages scope):
+GHCR_TOKEN=<classic-pat-read-packages>
+GHCR_USER=<github-username>   # optional — ghcr authenticates by token; any value works
 ```
+
+> The images are published to `ghcr.io/ecohackerfarm/power2plant` as **private**
+> packages. The deploy runs `docker login ghcr.io` (via `scripts/server/ghcr-login.sh`)
+> using `GHCR_USER`/`GHCR_TOKEN` before pulling. If you instead make the package
+> public, leave both unset and pulls work without auth.
+>
+> GHCR container pulls need a **classic PAT** with the `read:packages` scope —
+> fine-grained tokens don't cover the container registry. The token's account
+> must have read access to the package (grant it under the package's *Manage
+> access* if it isn't inherited from the repo).
 
 ```sh
 openssl rand -base64 48   # → BETTER_AUTH_SECRET
@@ -300,11 +313,14 @@ DATABASE_URL=postgresql://power2plant:<staging-db-password>@db:5432/power2plant
 POSTGRES_PASSWORD=<staging-db-password>
 BETTER_AUTH_SECRET=<min-32-char-random>
 BETTER_AUTH_URL=https://staging.power2plant.ecohackerfarm.org
-NEXT_PUBLIC_APP_URL=https://staging.power2plant.ecohackerfarm.org
+APP_URL=https://staging.power2plant.ecohackerfarm.org
 VOLUME_DATA_DIR=$VOLUME_PATH/power2plant/staging/data
 APP_PORT=3001
 DB_PORT=5433
 STAGING_DATA_SOURCE=prod
+# Private ghcr.io image pulls (classic PAT, read:packages; same as prod is fine):
+GHCR_TOKEN=<classic-pat-read-packages>
+GHCR_USER=<github-username>   # optional
 ```
 
 ```sh

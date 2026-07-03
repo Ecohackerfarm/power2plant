@@ -10,7 +10,22 @@ set -euo pipefail
 rm -f /run/p2p/deploy.trigger
 cd "$PROJECT_PATH"
 sudo -u "$DEPLOY_USERNAME" git pull origin main
-sudo -u "$DEPLOY_USERNAME" docker compose up -d --build
+
+# Clone or update invoice-service if INVOICE_SERVICE_REPO is set in .env
+INVOICE_SERVICE_REPO=$(grep -E '^INVOICE_SERVICE_REPO=' "${PROJECT_PATH}/.env" 2>/dev/null | cut -d= -f2- | tr -d '"' || true)
+if [[ -n "${INVOICE_SERVICE_REPO}" ]]; then
+  if [[ -d "${PROJECT_PATH}/invoice-service/.git" ]]; then
+    sudo -u "$DEPLOY_USERNAME" git -C "${PROJECT_PATH}/invoice-service" pull origin main
+  else
+    sudo -u "$DEPLOY_USERNAME" git clone "$INVOICE_SERVICE_REPO" "${PROJECT_PATH}/invoice-service"
+  fi
+fi
+
+# Authenticate to ghcr.io (private images) before pulling.
+"${PROJECT_PATH}/scripts/server/ghcr-login.sh"
+
+sudo -u "$DEPLOY_USERNAME" docker compose pull
+sudo -u "$DEPLOY_USERNAME" docker compose up -d
 
 # One-time seed bootstrap on a fresh volume — sentinel makes this a no-op on
 # every subsequent deploy. Never clobbers existing prod data.

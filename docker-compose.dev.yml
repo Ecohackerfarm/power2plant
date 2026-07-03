@@ -14,7 +14,7 @@ services:
         [ -f /run/ssh-persist/ssh_host_ed25519_key ] || ssh-keygen -q -t ed25519 -f /run/ssh-persist/ssh_host_ed25519_key -N '' &&
         /usr/sbin/sshd -o 'HostKey /run/ssh-persist/ssh_host_ed25519_key' &&
         chown -R node:node /app/node_modules /app/.next 2>/dev/null || true &&
-        exec su node -s /bin/sh -c 'pnpm exec prisma generate && { pnpm exec prisma migrate deploy || echo \"[dev] migration failed — fix then run prisma migrate deploy manually\"; } && pnpm dev'
+        exec su node -s /bin/sh -c 'pnpm install --frozen-lockfile && pnpm exec prisma generate && { pnpm exec prisma migrate deploy || echo \"[dev] migration failed — fix then run prisma migrate deploy manually\"; } && pnpm dev'
       "
     ports: !override
       - "3001:3000"
@@ -26,7 +26,8 @@ services:
       DATABASE_URL: postgresql://power2plant:power2plant@db:5432/power2plant
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-dev-secret-change-in-production}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3001}
-      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3001}
+      APP_URL: ${APP_URL:-http://localhost:3001}
+      BRAND_NAME: ${BRAND_NAME:-power2plant}
     volumes:
       - .:/app
       - /app/node_modules

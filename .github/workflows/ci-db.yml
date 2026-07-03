@@ -1,4 +1,8 @@
 name: DB Integrity
+# WARNING: The staging auto-deploy webhook triggers on workflow_run for this
+# workflow (name: "DB Integrity", trigger: pull_request). Renaming this workflow
+# or changing its trigger will silently break staging deploys. See
+# webhook/hooks.json.template and scripts/server/staging-deploy.sh.
 
 on:
   pull_request:

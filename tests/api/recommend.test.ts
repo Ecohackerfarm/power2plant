@@ -16,7 +16,7 @@ const fakeCrops = [
 ]
 
 const fakeRels = [
-  { cropAId: 'c1', cropBId: 'c2', type: 'COMPANION', confidence: 0.8 },
+  { cropAId: 'c1', cropBId: 'c2', type: 'COMPANION', confidence: 0.8, notes: null, claims: [{ mechanism: 'PEST_CONTROL', explanation: '' }] },
 ]
 
 describe('POST /api/recommend', () => {

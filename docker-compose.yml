@@ -17,19 +17,31 @@ services:
       - default
 
   app:
-    build:
-      context: .
-      target: runner
-      args:
-        BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
-        BETTER_AUTH_URL: ${BETTER_AUTH_URL}
-        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
+    image: ghcr.io/ecohackerfarm/power2plant:${IMAGE_TAG:-latest}
     restart: unless-stopped
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgresql://power2plant:power2plant@db:5432/power2plant}
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL}
-      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
+      APP_URL: ${APP_URL}
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY}
+      KOFI_URL: ${KOFI_URL}
+      BRAND_NAME: ${BRAND_NAME:-power2plant}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      SMTP_FROM: ${SMTP_FROM}
+      ADMIN_EMAILS: ${ADMIN_EMAILS}
+      CRON_SECRET: ${CRON_SECRET}
+      FEEDBACK_IP_SALT: ${FEEDBACK_IP_SALT}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      MOLLIE_API_KEY: ${MOLLIE_API_KEY:-}
+      MOLLIE_REDIRECT_URL_BASE: ${MOLLIE_REDIRECT_URL_BASE:-}
+      INVOICE_SERVICE_URL: ${INVOICE_SERVICE_URL:-}
+      INVOICE_SERVICE_SECRET: ${INVOICE_SERVICE_SECRET:-}
+      INVOICE_DEFAULT_VAT_RATE: ${INVOICE_DEFAULT_VAT_RATE:-19}
     healthcheck:
       test: ["CMD-SHELL", "wget -qO /dev/null http://127.0.0.1:3000/ || exit 1"]
       interval: 30s
@@ -57,10 +69,30 @@ services:
     networks:
       - default
 
+  research-worker:
+    image: ghcr.io/ecohackerfarm/power2plant:${SCRIPTS_IMAGE_TAG:-scripts}
+    command: npm run worker:research
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://power2plant:power2plant@db:5432/power2plant}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      LLM_API_KEY: ${OPENROUTER_API_KEY}
+      LLM_BASE_URL: ${LLM_BASE_URL:-https://openrouter.ai/api/v1}
+      LLM_MODEL: ${LLM_MODEL:-perplexity/sonar-deep-research}
+      RESEARCH_LOW_BALANCE_USD: ${RESEARCH_LOW_BALANCE_USD:-5}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      SMTP_FROM: ${SMTP_FROM}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - default
+
   scripts:
-    build:
-      context: .
-      target: scripts
+    image: ghcr.io/ecohackerfarm/power2plant:${SCRIPTS_IMAGE_TAG:-scripts}
     entrypoint: >
       sh -c "
         pg_isready -d \"$$DATABASE_URL\" -q 2>/dev/null ||
@@ -71,10 +103,61 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgresql://power2plant:power2plant@db:5432/power2plant}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
       LLM_API_KEY: ${OPENROUTER_API_KEY}
+      TREFLE_TOKEN: ${TREFLE_TOKEN}
     volumes:
       - ${VOLUME_DATA_DIR:-./data}/research:/app/data/research
     profiles:
       - scripts
+    networks:
+      - default
+
+  invoice-service:
+    build:
+      context: ./invoice-service
+    profiles: [invoice]
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://invoice:${INVOICE_DB_PASSWORD}@invoice-db:5432/invoice
+      INVOICE_SERVICE_SECRET: ${INVOICE_SERVICE_SECRET}
+      SELLER_NAME: ${SELLER_NAME}
+      SELLER_ADDRESS_STREET: ${SELLER_ADDRESS_STREET}
+      SELLER_ADDRESS_CITY: ${SELLER_ADDRESS_CITY}
+      SELLER_ADDRESS_ZIP: ${SELLER_ADDRESS_ZIP}
+      SELLER_STEUERNUMMER: ${SELLER_STEUERNUMMER:-}
+      SELLER_VAT_ID: ${SELLER_VAT_ID:-}
+      EMAIL_PROVIDER: ${INVOICE_EMAIL_PROVIDER:-resend}
+      EMAIL_FROM: ${INVOICE_EMAIL_FROM:-${SMTP_FROM:-}}
+      RESEND_API_KEY: ${INVOICE_RESEND_API_KEY:-}
+      POSTMARK_API_KEY: ${INVOICE_POSTMARK_API_KEY:-}
+      SMTP_HOST: ${INVOICE_SMTP_HOST:-${SMTP_HOST:-}}
+      SMTP_PORT: ${INVOICE_SMTP_PORT:-${SMTP_PORT:-}}
+      SMTP_USER: ${INVOICE_SMTP_USER:-${SMTP_USER:-}}
+      SMTP_PASS: ${INVOICE_SMTP_PASS:-${SMTP_PASS:-}}
+      STORAGE_TYPE: ${STORAGE_TYPE:-local}
+      STORAGE_PATH: /data/invoices
+    volumes:
+      - ${INVOICE_DATA_DIR:-${VOLUME_DATA_DIR:-./data}/invoices}:/data/invoices
+    depends_on:
+      invoice-db:
+        condition: service_healthy
+    networks:
+      - default
+
+  invoice-db:
+    image: postgres:16-alpine
+    profiles: [invoice]
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: invoice
+      POSTGRES_USER: invoice
+      POSTGRES_PASSWORD: ${INVOICE_DB_PASSWORD}
+    volumes:
+      - ${VOLUME_DATA_DIR:-./data}/invoice-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U invoice"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     networks:
       - default
 

@@ -10,12 +10,27 @@
     "pleaseWait": "Please wait…",
     "noAccount": "No account? Sign up",
     "haveAccount": "Have an account? Sign in",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "checkYourEmail": "Check your email",
+    "verifyEmailSent": "We sent a verification link to your email. Click it to activate your account.",
+    "forgotPassword": "Forgot password?",
+    "resetPasswordTitle": "Reset password",
+    "sendResetLink": "Send reset link",
+    "resetLinkSent": "Check your email for a password reset link.",
+    "resendVerification": "Resend verification email",
+    "verificationResent": "Verification email sent!",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm password",
+    "setPassword": "Set new password",
+    "passwordResetSuccess": "Password reset! You can now sign in.",
+    "passwordMismatch": "Passwords do not match",
+    "invalidResetToken": "This reset link is invalid or has expired.",
+    "backToSignIn": "Back to sign in"
   },
   "Home": {
     "subtitle": "Companion planting recommendations for your garden beds.",
-    "contributeLink": "Contribute an observation →",
-    "browseLink": "Browse observations →",
+    "contributeLink": "Contribute a finding →",
+    "browseLink": "Browse findings →",
     "myGarden": "My Garden →",
     "addingToGarden": "Adding to your existing garden.",
     "startFresh": "Start fresh",
@@ -25,20 +40,43 @@
     "addAtLeast2": "Add at least 2 plants to your wishlist."
   },
   "Landing": {
-    "title": "power2plant",
-    "subtitle": "Companion planting garden planner",
-    "lookupTitle": "Find companion plant",
-    "lookupDesc": "Find companions and antagonists for any plant",
-    "planTitle": "Plan beds",
-    "planDesc": "Know what you want to grow — find what fits together",
-    "gardenTitle": "My garden",
-    "gardenDesc": "See how the plants in your beds get along"
+    "eyebrow": "Choose your path",
+    "learnMore": "Learn more",
+    "previous": "Previous",
+    "next": "Next",
+    "slides": {
+      "explore": {
+        "tab": "Explore Companion Plants",
+        "heading": "Find who your plants love.",
+        "description": "Search any plant to discover its best companions — and the ones to keep apart. Backed by traditional knowledge and community observations.",
+        "cta": "Start exploring"
+      },
+      "plan": {
+        "tab": "Plan Garden Beds",
+        "heading": "Know what fits together.",
+        "description": "Map out your beds with plants that support each other. Catch conflicts before they happen and make the most of every square metre.",
+        "cta": "Plan your beds"
+      },
+      "evaluate": {
+        "tab": "Evaluate Your Garden",
+        "heading": "See how your beds get along.",
+        "description": "Check the health of your existing garden layout. Get suggestions to improve harmony, yield, and soil over time.",
+        "cta": "Evaluate now"
+      },
+      "community": {
+        "tab": "Join Community to Research",
+        "heading": "Be part of the science.",
+        "description": "Collaborate with growers and researchers worldwide. Share garden observations, add useful sources, or help fund peer-reviewed research that deepens what we all know about companion planting.",
+        "cta": "Join the community"
+      }
+    }
   },
   "Nav": {
-    "lookup": "Find companion plant",
-    "plan": "Plan beds",
-    "garden": "My garden",
-    "admin": "Admin"
+    "lookup": "Find Companions",
+    "plan": "Plan Beds",
+    "garden": "My Garden",
+    "admin": "Admin",
+    "leaderboard": "Leaderboard"
   },
   "ZoneDetector": {
     "title": "Step 1 — Your Growing Zone",
@@ -89,6 +127,7 @@
     "acceptSaving": "Saving…",
     "planSaved": "Plan saved to garden!",
     "bedSaved": "\"{name}\" saved to garden!",
+    "viewGarden": "View garden →",
     "noBeds": "No beds with plants to save.",
     "gardenFull": "Garden full — max 20 beds.",
     "overflow": "Overflow — no bed space ({count} plants)",
@@ -96,14 +135,14 @@
     "conflicts": "Conflicts — incompatible plants in same bed",
     "conflictItem": "{a} and {b} should not share a bed",
     "conflictsHint": "Add more beds to separate these plants.",
-    "noDataTitle": "We don't have data for these pairs yet",
+    "noDataTitle": "We don't have data for these pairs yet — but you can vote or fund the research",
     "requestResearch": "Request research →"
   },
   "Relationships": {
-    "title": "Community observations",
+    "title": "Community findings",
     "backHome": "← Home",
     "searchPlaceholder": "Search by crop name...",
-    "noObservations": "No observations yet",
+    "noObservations": "No findings yet",
     "loadMore": "Load more",
     "loading": "Loading…",
     "companion": "Companion",
@@ -113,7 +152,7 @@
     "sourceCount": "{count, plural, one {# source} other {# sources}}",
     "companions": "Companions",
     "antagonists": "Antagonists",
-    "contributeObservation": "Add an observation →",
+    "contributeObservation": "Add a finding →",
     "COMPANION": "Companion",
     "AVOID": "Avoid",
     "PEST_CONTROL": "Pest Control",
@@ -126,18 +165,29 @@
     "TRADITIONAL": "traditional",
     "OBSERVED": "observed",
     "PEER_REVIEWED": "peer-reviewed",
-    "loadError": "Failed to load relationships. Please try again."
+    "loadError": "Failed to load relationships. Please try again.",
+    "noData": "No data yet",
+    "voteForResearch": "Vote for research",
+    "voted": "Voted",
+    "signInToVote": "Sign in to vote",
+    "noResults": "No plants found",
+    "plantHasNoData": "No companion data yet for this plant",
+    "ATTRACTS": "Attracts",
+    "NURSE": "Nurse crop",
+    "TRAP_CROP": "Trap crop",
+    "conflicting": "Conflicting",
+    "unreviewed": "Unreviewed"
   },
   "Contribute": {
-    "title": "Contribute an observation",
+    "title": "Contribute a finding",
     "back": "← Back",
-    "subtitle": "Share what you've noticed in your garden. Your observations help improve recommendations for everyone.",
-    "signInPrompt": "Sign in to contribute companion planting observations.",
+    "subtitle": "Share what you've noticed in your garden. Your findings help improve recommendations for everyone.",
+    "signInPrompt": "Sign in to contribute companion planting findings.",
     "signInLink": "Sign in",
-    "success": "Thanks! Your observation has been recorded.",
+    "success": "Thanks! Your finding has been recorded.",
     "rateLimit": "You already submitted a relationship for this pair today.",
     "error": "Something went wrong. Please try again.",
-    "newObservation": "New observation",
+    "newObservation": "New finding",
     "plantA": "Plant A",
     "plantB": "Plant B",
     "relationship": "Relationship",
@@ -149,7 +199,7 @@
     "notesOptional": "(optional, max 2000 chars)",
     "notesPlaceholder": "e.g. Planted together for 3 seasons, noticed fewer aphids…",
     "evidenceLevel": "Evidence level",
-    "evidenceLevelHint": "Select the highest quality evidence you have for this observation.",
+    "evidenceLevelHint": "Select the highest quality evidence you have for this finding.",
     "sources": "Sources",
     "sourcesHint": "doi.org and PubMed links are recognised automatically as scientific papers.",
     "sourcesOptional": "(optional)",
@@ -157,7 +207,7 @@
     "remove": "remove",
     "autoDetected": "Auto-detected",
     "submitting": "Submitting…",
-    "submit": "Submit observation",
+    "submit": "Submit finding",
     "genusHint": "Genus entries (e.g. Ocimum L.) represent the whole plant family — pick a species for more precise recommendations.",
     "change": "change",
     "searchFor": "Search for {label}…",
@@ -177,7 +227,7 @@
     "BLOG_FORUM": "Blog / Forum",
     "PERSONAL_OBSERVATION": "Personal observation",
     "sourcePosition": "What does your source say?",
-    "sourcePositionHint": "Select if your source supports a different conclusion than your observation above."
+    "sourcePositionHint": "Select if your source supports a different conclusion than your finding above."
   },
   "PlantPage": {
     "backToPlan": "← Back to plan",
@@ -212,7 +262,9 @@
     "inheritedFrom": "via {genus}",
     "wikiReadMore": "Wikipedia →",
     "wikiAttribution": "Source: Wikipedia (CC BY-SA)",
-    "contributeObservation": "Add an observation →"
+    "contributeObservation": "Add a finding →",
+    "conflicting": "Conflicting",
+    "unreviewed": "Unreviewed"
   },
   "RelationshipPage": {
     "back": "← Back",
@@ -272,10 +324,17 @@
     "NOT_FOUND": "No evidence found",
     "LOW_CONFIDENCE": "Insufficient evidence",
     "researchAttemptClose": "Close",
-    "researchAttemptNoRelationship": "No relationship data found."
+    "researchAttemptNoRelationship": "No relationship data found.",
+    "genusLevelEvidence": "Genus-level evidence",
+    "fundedBy": "Research funded by",
+    "community": "Community",
+    "unknownUser": "Anonymous",
+    "conflicting": "Conflicting evidence",
+    "unreviewed": "Unreviewed",
+    "uncertain": "Uncertain"
   },
   "GardenPage": {
-    "backHome": "← power2plant",
+    "backHome": "← {brand}",
     "title": "My Garden",
     "subtitle": "Manage your saved garden beds.",
     "signInPrompt": "Sign in to manage your garden.",
@@ -299,7 +358,7 @@
     "remove": "Remove"
   },
   "SharePage": {
-    "backHome": "← power2plant",
+    "backHome": "← {brand}",
     "title": "Shared garden plan",
     "subtitle": "This is a read-only snapshot. Valid until {date}.",
     "emptyBed": "Empty bed"
@@ -394,5 +453,49 @@
     "error": "Something went wrong. Please try again.",
     "drawAnnotation": "Drag to highlight the problem area.",
     "screenshotCapturing": "Capturing screenshot…"
+  },
+  "Plan": {
+    "step": "Step {n} of 4",
+    "back": "← Back",
+    "continue": "Continue →",
+    "skip": "Skip",
+    "getRecommendations": "Get Recommendations",
+    "recompute": "Recalculate",
+    "calculating": "Calculating…",
+    "detectZoneFirst": "Detect your zone first.",
+    "addAtLeast2": "Add at least 2 plants.",
+    "addingToGarden": "Adding to your existing garden.",
+    "startFresh": "Start fresh"
+  },
+  "PaidFeatures": {
+    "title": "Unlock more with a top-up",
+    "moreBeds": "Up to 100 beds (free accounts: up to 20)",
+    "topUp": "Top up →"
+  },
+  "UserProfile": {
+    "notFound": "User not found.",
+    "loading": "Loading…",
+    "badges": "Badges",
+    "incrementalBadges": "Research Milestones",
+    "plantBadges": "Plants Researched",
+    "pairBadges": "Pairs Researched",
+    "noBadges": "No badges yet.",
+    "plantsResearched": "{count} plants",
+    "pairsResearched": "{count} pairs"
+  },
+  "Leaderboard": {
+    "title": "Research Leaderboard",
+    "allTime": "All time",
+    "yearly": "This year",
+    "monthly": "This month",
+    "weekly": "This week",
+    "daily": "Today",
+    "rank": "Rank",
+    "researcher": "Researcher",
+    "researches": "Researches",
+    "badge": "Badge",
+    "community": "Community",
+    "noData": "No data for this period yet.",
+    "fundedBy": "funded by community pot"
   }
 }

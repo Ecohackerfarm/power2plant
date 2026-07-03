@@ -1,17 +1,21 @@
 import { test, expect } from '@playwright/test'
 
-test('landing page shows 3 use-case cards', async ({ page }) => {
+// Disable the desktop intro animation, which otherwise fades in the fixed header
+// corners over several seconds and races these header assertions.
+test.use({ reducedMotion: 'reduce' })
+
+test('landing page shows site header and hero', async ({ page }) => {
   await page.goto('/')
-  await expect(page.getByRole('heading', { name: 'power2plant' })).toBeVisible()
-  await expect(page.getByRole('link', { name: /find companion plant/i })).toBeVisible()
-  await expect(page.getByRole('link', { name: /plan beds/i })).toBeVisible()
-  await expect(page.getByRole('link', { name: /my garden/i })).toBeVisible()
+  // Redesigned header: no role="banner"; a fixed account control renders in the
+  // top-right corner on every page. Hero still renders an <h1>.
+  await expect(page.locator('div.fixed.right-0.top-0').getByRole('button').first()).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
 })
 
 test('plan page has site header with nav', async ({ page }) => {
   await page.goto('/plan')
-  await expect(page.getByRole('banner')).toBeVisible()
-  await expect(page.getByRole('link', { name: /find companion plant/i })).toBeVisible()
+  // The menu toggle is always present on app pages; its presence proves the nav is mounted.
+  await expect(page.getByRole('button', { name: /toggle menu/i })).toBeVisible()
 })
 
 test('contribute page shows sign-in gate when unauthenticated', async ({ page }) => {
@@ -58,12 +62,8 @@ test('recommendation flow: zone + 2 plants → beds render', async ({ page, requ
     },
     { ids: [cropA.id, cropB.id], zone: minTempC },
   )
-  await page.goto('/plan')
-
-  // Button should be enabled now
-  const btn = page.getByRole('button', { name: /get recommendations/i })
-  await expect(btn).toBeEnabled()
-  await btn.click()
+  // Navigate directly to results with compute flag — wizard skips to compute when state pre-seeded
+  await page.goto('/plan/results?compute=1')
 
   // At least one bed card should render
   await expect(page.getByText(/bed 1/i)).toBeVisible({ timeout: 10000 })
@@ -107,34 +107,36 @@ test('map picker: stays visible during zone fetch, hides after success', async (
   // Unblock the zone API
   resolveZone(undefined)
 
-  // Map hides and zone confirmation appears
+  // Map hides and wizard advances to plant selection
   await expect(page.locator('.leaflet-container')).not.toBeVisible({ timeout: 5000 })
-  await expect(page.getByText(/coldest winter night/i)).toBeVisible()
+  await expect(page).toHaveURL(/\/plan\/plants/, { timeout: 5000 })
 })
 
 test('plan page shows plant search', async ({ page }) => {
-  await page.goto('/plan')
+  await page.goto('/plan/plants')
   await expect(page.getByRole('textbox', { name: /search/i })).toBeVisible()
 })
 
 test('sign-in panel: opens as dropdown without shifting header layout', async ({ page }) => {
   await page.goto('/plan')
-  const header = page.getByRole('banner')
-  const headerBox = await header.boundingBox()
-  expect(headerBox).not.toBeNull()
+  // Anchor the no-shift check on the always-present menu toggle (far from the
+  // right-corner sign-in dropdown, which is absolutely positioned and must not
+  // push page chrome around when it opens).
+  const toggle = page.getByRole('button', { name: /toggle menu/i })
+  await expect(toggle).toBeVisible()
+  const before = await toggle.boundingBox()
 
   await page.getByRole('button', { name: /sign in/i }).click()
 
   const form = page.getByLabel(/email/i).first()
   await expect(form).toBeVisible()
 
-  // Header height must not change
-  const headerBoxAfter = await header.boundingBox()
-  expect(headerBoxAfter!.height).toBe(headerBox!.height)
+  // Opening the dropdown must not move the toggle.
+  const after = await toggle.boundingBox()
+  expect(after!.y).toBe(before!.y)
 
-  // Form must be fully within viewport
-  const formCard = page.getByLabel(/email/i).first()
-  const cardBox = await formCard.boundingBox()
+  // Form must be fully within the viewport.
+  const cardBox = await form.boundingBox()
   expect(cardBox).not.toBeNull()
   const viewport = page.viewportSize()!
   expect(cardBox!.x).toBeGreaterThanOrEqual(0)
@@ -144,20 +146,21 @@ test('sign-in panel: opens as dropdown without shifting header layout', async ({
 
 test('sign-in panel: opens on landing page without layout shift', async ({ page }) => {
   await page.goto('/')
-  const heading = page.getByRole('heading', { name: 'power2plant' })
-  const headingBoxBefore = await heading.boundingBox()
-  expect(headingBoxBefore).not.toBeNull()
+  // Sign-in is the top-right account control now; anchor the no-shift check on it.
+  const account = page.locator('div.fixed.right-0.top-0').getByRole('button').first()
+  await expect(account).toBeVisible()
+  const before = await account.boundingBox()
 
-  await page.getByRole('button', { name: /sign in/i }).click()
+  await account.click()
   await expect(page.getByLabel(/email/i).first()).toBeVisible()
 
-  const headingBoxAfter = await heading.boundingBox()
-  expect(headingBoxAfter!.y).toBe(headingBoxBefore!.y)
+  const after = await account.boundingBox()
+  expect(after!.y).toBe(before!.y)
 })
 
-test('garden page has back link to home', async ({ page }) => {
+test('garden page renders the site header', async ({ page }) => {
   await page.goto('/garden')
-  const link = page.getByRole('link', { name: /power2plant/i })
-  await expect(link).toBeVisible()
-  await expect(link).toHaveAttribute('href', /^\/(en|de)?\/?$/)
+  // The redesigned header dropped the wordmark home link; assert the header
+  // chrome (menu toggle) mounts on app pages instead.
+  await expect(page.getByRole('button', { name: /toggle menu/i })).toBeVisible()
 })

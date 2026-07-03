@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { PrismaClient, RelationshipType, RelationshipReason } from '@prisma/client'
+import { PrismaClient, RelationshipType, RelationshipReasonType } from '@prisma/client'
 import { computeRelationshipConfidence } from '../import/confidence'
 
 const prisma = new PrismaClient()
@@ -131,13 +131,12 @@ async function findGenusCropId(botanicalName: string): Promise<string | null> {
   return rows[0]?.id ?? null
 }
 
-// Valid RelationshipReason enum values from Prisma schema
-const VALID_REASONS = new Set<string>(Object.values(RelationshipReason))
+const VALID_REASONS = new Set<string>(Object.values(RelationshipReasonType))
 
-function validateReason(value: string | null | undefined): RelationshipReason | null {
+function validateReasonType(value: string | null | undefined): RelationshipReasonType | null {
   if (value == null) return null
-  if (VALID_REASONS.has(value)) return value as RelationshipReason
-  console.warn(`INVALID reason "${value}" — storing null`)
+  if (VALID_REASONS.has(value)) return value as RelationshipReasonType
+  console.warn(`INVALID reason "${value}" — skipping`)
   return null
 }
 
@@ -178,15 +177,15 @@ async function main(): Promise<void> {
           cropBId,
           type: pair.type as RelationshipType,
           direction: 'MUTUAL',
-          reason: validateReason(pair.reason),
-          // confidence is set after sources are added via recompute below
           confidence: 0.25,
           notes: pair.notes,
         },
-        // Don't overwrite type/confidence set by other importers — sources are the authority
         update: {},
         include: { sources: true },
       })
+
+      // Mechanism carried per source via claims (relationship-level reasons no longer exist).
+      const reasonMechanism = validateReasonType(pair.reason) ?? 'OTHER'
 
       // Create one source per paper — deduplicated by URL (or by note-key when no URL),
       // across both pre-existing sources and those added in this batch.
@@ -209,16 +208,23 @@ async function main(): Promise<void> {
         // Resolve the per-paper extraction-order cropA to an ID so mapDirection
         // can correctly flip A_TO_B ↔ B_TO_A when the stored pair order differs.
         const paperCropAId = await resolveCropId(paper.extractedCropA)
-        await prisma.relationshipSource.create({
+        const src = await prisma.relationshipSource.create({
           data: {
             relationshipId: relationship.id,
             source: 'RESEARCH',
             confidence: paperUrl ? 'PEER_REVIEWED' : 'ANECDOTAL',
-            position: paper.position,
-            reason: validateReason(paper.reason),
-            sourceDirection: mapDirection(paper.direction, paperCropAId ?? idA, cropAId) as any,
             url: paperUrl,
             notes: noteKey,
+          },
+        })
+        await prisma.relationshipClaim.create({
+          data: {
+            mechanism: reasonMechanism,
+            explanation: pair.notes || reasonMechanism,
+            relationshipType: paper.position as RelationshipType,
+            direction: mapDirection(paper.direction, paperCropAId ?? idA, cropAId) ?? 'UNKNOWN',
+            relationshipId: relationship.id,
+            sourceId: src.id,
           },
         })
         addedSources++
@@ -256,7 +262,7 @@ async function main(): Promise<void> {
             const [gCropAId, gCropBId] = genusAId < genusBId ? [genusAId, genusBId] : [genusBId, genusAId]
             const genusRel = await prisma.cropRelationship.upsert({
               where: { cropAId_cropBId: { cropAId: gCropAId, cropBId: gCropBId } },
-              create: { cropAId: gCropAId, cropBId: gCropBId, type: pair.type as RelationshipType, direction: 'MUTUAL', reason: validateReason(pair.reason), confidence: 0.25, notes: pair.notes },
+              create: { cropAId: gCropAId, cropBId: gCropBId, type: pair.type as RelationshipType, direction: 'MUTUAL', confidence: 0.25, notes: pair.notes },
               update: {},
               include: { sources: true },
             })
@@ -273,15 +279,23 @@ async function main(): Promise<void> {
                 if (seenGenusNoteKeys.has(noteKey)) continue
                 seenGenusNoteKeys.add(noteKey)
               }
-              await prisma.relationshipSource.create({
+              const gsrc = await prisma.relationshipSource.create({
                 data: {
                   relationshipId: genusRel.id,
                   source: 'RESEARCH',
                   confidence: paperUrl ? 'PEER_REVIEWED' : 'ANECDOTAL',
-                  position: paper.position,
-                  reason: validateReason(paper.reason),
                   url: paperUrl,
                   notes: noteKey,
+                },
+              })
+              await prisma.relationshipClaim.create({
+                data: {
+                  mechanism: reasonMechanism,
+                  explanation: pair.notes || reasonMechanism,
+                  relationshipType: paper.position as RelationshipType,
+                  direction: 'UNKNOWN',
+                  relationshipId: genusRel.id,
+                  sourceId: gsrc.id,
                 },
               })
               addedGenusSources++

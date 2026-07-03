@@ -10,7 +10,22 @@
     "pleaseWait": "Подождите…",
     "noAccount": "Нет аккаунта? Зарегистрироваться",
     "haveAccount": "Есть аккаунт? Войти",
-    "cancel": "Отмена"
+    "cancel": "Отмена",
+    "checkYourEmail": "Проверьте почту",
+    "verifyEmailSent": "Мы отправили ссылку для подтверждения на ваш email. Перейдите по ней, чтобы активировать аккаунт.",
+    "forgotPassword": "Забыли пароль?",
+    "resetPasswordTitle": "Сбросить пароль",
+    "sendResetLink": "Отправить ссылку для сброса",
+    "resetLinkSent": "Проверьте почту — мы отправили ссылку для сброса пароля.",
+    "resendVerification": "Отправить письмо повторно",
+    "verificationResent": "Письмо с подтверждением отправлено!",
+    "newPassword": "Новый пароль",
+    "confirmPassword": "Подтвердите пароль",
+    "setPassword": "Установить новый пароль",
+    "passwordResetSuccess": "Пароль сброшен! Теперь вы можете войти.",
+    "passwordMismatch": "Пароли не совпадают",
+    "invalidResetToken": "Эта ссылка недействительна или истекла.",
+    "backToSignIn": "Назад к входу"
   },
   "Home": {
     "subtitle": "Рекомендации по совместной посадке для ваших грядок.",
@@ -25,20 +40,43 @@
     "addAtLeast2": "Добавьте минимум 2 растения в список желаний."
   },
   "Landing": {
-    "title": "power2plant",
-    "subtitle": "Планировщик огорода для совместной посадки",
-    "lookupTitle": "Найти растение-компаньон",
-    "lookupDesc": "Найдите компаньонов и антагонистов для любого растения",
-    "planTitle": "Планировать грядки",
-    "planDesc": "Знаете, что хотите вырастить — найдите, что сочетается",
-    "gardenTitle": "Мой огород",
-    "gardenDesc": "Посмотрите, как уживаются растения на ваших грядках"
+    "eyebrow": "Choose your path",
+    "learnMore": "Learn more",
+    "previous": "Previous",
+    "next": "Next",
+    "slides": {
+      "explore": {
+        "tab": "Explore Companion Plants",
+        "heading": "Find who your plants love.",
+        "description": "Search any plant to discover its best companions — and the ones to keep apart. Backed by traditional knowledge and community observations.",
+        "cta": "Start exploring"
+      },
+      "plan": {
+        "tab": "Plan Garden Beds",
+        "heading": "Know what fits together.",
+        "description": "Map out your beds with plants that support each other. Catch conflicts before they happen and make the most of every square metre.",
+        "cta": "Plan your beds"
+      },
+      "evaluate": {
+        "tab": "Evaluate Your Garden",
+        "heading": "See how your beds get along.",
+        "description": "Check the health of your existing garden layout. Get suggestions to improve harmony, yield, and soil over time.",
+        "cta": "Evaluate now"
+      },
+      "community": {
+        "tab": "Join Community to Research",
+        "heading": "Be part of the science.",
+        "description": "Collaborate with researchers and curious growers worldwide. Share your own garden observations, add useful sources you discover, or help fund the collection of peer-reviewed research through advanced scientific research AI. Every contribution strengthens our shared understanding of companion planting.",
+        "cta": "Join the community"
+      }
+    }
   },
   "Nav": {
     "lookup": "Найти растение-компаньон",
     "plan": "Планировать грядки",
     "garden": "Мой огород",
-    "admin": "Администратор"
+    "admin": "Администратор",
+    "leaderboard": "Таблица лидеров"
   },
   "ZoneDetector": {
     "title": "Шаг 1 — Ваша зона выращивания",
@@ -87,6 +125,7 @@
     "acceptSaving": "Сохранение…",
     "planSaved": "Вариант сохранён в огороде!",
     "bedSaved": "«{name}» сохранена в огороде!",
+    "viewGarden": "Перейти в огород →",
     "noBeds": "Нет грядок с растениями для сохранения.",
     "gardenFull": "Огород заполнен — максимум 20 грядок.",
     "overflow": "Переполнение — нет места на грядках ({count} {count, plural, one {растение} few {растения} other {растений}})",
@@ -94,14 +133,14 @@
     "conflicts": "Конфликты — несовместимые растения на одной грядке",
     "conflictItem": "{a} и {b} нельзя размещать на одной грядке",
     "conflictsHint": "Добавьте грядки, чтобы разделить эти растения.",
-    "noDataTitle": "Данных по этим парам пока нет",
+    "noDataTitle": "Данных по этим парам пока нет — но вы можете проголосовать или финансировать исследование",
     "requestResearch": "Запросить исследование →"
   },
   "Relationships": {
     "title": "Наблюдения сообщества",
     "backHome": "← На главную",
     "searchPlaceholder": "Поиск по названию культуры…",
-    "noObservations": "Наблюдений пока нет",
+    "noObservations": "Находок пока нет",
     "loadMore": "Загрузить ещё",
     "loading": "Загрузка…",
     "companion": "Компаньон",
@@ -111,7 +150,7 @@
     "sourceCount": "{count, plural, one {# источник} few {# источника} other {# источников}}",
     "companions": "Компаньоны",
     "antagonists": "Антагонисты",
-    "contributeObservation": "Добавить наблюдение →",
+    "contributeObservation": "Добавить находку →",
     "COMPANION": "Компаньон",
     "AVOID": "Избегать",
     "PEST_CONTROL": "Борьба с вредителями",
@@ -124,7 +163,18 @@
     "TRADITIONAL": "традиционное",
     "OBSERVED": "наблюдаемое",
     "PEER_REVIEWED": "рецензируемое",
-    "loadError": "Не удалось загрузить отношения. Попробуйте ещё раз."
+    "loadError": "Не удалось загрузить отношения. Попробуйте ещё раз.",
+    "noData": "No data yet",
+    "voteForResearch": "Vote for research",
+    "voted": "Voted",
+    "signInToVote": "Sign in to vote",
+    "noResults": "No plants found",
+    "plantHasNoData": "No companion data yet for this plant",
+    "ATTRACTS": "Attracts",
+    "NURSE": "Nurse crop",
+    "TRAP_CROP": "Trap crop",
+    "conflicting": "Противоречивый",
+    "unreviewed": "Непроверенный"
   },
   "Contribute": {
     "title": "Добавить наблюдение",
@@ -135,7 +185,7 @@
     "success": "Спасибо! Ваше наблюдение записано.",
     "rateLimit": "Вы уже отправили отношение для этой пары сегодня.",
     "error": "Что-то пошло не так. Попробуйте ещё раз.",
-    "newObservation": "Новое наблюдение",
+    "newObservation": "Новая находка",
     "plantA": "Растение A",
     "plantB": "Растение B",
     "relationship": "Отношение",
@@ -210,7 +260,9 @@
     "inheritedFrom": "от {genus}",
     "wikiReadMore": "Википедия →",
     "wikiAttribution": "Источник: Википедия (CC BY-SA)",
-    "contributeObservation": "Добавить наблюдение →"
+    "contributeObservation": "Добавить находку →",
+    "conflicting": "Противоречивый",
+    "unreviewed": "Непроверенный"
   },
   "RelationshipPage": {
     "back": "← Назад",
@@ -260,16 +312,23 @@
     "RESEARCH": "Исследование",
     "link": "ссылка",
     "genusLevelBanner": "Отношение определено на уровне рода ({genusA} ↔ {genusB}) — применяется ко всем видам {genus}.",
-    "appliesToAllSpecies": "Применяется ко всем видам {genus}."
+    "appliesToAllSpecies": "Применяется ко всем видам {genus}.",
+    "genusLevelEvidence": "Свидетельства на уровне рода",
+    "fundedBy": "Исследование профинансировано",
+    "community": "Сообщество",
+    "unknownUser": "Аноним",
+    "conflicting": "Противоречивые данные",
+    "unreviewed": "Непроверенный",
+    "uncertain": "Неопределённый"
   },
   "GardenPage": {
-    "backHome": "← power2plant",
+    "backHome": "← {brand}",
     "title": "Мой огород",
     "subtitle": "Управляйте сохранёнными грядками.",
     "signInPrompt": "Войдите для управления грядками."
   },
   "SharePage": {
-    "backHome": "← power2plant",
+    "backHome": "← {brand}",
     "title": "Общий план огорода",
     "subtitle": "Это снимок только для чтения. Действителен до {date}.",
     "emptyBed": "Пустая грядка"
@@ -352,5 +411,49 @@
     "error": "Что-то пошло не так. Попробуйте ещё раз.",
     "drawAnnotation": "Перетащите, чтобы выделить проблемную область.",
     "screenshotCapturing": "Создание снимка экрана…"
+  },
+  "Plan": {
+    "step": "Шаг {n} из 4",
+    "back": "← Назад",
+    "continue": "Далее →",
+    "skip": "Пропустить",
+    "getRecommendations": "Получить рекомендации",
+    "recompute": "Пересчитать",
+    "calculating": "Вычисление…",
+    "detectZoneFirst": "Сначала определите зону.",
+    "addAtLeast2": "Добавьте минимум 2 растения.",
+    "addingToGarden": "Добавление в существующий огород.",
+    "startFresh": "Начать заново"
+  },
+  "PaidFeatures": {
+    "title": "Разблокируйте больше с пополнением",
+    "moreBeds": "До 100 грядок (бесплатно: до 20)",
+    "topUp": "Пополнить →"
+  },
+  "UserProfile": {
+    "notFound": "Пользователь не найден.",
+    "loading": "Загрузка…",
+    "badges": "Значки",
+    "incrementalBadges": "Исследовательские вехи",
+    "plantBadges": "Исследованные растения",
+    "pairBadges": "Исследованные пары",
+    "noBadges": "Значков пока нет.",
+    "plantsResearched": "{count} растений",
+    "pairsResearched": "{count} пар"
+  },
+  "Leaderboard": {
+    "title": "Таблица лидеров исследований",
+    "allTime": "За всё время",
+    "yearly": "За этот год",
+    "monthly": "За этот месяц",
+    "weekly": "За эту неделю",
+    "daily": "За сегодня",
+    "rank": "Место",
+    "researcher": "Исследователь",
+    "researches": "Исследований",
+    "badge": "Значок",
+    "community": "Сообщество",
+    "noData": "Данных за этот период пока нет.",
+    "fundedBy": "финансируется из общественного фонда"
   }
 }

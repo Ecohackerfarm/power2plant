@@ -1,6 +1,6 @@
 {
   "name": "power2plant",
-  "version": "0.17.0",
+  "version": "0.18.0",
   "description": "Companion planting recommendations for your garden beds",
   "license": "MIT",
   "packageManager": "pnpm@11.4.0",
@@ -15,6 +15,7 @@
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
     "db:import": "tsx scripts/import/index.ts",
+    "db:set-admin-cred": "tsx scripts/set-admin-credentials.ts",
     "db:seed-common": "tsx prisma/seed-common-crops.ts",
     "db:studio": "prisma studio",
     "db:dump": "sh db/dump.sh",
@@ -32,17 +33,14 @@
     "enrich:translate-names": "tsx scripts/enrich/translate-names.ts",
     "enrich:populate-canonical-names": "tsx scripts/enrich/populate-canonical-names.ts",
     "enrich:populate-botanical-synonyms": "tsx scripts/enrich/populate-botanical-synonyms.ts",
-    "orchestrate:status": "NODE_PATH=/home/agent/.local/share/pnpm/global/5/node_modules tsx autodev/scripts/index.ts status",
-    "orchestrate:run": "NODE_PATH=/home/agent/.local/share/pnpm/global/5/node_modules tsx autodev/scripts/index.ts run",
-    "orchestrate:retry": "NODE_PATH=/home/agent/.local/share/pnpm/global/5/node_modules tsx autodev/scripts/index.ts retry",
-    "orchestrate:logs": "NODE_PATH=/home/agent/.local/share/pnpm/global/5/node_modules tsx autodev/scripts/index.ts logs",
-    "orchestrate:start": "NODE_PATH=/home/agent/.local/share/pnpm/global/5/node_modules tsx autodev/scripts/index.ts start",
-    "orchestrate:release": "NODE_PATH=/home/agent/.local/share/pnpm/global/5/node_modules tsx autodev/scripts/index.ts release",
-    "orchestrate:continue": "NODE_PATH=/home/agent/.local/share/pnpm/global/5/node_modules tsx autodev/scripts/index.ts continue"
+    "worker:research": "tsx workers/research-worker.ts"
   },
   "dependencies": {
+    "@mollie/api-client": "^4.0.0",
     "@base-ui/react": "^1.4.1",
     "@prisma/client": "^6.0.0",
+    "@stripe/react-stripe-js": "^6.6.0",
+    "@stripe/stripe-js": "^9.8.0",
     "@tailwindcss/postcss": "^4.2.4",
     "@types/nodemailer": "^8.0.0",
     "better-auth": "^1.6.9",
@@ -61,7 +59,9 @@
     "react-leaflet": "^5.0.0",
     "shadcn": "^4.6.0",
     "sonner": "^2.0.7",
+    "stripe": "^22.2.0",
     "tailwind-merge": "^3.5.0",
+    "zod": "^4.0.0",
     "tw-animate-css": "^1.4.0"
   },
   "devDependencies": {

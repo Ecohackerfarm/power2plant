@@ -1,4 +1,5 @@
 .worktrees/
+invoice-service/
 .env
 .next/
 .pnpm-store/
@@ -7,12 +8,18 @@ data/
 *.tsbuildinfo
 test-results/
 playwright-report/
+tests/e2e/.auth/
 deploy_keys/
-autodev/orchestrate/state.json
 webhook/hooks.json
 .git-credentials
-autodev/orchestrate/orchestrator.pid
-autodev/logs/
 .claude/settings.local.json
 .env.prod
 db/seed-enrichment-attempts.sql
+
+# design-sync scratch
+.ds-sync/
+ds-bundle/
+.design-sync/.cache/
+.design-sync/learnings/
+.design-sync/node_modules
+.design-sync/compiled.css

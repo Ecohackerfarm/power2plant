@@ -71,7 +71,7 @@ pnpm db:studio               # Prisma Studio at http://localhost:5555
 | `DATABASE_URL` | Yes | PostgreSQL connection string |
 | `BETTER_AUTH_SECRET` | Yes (prod) | Secret for session signing (≥32 chars) |
 | `BETTER_AUTH_URL` | Yes (prod) | Public URL of the app (e.g. `https://example.com`) |
-| `NEXT_PUBLIC_APP_URL` | Yes (prod) | Same as `BETTER_AUTH_URL`, exposed to client |
+| `APP_URL` | Yes (prod) | Same as `BETTER_AUTH_URL`, exposed to client |
 | `TREFLE_TOKEN` | For import | API token for Trefle plant database |
 
 In development, `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL` fall back to safe defaults if unset.
@@ -115,7 +115,7 @@ Development is covered in [Getting Started](#getting-started) — edit files in 
 ```bash
 export BETTER_AUTH_SECRET="your-secret-here"
 export BETTER_AUTH_URL="https://your-domain.com"
-export NEXT_PUBLIC_APP_URL="https://your-domain.com"
+export APP_URL="https://your-domain.com"
 
 docker compose up --build
 ```

@@ -33,7 +33,8 @@ async function uniqueSlug(baseSlug: string): Promise<string> {
   throw new Error(`Cannot generate unique slug for base: ${baseSlug}`)
 }
 
-async function upsertCrop(importer: Importer, raw: RawCrop, stats: ImportStats): Promise<void> {
+async function upsertCrop(importer: Importer, raw: RawCrop, stats: ImportStats, cropFilter?: string): Promise<void> {
+  if (cropFilter && !raw.botanicalName.toLowerCase().includes(cropFilter.toLowerCase())) return
   const baseSlug = raw.slug ?? toSlug(raw.botanicalName)
 
   // Check if the record already exists — if so, skip slug resolution (update path won't touch slug)
@@ -98,7 +99,11 @@ async function resolveCropId(name: string): Promise<string | null> {
   return null
 }
 
-async function upsertRelationship(importer: Importer, raw: RawRelationship, stats: ImportStats): Promise<void> {
+async function upsertRelationship(importer: Importer, raw: RawRelationship, stats: ImportStats, cropFilter?: string): Promise<void> {
+  if (cropFilter) {
+    const cf = cropFilter.toLowerCase()
+    if (!raw.cropNameA.toLowerCase().includes(cf) && !raw.cropNameB.toLowerCase().includes(cf)) return
+  }
   const idA = await resolveCropId(raw.cropNameA)
   const idB = await resolveCropId(raw.cropNameB)
 
@@ -115,10 +120,8 @@ async function upsertRelationship(importer: Importer, raw: RawRelationship, stat
       cropBId,
       type: raw.type,
       direction: raw.direction,
-      reason: raw.reason ?? null,
       confidence: 0.5,
     },
-    // First source wins for type/direction/reason — subsequent sources only add provenance
     update: {},
     include: { sources: true },
   })
@@ -149,7 +152,7 @@ async function upsertRelationship(importer: Importer, raw: RawRelationship, stat
   })
 }
 
-async function runImporter(importer: Importer): Promise<ImportStats> {
+async function runImporter(importer: Importer, cropFilter?: string): Promise<ImportStats> {
   const stats: ImportStats = {
     source: importer.source,
     cropsCreated: 0,
@@ -164,7 +167,7 @@ async function runImporter(importer: Importer): Promise<ImportStats> {
   if (importer.fetchCrops) {
     for await (const raw of importer.fetchCrops()) {
       try {
-        await upsertCrop(importer, raw, stats)
+        await upsertCrop(importer, raw, stats, cropFilter)
       } catch (err) {
         console.error(`[${importer.source}] Error upserting crop "${raw.botanicalName}":`, err)
       }
@@ -174,7 +177,7 @@ async function runImporter(importer: Importer): Promise<ImportStats> {
   if (importer.fetchRelationships) {
     for await (const raw of importer.fetchRelationships()) {
       try {
-        await upsertRelationship(importer, raw, stats)
+        await upsertRelationship(importer, raw, stats, cropFilter)
       } catch (err) {
         console.error(`[${importer.source}] Error upserting relationship "${raw.cropNameA}" <-> "${raw.cropNameB}":`, err)
       }
@@ -192,8 +195,19 @@ async function runImporter(importer: Importer): Promise<ImportStats> {
   return stats
 }
 
+function getArg(flag: string): string | undefined {
+  const args = process.argv.slice(2)
+  const i = args.indexOf(flag)
+  return i !== -1 ? args[i + 1] : undefined
+}
+
 async function main(): Promise<void> {
-  const target = process.argv[2]?.toUpperCase()
+  // Support both positional source arg and --crop filter flag.
+  // Positional arg is the first non-flag argument (doesn't start with '--').
+  const positional = process.argv.slice(2).find(a => !a.startsWith('--'))
+  const target = positional?.toUpperCase()
+  const cropFilter = getArg('--crop')
+
   const importers = target
     ? ALL_IMPORTERS.filter(i => i.source === target)
     : ALL_IMPORTERS
@@ -204,8 +218,12 @@ async function main(): Promise<void> {
     process.exit(1)
   }
 
+  if (cropFilter) {
+    console.log(`[--crop] Filtering to crops matching: "${cropFilter}"`)
+  }
+
   for (const importer of importers) {
-    await runImporter(importer)
+    await runImporter(importer, cropFilter)
   }
 
   await prisma.$disconnect()

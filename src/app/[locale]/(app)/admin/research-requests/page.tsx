@@ -10,12 +10,12 @@ type Crop = { id: string; name: string; botanicalName: string; commonNames: stri
 type ResearchRequestItem = {
   id: string
   cropAId: string
-  cropBId: string
+  cropBId: string | null
   voteCount: number
   funded: boolean
   createdAt: string
   cropA: Crop
-  cropB: Crop
+  cropB: Crop | null
   _count: { votes: number }
 }
 
@@ -23,13 +23,13 @@ export default function AdminResearchRequestsPage() {
   const [items, setItems] = useState<ResearchRequestItem[]>([])
   const [loading, setLoading] = useState(true)
   const [toggling, setToggling] = useState<string | null>(null)
+  const [enqueueing, setEnqueueing] = useState<string | null>(null)
+  const [enqueueResult, setEnqueueResult] = useState<Record<string, 'queued' | 'exists' | 'error'>>({})
 
   useEffect(() => {
     fetch('/api/admin/research-requests')
       .then(r => r.ok ? r.json() : [])
-      .then((data: ResearchRequestItem[]) => {
-        setItems(data)
-      })
+      .then((data: ResearchRequestItem[]) => setItems(data))
       .finally(() => setLoading(false))
   }, [])
 
@@ -41,11 +41,24 @@ export default function AdminResearchRequestsPage() {
       body: JSON.stringify({ id: item.id, funded: !item.funded }),
     })
     if (res.ok) {
-      setItems(prev =>
-        prev.map(i => i.id === item.id ? { ...i, funded: !i.funded } : i)
-      )
+      setItems(prev => prev.map(i => i.id === item.id ? { ...i, funded: !i.funded } : i))
     }
     setToggling(null)
+  }
+
+  async function enqueue(item: ResearchRequestItem) {
+    setEnqueueing(item.id)
+    const res = await fetch('/api/admin/research-queue', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cropAId: item.cropAId, cropBId: item.cropBId }),
+    })
+    const data = await res.json() as { alreadyExisted?: boolean }
+    setEnqueueResult(prev => ({
+      ...prev,
+      [item.id]: res.ok ? (data.alreadyExisted ? 'exists' : 'queued') : 'error',
+    }))
+    setEnqueueing(null)
   }
 
   return (
@@ -53,7 +66,6 @@ export default function AdminResearchRequestsPage() {
       <h1 className="text-xl font-bold mb-4">Research Requests</h1>
 
       {loading && <p className="text-sm text-muted-foreground">Loading…</p>}
-
       {!loading && items.length === 0 && (
         <p className="text-sm text-muted-foreground">No research requests yet.</p>
       )}
@@ -62,24 +74,37 @@ export default function AdminResearchRequestsPage() {
         <div className="space-y-2">
           {items.map(item => {
             const nameA = getDisplayName(item.cropA)
-            const nameB = getDisplayName(item.cropB)
+            // cropB is optional — single-crop requests have cropBId null.
+            const nameB = item.cropB ? getDisplayName(item.cropB) : null
+            const isPair = item.cropB !== null
+            const result = enqueueResult[item.id]
             return (
               <div
                 key={item.id}
                 className="flex items-center justify-between gap-4 border rounded-md px-4 py-3"
               >
                 <div className="min-w-0">
-                  <p className="font-medium text-sm">
-                    {nameA} &amp; {nameB}
-                  </p>
+                  <p className="font-medium text-sm">{nameB ? `${nameA} & ${nameB}` : nameA}</p>
                   <p className="text-xs text-muted-foreground italic">
-                    {item.cropA.botanicalName} × {item.cropB.botanicalName}
+                    {item.cropB
+                      ? `${item.cropA.botanicalName} × ${item.cropB.botanicalName}`
+                      : item.cropA.botanicalName}
                   </p>
                 </div>
-                <div className="flex items-center gap-3 shrink-0">
+                <div className="flex items-center gap-3 shrink-0 flex-wrap justify-end">
                   <Badge variant="secondary">{item.voteCount} vote{item.voteCount !== 1 ? 's' : ''}</Badge>
                   {item.funded && <Badge variant="default">Funded</Badge>}
-                  <ResearchFundButton cropAName={nameA} cropBName={nameB} cropAId={item.cropAId} cropBId={item.cropBId} />
+                  {!isPair && <Badge variant="outline">Single crop</Badge>}
+                  {isPair && item.cropBId && nameB && (
+                    <ResearchFundButton
+                      cropAName={nameA}
+                      cropBName={nameB}
+                      cropAId={item.cropAId}
+                      cropBId={item.cropBId}
+                      signedIn
+                      onRequireSignIn={() => {}}
+                    />
+                  )}
                   <Button
                     size="sm"
                     variant={item.funded ? 'outline' : 'secondary'}
@@ -88,6 +113,18 @@ export default function AdminResearchRequestsPage() {
                   >
                     {item.funded ? 'Unmark funded' : 'Mark funded'}
                   </Button>
+                  {isPair && (
+                    <Button
+                      size="sm"
+                      disabled={enqueueing === item.id}
+                      onClick={() => enqueue(item)}
+                    >
+                      {enqueueing === item.id ? 'Enqueueing…' : 'Enqueue'}
+                    </Button>
+                  )}
+                  {result === 'queued' && <span className="text-xs text-green-600">Queued ✓</span>}
+                  {result === 'exists' && <span className="text-xs text-muted-foreground">Already queued</span>}
+                  {result === 'error' && <span className="text-xs text-destructive">Failed</span>}
                 </div>
               </div>
             )

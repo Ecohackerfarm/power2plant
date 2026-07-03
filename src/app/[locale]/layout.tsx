@@ -1,18 +1,33 @@
-import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import type { Metadata, Viewport } from 'next'
+import { DM_Sans, Fraunces } from 'next/font/google'
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 import { Toaster } from 'sonner'
 import { routing, RTL_LOCALES } from '@/i18n/routing'
+import { clientEnv } from '@/lib/client-env'
 import '../globals.css'
 
-const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
-const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] })
+const dmSans = DM_Sans({
+  variable: '--font-dm-sans',
+  subsets: ['latin'],
+  weight: ['400', '500', '600'],
+})
+const fraunces = Fraunces({
+  variable: '--font-fraunces',
+  subsets: ['latin'],
+  weight: ['300', '700'],
+  style: ['normal', 'italic'],
+})
 
 export const metadata: Metadata = {
-  title: 'power2plant',
+  title: clientEnv.brand(),
   description: 'Companion planting garden planner',
+  manifest: '/manifest.webmanifest',
+}
+
+export const viewport: Viewport = {
+  themeColor: '#1C2E28',
 }
 
 export default async function LocaleLayout({
@@ -27,9 +42,20 @@ export default async function LocaleLayout({
 
   const messages = await getMessages()
 
+  const publicEnv = {
+    APP_URL:                 process.env['APP_URL'] ?? '',
+    STRIPE_PUBLISHABLE_KEY:  process.env['STRIPE_PUBLISHABLE_KEY'] ?? '',
+    KOFI_URL:                process.env['KOFI_URL'] ?? '',
+    BRAND_NAME:              process.env['BRAND_NAME'] ?? '',
+  }
+
   return (
-    <html lang={locale} dir={RTL_LOCALES.has(locale) ? 'rtl' : 'ltr'}>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+    <html lang={locale} dir={RTL_LOCALES.has(locale) ? 'rtl' : 'ltr'} suppressHydrationWarning>
+      <head>
+        {/* Injected at request time so client code reads runtime env without build-time baking */}
+        <script dangerouslySetInnerHTML={{ __html: `window.__ENV__=${JSON.stringify(publicEnv)}` }} />
+      </head>
+      <body className={`${dmSans.variable} ${fraunces.variable} antialiased`}>
         <NextIntlClientProvider messages={messages}>
           {children}
         </NextIntlClientProvider>

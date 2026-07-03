@@ -21,17 +21,36 @@ export async function GET() {
     },
   })
 
+  // Attach queue entry info for funded pairs
+  const fundedPairs = requests.filter(r => r.funded && r.cropBId)
+  const queueEntries = fundedPairs.length > 0
+    ? await prisma.researchQueue.findMany({
+        where: {
+          OR: fundedPairs.map(r => ({ cropAId: r.cropAId, cropBId: r.cropBId! })),
+        },
+        select: { id: true, status: true, cropAId: true, cropBId: true },
+      })
+    : []
+
   return NextResponse.json(
-    requests.map(r => ({
-      id: r.id,
-      cropAId: r.cropAId,
-      cropBId: r.cropBId,
-      voteCount: r.voteCount,
-      createdAt: r.createdAt,
-      cropA: r.cropA,
-      cropB: r.cropB,
-      hasVoted: session ? (r.votes?.length ?? 0) > 0 : false,
-    }))
+    requests.map(r => {
+      const queueEntry = r.cropBId
+        ? queueEntries.find(q => q.cropAId === r.cropAId && q.cropBId === r.cropBId)
+        : undefined
+      return {
+        id: r.id,
+        cropAId: r.cropAId,
+        cropBId: r.cropBId,
+        voteCount: r.voteCount,
+        funded: r.funded,
+        createdAt: r.createdAt,
+        cropA: r.cropA,
+        cropB: r.cropB,
+        hasVoted: session ? (r.votes?.length ?? 0) > 0 : false,
+        queueId: queueEntry?.id ?? null,
+        queueStatus: queueEntry?.status ?? null,
+      }
+    })
   )
 }
 
@@ -47,31 +66,45 @@ export async function POST(req: Request) {
   }
 
   const raw = body as { cropAId?: unknown; cropBId?: unknown }
-  if (typeof raw.cropAId !== 'string' || typeof raw.cropBId !== 'string') {
-    return NextResponse.json({ error: 'cropAId and cropBId required' }, { status: 400 })
+  if (typeof raw.cropAId !== 'string') {
+    return NextResponse.json({ error: 'cropAId required' }, { status: 400 })
   }
-  if (raw.cropAId === raw.cropBId) {
+
+  // cropBId is optional — omit or null for a single-plant request
+  const hasCropB = raw.cropBId !== undefined && raw.cropBId !== null
+  if (hasCropB && typeof raw.cropBId !== 'string') {
+    return NextResponse.json({ error: 'cropBId must be a string' }, { status: 400 })
+  }
+  if (hasCropB && raw.cropAId === raw.cropBId) {
     return NextResponse.json({ error: 'cropAId and cropBId must differ' }, { status: 400 })
   }
 
-  // Normalize: smaller ID always goes to cropAId (matches recommend.ts pairKey logic)
-  const cropAId = raw.cropAId < raw.cropBId ? raw.cropAId : raw.cropBId
-  const cropBId = raw.cropAId < raw.cropBId ? raw.cropBId : raw.cropAId
+  // Normalise pair order so smaller ID is always cropA
+  const cropAId = hasCropB
+    ? (raw.cropAId < (raw.cropBId as string) ? raw.cropAId : raw.cropBId as string)
+    : raw.cropAId
+  const cropBId: string | null = hasCropB
+    ? (raw.cropAId < (raw.cropBId as string) ? raw.cropBId as string : raw.cropAId)
+    : null
 
-  const [cropA, cropB] = await Promise.all([
-    prisma.crop.findUnique({ where: { id: cropAId }, select: { id: true } }),
-    prisma.crop.findUnique({ where: { id: cropBId }, select: { id: true } }),
-  ])
-  if (!cropA || !cropB) {
-    return NextResponse.json({ error: 'crop not found' }, { status: 404 })
+  const cropA = await prisma.crop.findUnique({ where: { id: cropAId }, select: { id: true } })
+  if (!cropA) return NextResponse.json({ error: 'crop not found' }, { status: 404 })
+
+  if (cropBId) {
+    const cropB = await prisma.crop.findUnique({ where: { id: cropBId }, select: { id: true } })
+    if (!cropB) return NextResponse.json({ error: 'crop not found' }, { status: 404 })
   }
 
   const result = await prisma.$transaction(async (tx) => {
-    const request = await tx.researchRequest.upsert({
-      where: { cropAId_cropBId: { cropAId, cropBId } },
-      create: { cropAId, cropBId, voteCount: 0 },
-      update: {},
+    // findFirst + create because Prisma can't upsert on partial DB indexes
+    let request = await tx.researchRequest.findFirst({
+      where: cropBId ? { cropAId, cropBId } : { cropAId, cropBId: null },
     })
+    if (!request) {
+      request = await tx.researchRequest.create({
+        data: { cropAId, cropBId, voteCount: 0 },
+      })
+    }
 
     const existing = await tx.researchRequestVote.findUnique({
       where: { requestId_userId: { requestId: request.id, userId: session.user.id } },

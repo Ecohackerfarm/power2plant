@@ -10,7 +10,22 @@
     "pleaseWait": "Por favor aguarde…",
     "noAccount": "Sem conta? Cadastre-se",
     "haveAccount": "Já tem conta? Entre",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "checkYourEmail": "Verifique seu e-mail",
+    "verifyEmailSent": "Enviamos um link de verificação para o seu e-mail. Clique nele para ativar sua conta.",
+    "forgotPassword": "Esqueceu a senha?",
+    "resetPasswordTitle": "Redefinir senha",
+    "sendResetLink": "Enviar link de redefinição",
+    "resetLinkSent": "Verifique seu e-mail para um link de redefinição.",
+    "resendVerification": "Reenviar e-mail de verificação",
+    "verificationResent": "E-mail de verificação enviado!",
+    "newPassword": "Nova senha",
+    "confirmPassword": "Confirmar senha",
+    "setPassword": "Definir nova senha",
+    "passwordResetSuccess": "Senha redefinida! Agora você pode fazer login.",
+    "passwordMismatch": "As senhas não coincidem",
+    "invalidResetToken": "Este link é inválido ou expirou.",
+    "backToSignIn": "Voltar ao login"
   },
   "Home": {
     "subtitle": "Recomendações de plantas companheiras para seus canteiros.",
@@ -25,20 +40,43 @@
     "addAtLeast2": "Adicione pelo menos 2 plantas à sua lista de desejos."
   },
   "Landing": {
-    "title": "power2plant",
-    "subtitle": "Planejador de horta para plantas companheiras",
-    "lookupTitle": "Encontrar planta companheira",
-    "lookupDesc": "Encontre companheiras e antagonistas para qualquer planta",
-    "planTitle": "Planejar canteiros",
-    "planDesc": "Saiba o que quer cultivar — encontre o que combina",
-    "gardenTitle": "Minha horta",
-    "gardenDesc": "Veja como convivem as plantas dos seus canteiros"
+    "eyebrow": "Choose your path",
+    "learnMore": "Learn more",
+    "previous": "Previous",
+    "next": "Next",
+    "slides": {
+      "explore": {
+        "tab": "Explore Companion Plants",
+        "heading": "Find who your plants love.",
+        "description": "Search any plant to discover its best companions — and the ones to keep apart. Backed by traditional knowledge and community observations.",
+        "cta": "Start exploring"
+      },
+      "plan": {
+        "tab": "Plan Garden Beds",
+        "heading": "Know what fits together.",
+        "description": "Map out your beds with plants that support each other. Catch conflicts before they happen and make the most of every square metre.",
+        "cta": "Plan your beds"
+      },
+      "evaluate": {
+        "tab": "Evaluate Your Garden",
+        "heading": "See how your beds get along.",
+        "description": "Check the health of your existing garden layout. Get suggestions to improve harmony, yield, and soil over time.",
+        "cta": "Evaluate now"
+      },
+      "community": {
+        "tab": "Join Community to Research",
+        "heading": "Be part of the science.",
+        "description": "Collaborate with researchers and curious growers worldwide. Share your own garden observations, add useful sources you discover, or help fund the collection of peer-reviewed research through advanced scientific research AI. Every contribution strengthens our shared understanding of companion planting.",
+        "cta": "Join the community"
+      }
+    }
   },
   "Nav": {
     "lookup": "Encontrar planta companheira",
     "plan": "Planejar canteiros",
     "garden": "Minha horta",
-    "admin": "Administração"
+    "admin": "Administração",
+    "leaderboard": "Classificação"
   },
   "ZoneDetector": {
     "title": "Passo 1 — Sua zona de cultivo",
@@ -87,6 +125,7 @@
     "acceptSaving": "Salvando…",
     "planSaved": "Plano salvo na horta!",
     "bedSaved": "\"{name}\" salvo na horta!",
+    "viewGarden": "Ver horta →",
     "noBeds": "Nenhum canteiro com plantas para salvar.",
     "gardenFull": "Horta cheia — máximo 20 canteiros.",
     "overflow": "Excesso — sem espaço nos canteiros ({count} {count, plural, one {planta} other {plantas}})",
@@ -94,14 +133,14 @@
     "conflicts": "Conflitos — plantas incompatíveis no mesmo canteiro",
     "conflictItem": "{a} e {b} não devem compartilhar um canteiro",
     "conflictsHint": "Adicione mais canteiros para separar essas plantas.",
-    "noDataTitle": "Ainda não temos dados para esses pares",
+    "noDataTitle": "Ainda não temos dados para esses pares — mas você pode votar ou financiar a pesquisa",
     "requestResearch": "Solicitar pesquisa →"
   },
   "Relationships": {
     "title": "Observações da comunidade",
     "backHome": "← Início",
     "searchPlaceholder": "Pesquisar por nome da cultura…",
-    "noObservations": "Ainda não há observações",
+    "noObservations": "Ainda não há descobertas",
     "loadMore": "Carregar mais",
     "loading": "Carregando…",
     "companion": "Companheira",
@@ -111,7 +150,7 @@
     "sourceCount": "{count, plural, one {# fonte} other {# fontes}}",
     "companions": "Companheiras",
     "antagonists": "Antagonistas",
-    "contributeObservation": "Adicionar uma observação →",
+    "contributeObservation": "Adicionar uma descoberta →",
     "COMPANION": "Companheira",
     "AVOID": "Evitar",
     "PEST_CONTROL": "Controle de pragas",
@@ -124,7 +163,18 @@
     "TRADITIONAL": "tradicional",
     "OBSERVED": "observado",
     "PEER_REVIEWED": "revisado por pares",
-    "loadError": "Falha ao carregar relações. Tente novamente."
+    "loadError": "Falha ao carregar relações. Tente novamente.",
+    "noData": "No data yet",
+    "voteForResearch": "Vote for research",
+    "voted": "Voted",
+    "signInToVote": "Sign in to vote",
+    "noResults": "No plants found",
+    "plantHasNoData": "No companion data yet for this plant",
+    "ATTRACTS": "Attracts",
+    "NURSE": "Nurse crop",
+    "TRAP_CROP": "Trap crop",
+    "conflicting": "Contraditório",
+    "unreviewed": "Não revisado"
   },
   "Contribute": {
     "title": "Contribuir uma observação",
@@ -135,7 +185,7 @@
     "success": "Obrigado! Sua observação foi registrada.",
     "rateLimit": "Você já enviou uma relação para este par hoje.",
     "error": "Algo deu errado. Tente novamente.",
-    "newObservation": "Nova observação",
+    "newObservation": "Nova descoberta",
     "plantA": "Planta A",
     "plantB": "Planta B",
     "relationship": "Relação",
@@ -210,7 +260,9 @@
     "inheritedFrom": "via {genus}",
     "wikiReadMore": "Wikipedia →",
     "wikiAttribution": "Fonte: Wikipedia (CC BY-SA)",
-    "contributeObservation": "Adicionar uma observação →"
+    "contributeObservation": "Adicionar uma descoberta →",
+    "conflicting": "Contraditório",
+    "unreviewed": "Não revisado"
   },
   "RelationshipPage": {
     "back": "← Voltar",
@@ -260,16 +312,23 @@
     "RESEARCH": "Pesquisa",
     "link": "link",
     "genusLevelBanner": "Relação definida a nível de gênero ({genusA} ↔ {genusB}) — aplica-se a todas as espécies de {genus}.",
-    "appliesToAllSpecies": "Aplica-se a todas as espécies de {genus}."
+    "appliesToAllSpecies": "Aplica-se a todas as espécies de {genus}.",
+    "genusLevelEvidence": "Evidências ao nível do género",
+    "fundedBy": "Pesquisa financiada por",
+    "community": "Comunidade",
+    "unknownUser": "Anônimo",
+    "conflicting": "Evidência contraditória",
+    "unreviewed": "Não revisado",
+    "uncertain": "Incerto"
   },
   "GardenPage": {
-    "backHome": "← power2plant",
+    "backHome": "← {brand}",
     "title": "Minha horta",
     "subtitle": "Gerencie seus canteiros salvos.",
     "signInPrompt": "Entre para gerenciar seus canteiros."
   },
   "SharePage": {
-    "backHome": "← power2plant",
+    "backHome": "← {brand}",
     "title": "Plano de horta compartilhado",
     "subtitle": "Este é um instantâneo somente leitura. Válido até {date}.",
     "emptyBed": "Canteiro vazio"
@@ -352,5 +411,49 @@
     "error": "Algo deu errado. Tente novamente.",
     "drawAnnotation": "Arraste para destacar a área problemática.",
     "screenshotCapturing": "Capturando tela…"
+  },
+  "Plan": {
+    "step": "Passo {n} de 4",
+    "back": "← Voltar",
+    "continue": "Continuar →",
+    "skip": "Pular",
+    "getRecommendations": "Obter recomendações",
+    "recompute": "Recalcular",
+    "calculating": "Calculando…",
+    "detectZoneFirst": "Detecte sua zona primeiro.",
+    "addAtLeast2": "Adicione pelo menos 2 plantas.",
+    "addingToGarden": "Adicionando à sua horta existente.",
+    "startFresh": "Começar do zero"
+  },
+  "PaidFeatures": {
+    "title": "Desbloqueie mais com recarga",
+    "moreBeds": "Até 100 canteiros (gratuito: até 20)",
+    "topUp": "Recarregar →"
+  },
+  "UserProfile": {
+    "notFound": "Usuário não encontrado.",
+    "loading": "Carregando…",
+    "badges": "Emblemas",
+    "incrementalBadges": "Marcos de pesquisa",
+    "plantBadges": "Plantas pesquisadas",
+    "pairBadges": "Pares pesquisados",
+    "noBadges": "Nenhum emblema ainda.",
+    "plantsResearched": "{count} plantas",
+    "pairsResearched": "{count} pares"
+  },
+  "Leaderboard": {
+    "title": "Classificação de pesquisa",
+    "allTime": "Todo o tempo",
+    "yearly": "Este ano",
+    "monthly": "Este mês",
+    "weekly": "Esta semana",
+    "daily": "Hoje",
+    "rank": "Posição",
+    "researcher": "Pesquisador",
+    "researches": "Pesquisas",
+    "badge": "Distintivo",
+    "community": "Comunidade",
+    "noData": "Ainda não há dados para este período.",
+    "fundedBy": "financiado pelo fundo comunitário"
   }
 }

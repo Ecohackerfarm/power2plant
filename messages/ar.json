@@ -10,7 +10,22 @@
     "pleaseWait": "يرجى الانتظار…",
     "noAccount": "ليس لديك حساب؟ سجّل الآن",
     "haveAccount": "لديك حساب؟ سجّل دخولك",
-    "cancel": "إلغاء"
+    "cancel": "إلغاء",
+    "checkYourEmail": "تحقق من بريدك",
+    "verifyEmailSent": "أرسلنا رابط التحقق إلى بريدك الإلكتروني. انقر عليه لتفعيل حسابك.",
+    "forgotPassword": "نسيت كلمة المرور؟",
+    "resetPasswordTitle": "إعادة تعيين كلمة المرور",
+    "sendResetLink": "إرسال رابط إعادة التعيين",
+    "resetLinkSent": "تحقق من بريدك الإلكتروني للحصول على رابط إعادة تعيين كلمة المرور.",
+    "resendVerification": "إعادة إرسال بريد التحقق",
+    "verificationResent": "تم إرسال بريد التحقق!",
+    "newPassword": "كلمة المرور الجديدة",
+    "confirmPassword": "تأكيد كلمة المرور",
+    "setPassword": "تعيين كلمة مرور جديدة",
+    "passwordResetSuccess": "تمت إعادة تعيين كلمة المرور! يمكنك الآن تسجيل الدخول.",
+    "passwordMismatch": "كلمتا المرور غير متطابقتين",
+    "invalidResetToken": "هذا الرابط غير صالح أو منتهي الصلاحية.",
+    "backToSignIn": "العودة لتسجيل الدخول"
   },
   "Home": {
     "subtitle": "توصيات الزراعة التكاملية لأحواض حديقتك.",
@@ -25,20 +40,43 @@
     "addAtLeast2": "أضف نباتَين على الأقل إلى قائمة رغباتك."
   },
   "Landing": {
-    "title": "power2plant",
-    "subtitle": "مخطّط حديقة للزراعة التكاملية",
-    "lookupTitle": "ابحث عن نبات مرافق",
-    "lookupDesc": "ابحث عن النباتات المرافقة والمتضادة لأي نبات",
-    "planTitle": "خطّط أحواضك",
-    "planDesc": "اعرف ما تريد زراعته — اكتشف ما يتلاءم معاً",
-    "gardenTitle": "حديقتي",
-    "gardenDesc": "شاهد كيف تتعايش نباتات أحواضك"
+    "eyebrow": "Choose your path",
+    "learnMore": "Learn more",
+    "previous": "Previous",
+    "next": "Next",
+    "slides": {
+      "explore": {
+        "tab": "Explore Companion Plants",
+        "heading": "Find who your plants love.",
+        "description": "Search any plant to discover its best companions — and the ones to keep apart. Backed by traditional knowledge and community observations.",
+        "cta": "Start exploring"
+      },
+      "plan": {
+        "tab": "Plan Garden Beds",
+        "heading": "Know what fits together.",
+        "description": "Map out your beds with plants that support each other. Catch conflicts before they happen and make the most of every square metre.",
+        "cta": "Plan your beds"
+      },
+      "evaluate": {
+        "tab": "Evaluate Your Garden",
+        "heading": "See how your beds get along.",
+        "description": "Check the health of your existing garden layout. Get suggestions to improve harmony, yield, and soil over time.",
+        "cta": "Evaluate now"
+      },
+      "community": {
+        "tab": "Join Community to Research",
+        "heading": "Be part of the science.",
+        "description": "Collaborate with researchers and curious growers worldwide. Share your own garden observations, add useful sources you discover, or help fund the collection of peer-reviewed research through advanced scientific research AI. Every contribution strengthens our shared understanding of companion planting.",
+        "cta": "Join the community"
+      }
+    }
   },
   "Nav": {
     "lookup": "ابحث عن نبات مرافق",
     "plan": "خطّط أحواضك",
     "garden": "حديقتي",
-    "admin": "الإدارة"
+    "admin": "الإدارة",
+    "leaderboard": "لوحة المتصدرين"
   },
   "ZoneDetector": {
     "title": "الخطوة 1 — منطقة زراعتك",
@@ -87,6 +125,7 @@
     "acceptSaving": "جارٍ الحفظ…",
     "planSaved": "تم حفظ الخطة في الحديقة!",
     "bedSaved": "تم حفظ «{name}» في الحديقة!",
+    "viewGarden": "عرض الحديقة →",
     "noBeds": "لا أحواض تحتوي على نباتات للحفظ.",
     "gardenFull": "الحديقة ممتلئة — الحد الأقصى 20 حوضاً.",
     "overflow": "تجاوز السعة — لا مساحة في الأحواض ({count, plural, zero {لا نباتات} one {نبات واحد} two {نباتان} few {# نباتات} many {# نباتاً} other {# نبات}})",
@@ -94,14 +133,14 @@
     "conflicts": "تعارضات — نباتات غير متوافقة في الحوض ذاته",
     "conflictItem": "لا ينبغي أن يتشارك {a} و{b} الحوض ذاته",
     "conflictsHint": "أضف أحواضاً لفصل هذه النباتات.",
-    "noDataTitle": "لا تتوفر بيانات لهذه الأزواج بعد",
+    "noDataTitle": "لا تتوفر بيانات لهذه الأزواج بعد — لكن يمكنك التصويت أو تمويل البحث",
     "requestResearch": "طلب بحث ←"
   },
   "Relationships": {
     "title": "ملاحظات المجتمع",
     "backHome": "→ الرئيسية",
     "searchPlaceholder": "ابحث باسم المحصول…",
-    "noObservations": "لا توجد ملاحظات بعد",
+    "noObservations": "لا توجد اكتشافات بعد",
     "loadMore": "تحميل المزيد",
     "loading": "جارٍ التحميل…",
     "companion": "مرافق",
@@ -111,7 +150,7 @@
     "sourceCount": "{count, plural, zero {لا مصادر} one {مصدر واحد} two {مصدران} few {# مصادر} many {# مصدراً} other {# مصدر}}",
     "companions": "النباتات المرافقة",
     "antagonists": "النباتات المتضادة",
-    "contributeObservation": "أضف ملاحظة ←",
+    "contributeObservation": "أضف اكتشافاً ←",
     "COMPANION": "مرافق",
     "AVOID": "تجنّب",
     "PEST_CONTROL": "مكافحة الآفات",
@@ -124,7 +163,18 @@
     "TRADITIONAL": "تقليدي",
     "OBSERVED": "ملاحَظ",
     "PEER_REVIEWED": "محكَّم",
-    "loadError": "فشل تحميل العلاقات. يرجى المحاولة مجدداً."
+    "loadError": "فشل تحميل العلاقات. يرجى المحاولة مجدداً.",
+    "noData": "No data yet",
+    "voteForResearch": "Vote for research",
+    "voted": "Voted",
+    "signInToVote": "Sign in to vote",
+    "noResults": "No plants found",
+    "plantHasNoData": "No companion data yet for this plant",
+    "ATTRACTS": "Attracts",
+    "NURSE": "Nurse crop",
+    "TRAP_CROP": "Trap crop",
+    "conflicting": "متناقض",
+    "unreviewed": "غير مراجع"
   },
   "Contribute": {
     "title": "إضافة ملاحظة",
@@ -135,7 +185,7 @@
     "success": "شكراً! تم تسجيل ملاحظتك.",
     "rateLimit": "لقد أرسلت علاقة لهذا الزوج اليوم بالفعل.",
     "error": "حدث خطأ ما. يرجى المحاولة مجدداً.",
-    "newObservation": "ملاحظة جديدة",
+    "newObservation": "اكتشاف جديد",
     "plantA": "النبات A",
     "plantB": "النبات B",
     "relationship": "العلاقة",
@@ -210,7 +260,9 @@
     "inheritedFrom": "عبر {genus}",
     "wikiReadMore": "ويكيبيديا ←",
     "wikiAttribution": "المصدر: ويكيبيديا (CC BY-SA)",
-    "contributeObservation": "أضف ملاحظة ←"
+    "contributeObservation": "أضف اكتشافاً ←",
+    "conflicting": "متناقض",
+    "unreviewed": "غير مراجع"
   },
   "RelationshipPage": {
     "back": "→ رجوع",
@@ -260,16 +312,23 @@
     "RESEARCH": "بحث",
     "link": "رابط",
     "genusLevelBanner": "العلاقة محدَّدة على مستوى الجنس ({genusA} ↔ {genusB}) — تنطبق على جميع أنواع {genus}.",
-    "appliesToAllSpecies": "تنطبق على جميع أنواع {genus}."
+    "appliesToAllSpecies": "تنطبق على جميع أنواع {genus}.",
+    "genusLevelEvidence": "أدلة على مستوى الجنس",
+    "fundedBy": "البحث ممول من",
+    "community": "المجتمع",
+    "unknownUser": "مجهول",
+    "conflicting": "أدلة متناقضة",
+    "unreviewed": "غير مراجع",
+    "uncertain": "غير مؤكد"
   },
   "GardenPage": {
-    "backHome": "→ power2plant",
+    "backHome": "→ {brand}",
     "title": "حديقتي",
     "subtitle": "أدِر أحواضك المحفوظة.",
     "signInPrompt": "سجّل دخولك لإدارة أحواض حديقتك."
   },
   "SharePage": {
-    "backHome": "→ power2plant",
+    "backHome": "→ {brand}",
     "title": "خطة الحديقة المشتركة",
     "subtitle": "هذه لقطة للقراءة فقط. صالحة حتى {date}.",
     "emptyBed": "حوض فارغ"
@@ -352,5 +411,49 @@
     "error": "حدث خطأ ما. يرجى المحاولة مجدداً.",
     "drawAnnotation": "اسحب لتحديد منطقة المشكلة.",
     "screenshotCapturing": "جارٍ التقاط لقطة الشاشة…"
+  },
+  "Plan": {
+    "step": "الخطوة {n} من 4",
+    "back": "→ رجوع",
+    "continue": "متابعة ←",
+    "skip": "تخطي",
+    "getRecommendations": "احصل على توصيات",
+    "recompute": "إعادة الحساب",
+    "calculating": "جارٍ الحساب…",
+    "detectZoneFirst": "حدد منطقتك أولاً.",
+    "addAtLeast2": "أضف نباتَين على الأقل.",
+    "addingToGarden": "إضافة إلى حديقتك الحالية.",
+    "startFresh": "ابدأ من جديد"
+  },
+  "PaidFeatures": {
+    "title": "افتح المزيد بإضافة رصيد",
+    "moreBeds": "حتى 100 سرير (مجاناً: حتى 20)",
+    "topUp": "إضافة رصيد ←"
+  },
+  "UserProfile": {
+    "notFound": "المستخدم غير موجود.",
+    "loading": "جارِ التحميل…",
+    "badges": "الشارات",
+    "incrementalBadges": "معالم البحث",
+    "plantBadges": "النباتات المبحوثة",
+    "pairBadges": "الأزواج المبحوثة",
+    "noBadges": "لا توجد شارات بعد.",
+    "plantsResearched": "{count} نبات",
+    "pairsResearched": "{count} زوج"
+  },
+  "Leaderboard": {
+    "title": "لوحة متصدري الأبحاث",
+    "allTime": "كل الوقت",
+    "yearly": "هذا العام",
+    "monthly": "هذا الشهر",
+    "weekly": "هذا الأسبوع",
+    "daily": "اليوم",
+    "rank": "الترتيب",
+    "researcher": "الباحث",
+    "researches": "الأبحاث",
+    "badge": "الشارة",
+    "community": "المجتمع",
+    "noData": "لا توجد بيانات لهذه الفترة بعد.",
+    "fundedBy": "ممول من صندوق المجتمع"
   }
 }

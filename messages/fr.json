@@ -10,12 +10,27 @@
     "pleaseWait": "Veuillez patienter…",
     "noAccount": "Pas de compte ? S'inscrire",
     "haveAccount": "Déjà un compte ? Se connecter",
-    "cancel": "Annuler"
+    "cancel": "Annuler",
+    "checkYourEmail": "Vérifiez votre e-mail",
+    "verifyEmailSent": "Nous vous avons envoyé un lien de vérification. Cliquez dessus pour activer votre compte.",
+    "forgotPassword": "Mot de passe oublié ?",
+    "resetPasswordTitle": "Réinitialiser le mot de passe",
+    "sendResetLink": "Envoyer le lien de réinitialisation",
+    "resetLinkSent": "Vérifiez votre e-mail pour un lien de réinitialisation.",
+    "resendVerification": "Renvoyer l'e-mail de vérification",
+    "verificationResent": "E-mail de vérification envoyé !",
+    "newPassword": "Nouveau mot de passe",
+    "confirmPassword": "Confirmer le mot de passe",
+    "setPassword": "Définir le nouveau mot de passe",
+    "passwordResetSuccess": "Mot de passe réinitialisé ! Vous pouvez maintenant vous connecter.",
+    "passwordMismatch": "Les mots de passe ne correspondent pas",
+    "invalidResetToken": "Ce lien est invalide ou a expiré.",
+    "backToSignIn": "Retour à la connexion"
   },
   "Home": {
     "subtitle": "Recommandations de plantes compagnes pour vos planches de jardin.",
-    "contributeLink": "Contribuer une observation →",
-    "browseLink": "Parcourir les observations →",
+    "contributeLink": "Contribuer une découverte →",
+    "browseLink": "Parcourir les découvertes →",
     "myGarden": "Mon jardin →",
     "addingToGarden": "Ajout à votre jardin existant.",
     "startFresh": "Recommencer à zéro",
@@ -25,20 +40,43 @@
     "addAtLeast2": "Ajoutez au moins 2 plantes à votre liste de souhaits."
   },
   "Landing": {
-    "title": "power2plant",
-    "subtitle": "Planificateur de jardin pour les plantes compagnes",
-    "lookupTitle": "Trouver une plante compagne",
-    "lookupDesc": "Trouvez les compagnes et antagonistes de n'importe quelle plante",
-    "planTitle": "Planifier les planches",
-    "planDesc": "Sachez ce que vous voulez cultiver — trouvez ce qui va ensemble",
-    "gardenTitle": "Mon jardin",
-    "gardenDesc": "Voyez comment cohabitent les plantes de vos planches"
+    "eyebrow": "Choose your path",
+    "learnMore": "Learn more",
+    "previous": "Previous",
+    "next": "Next",
+    "slides": {
+      "explore": {
+        "tab": "Explore Companion Plants",
+        "heading": "Find who your plants love.",
+        "description": "Search any plant to discover its best companions — and the ones to keep apart. Backed by traditional knowledge and community observations.",
+        "cta": "Start exploring"
+      },
+      "plan": {
+        "tab": "Plan Garden Beds",
+        "heading": "Know what fits together.",
+        "description": "Map out your beds with plants that support each other. Catch conflicts before they happen and make the most of every square metre.",
+        "cta": "Plan your beds"
+      },
+      "evaluate": {
+        "tab": "Evaluate Your Garden",
+        "heading": "See how your beds get along.",
+        "description": "Check the health of your existing garden layout. Get suggestions to improve harmony, yield, and soil over time.",
+        "cta": "Evaluate now"
+      },
+      "community": {
+        "tab": "Join Community to Research",
+        "heading": "Be part of the science.",
+        "description": "Collaborate with researchers and curious growers worldwide. Share your own garden observations, add useful sources you discover, or help fund the collection of peer-reviewed research through advanced scientific research AI. Every contribution strengthens our shared understanding of companion planting.",
+        "cta": "Join the community"
+      }
+    }
   },
   "Nav": {
     "lookup": "Trouver une plante compagne",
     "plan": "Planifier les planches",
     "garden": "Mon jardin",
-    "admin": "Administration"
+    "admin": "Administration",
+    "leaderboard": "Classement"
   },
   "ZoneDetector": {
     "title": "Étape 1 — Votre zone de culture",
@@ -87,6 +125,7 @@
     "acceptSaving": "Sauvegarde…",
     "planSaved": "Plan sauvegardé dans le jardin !",
     "bedSaved": "« {name} » sauvegardée dans le jardin !",
+    "viewGarden": "Voir le jardin →",
     "noBeds": "Aucune planche avec des plantes à sauvegarder.",
     "gardenFull": "Jardin plein — maximum 20 planches.",
     "overflow": "Débordement — pas de place dans les planches ({count} {count, plural, one {plante} other {plantes}})",
@@ -94,14 +133,14 @@
     "conflicts": "Conflits — plantes incompatibles dans la même planche",
     "conflictItem": "{a} et {b} ne doivent pas partager la même planche",
     "conflictsHint": "Ajoutez plus de planches pour séparer ces plantes.",
-    "noDataTitle": "Nous n'avons pas encore de données pour ces paires",
+    "noDataTitle": "Nous n'avons pas encore de données pour ces paires — mais vous pouvez voter ou financer la recherche",
     "requestResearch": "Demander une recherche →"
   },
   "Relationships": {
-    "title": "Observations de la communauté",
+    "title": "Découvertes de la communauté",
     "backHome": "← Accueil",
     "searchPlaceholder": "Rechercher par nom de culture…",
-    "noObservations": "Pas encore d'observations",
+    "noObservations": "Pas encore de découvertes",
     "loadMore": "Charger plus",
     "loading": "Chargement…",
     "companion": "Compagne",
@@ -111,7 +150,7 @@
     "sourceCount": "{count, plural, one {# source} other {# sources}}",
     "companions": "Compagnes",
     "antagonists": "Antagonistes",
-    "contributeObservation": "Ajouter une observation →",
+    "contributeObservation": "Ajouter une découverte →",
     "COMPANION": "Compagne",
     "AVOID": "Éviter",
     "PEST_CONTROL": "Lutte antiparasitaire",
@@ -124,18 +163,29 @@
     "TRADITIONAL": "traditionnel",
     "OBSERVED": "observé",
     "PEER_REVIEWED": "évalué par les pairs",
-    "loadError": "Échec du chargement des relations. Réessayez."
+    "loadError": "Échec du chargement des relations. Réessayez.",
+    "noData": "No data yet",
+    "voteForResearch": "Vote for research",
+    "voted": "Voted",
+    "signInToVote": "Sign in to vote",
+    "noResults": "No plants found",
+    "plantHasNoData": "No companion data yet for this plant",
+    "ATTRACTS": "Attracts",
+    "NURSE": "Nurse crop",
+    "TRAP_CROP": "Trap crop",
+    "conflicting": "Contradictoire",
+    "unreviewed": "Non vérifié"
   },
   "Contribute": {
-    "title": "Contribuer une observation",
+    "title": "Contribuer une découverte",
     "back": "← Retour",
-    "subtitle": "Partagez ce que vous avez remarqué dans votre jardin. Vos observations aident à améliorer les recommandations pour tous.",
-    "signInPrompt": "Connectez-vous pour contribuer des observations de culture compagne.",
+    "subtitle": "Partagez ce que vous avez remarqué dans votre jardin. Vos découvertes aident à améliorer les recommandations pour tous.",
+    "signInPrompt": "Connectez-vous pour contribuer des découvertes de culture compagne.",
     "signInLink": "Se connecter",
-    "success": "Merci ! Votre observation a été enregistrée.",
+    "success": "Merci ! Votre découverte a été enregistrée.",
     "rateLimit": "Vous avez déjà soumis une relation pour cette paire aujourd'hui.",
     "error": "Une erreur s'est produite. Réessayez.",
-    "newObservation": "Nouvelle observation",
+    "newObservation": "Nouvelle découverte",
     "plantA": "Plante A",
     "plantB": "Plante B",
     "relationship": "Relation",
@@ -147,7 +197,7 @@
     "notesOptional": "(facultatif, max. 2000 caractères)",
     "notesPlaceholder": "ex. Plantées ensemble pendant 3 saisons, j'ai remarqué moins de pucerons…",
     "evidenceLevel": "Niveau de preuve",
-    "evidenceLevelHint": "Sélectionnez la preuve de la meilleure qualité que vous avez pour cette observation.",
+    "evidenceLevelHint": "Sélectionnez la preuve de la meilleure qualité que vous avez pour cette découverte.",
     "sources": "Sources",
     "sourcesHint": "Les liens doi.org et PubMed sont automatiquement reconnus comme des articles scientifiques.",
     "sourcesOptional": "(facultatif)",
@@ -155,7 +205,7 @@
     "remove": "supprimer",
     "autoDetected": "Détecté automatiquement",
     "submitting": "Envoi en cours…",
-    "submit": "Soumettre l'observation",
+    "submit": "Soumettre la découverte",
     "genusHint": "Les entrées de genre (ex. Ocimum L.) représentent toute la famille végétale — choisissez une espèce pour des recommandations plus précises.",
     "change": "modifier",
     "searchFor": "Rechercher {label}…",
@@ -175,7 +225,7 @@
     "BLOG_FORUM": "Blog / Forum",
     "PERSONAL_OBSERVATION": "Observation personnelle",
     "sourcePosition": "Que dit votre source ?",
-    "sourcePositionHint": "Sélectionnez si votre source soutient une conclusion différente de votre observation ci-dessus."
+    "sourcePositionHint": "Sélectionnez si votre source soutient une conclusion différente de votre découverte ci-dessus."
   },
   "PlantPage": {
     "backToPlan": "← Retour au plan",
@@ -210,7 +260,9 @@
     "inheritedFrom": "via {genus}",
     "wikiReadMore": "Wikipedia →",
     "wikiAttribution": "Source : Wikipedia (CC BY-SA)",
-    "contributeObservation": "Ajouter une observation →"
+    "contributeObservation": "Ajouter une découverte →",
+    "conflicting": "Contradictoire",
+    "unreviewed": "Non vérifié"
   },
   "RelationshipPage": {
     "back": "← Retour",
@@ -260,16 +312,23 @@
     "RESEARCH": "Recherche",
     "link": "lien",
     "genusLevelBanner": "Relation définie au niveau du genre ({genusA} ↔ {genusB}) — s'applique à toutes les espèces de {genus}.",
-    "appliesToAllSpecies": "S'applique à toutes les espèces de {genus}."
+    "appliesToAllSpecies": "S'applique à toutes les espèces de {genus}.",
+    "genusLevelEvidence": "Preuves au niveau du genre",
+    "fundedBy": "Recherche financée par",
+    "community": "Communauté",
+    "unknownUser": "Anonyme",
+    "conflicting": "Preuves contradictoires",
+    "unreviewed": "Non vérifié",
+    "uncertain": "Incertain"
   },
   "GardenPage": {
-    "backHome": "← power2plant",
+    "backHome": "← {brand}",
     "title": "Mon jardin",
     "subtitle": "Gérez vos planches sauvegardées.",
     "signInPrompt": "Connectez-vous pour gérer vos planches de jardin."
   },
   "SharePage": {
-    "backHome": "← power2plant",
+    "backHome": "← {brand}",
     "title": "Plan de jardin partagé",
     "subtitle": "C'est un instantané en lecture seule. Valide jusqu'au {date}.",
     "emptyBed": "Planche vide"
@@ -352,5 +411,49 @@
     "error": "Une erreur s'est produite. Réessayez.",
     "drawAnnotation": "Faites glisser pour surligner la zone problématique.",
     "screenshotCapturing": "Capture d'écran en cours…"
+  },
+  "Plan": {
+    "step": "Étape {n} sur 4",
+    "back": "← Retour",
+    "continue": "Continuer →",
+    "skip": "Passer",
+    "getRecommendations": "Obtenir des recommandations",
+    "recompute": "Recalculer",
+    "calculating": "Calcul en cours…",
+    "detectZoneFirst": "Détectez votre zone d'abord.",
+    "addAtLeast2": "Ajoutez au moins 2 plantes.",
+    "addingToGarden": "Ajout à votre jardin existant.",
+    "startFresh": "Recommencer"
+  },
+  "PaidFeatures": {
+    "title": "Débloquez plus avec une recharge",
+    "moreBeds": "Jusqu'à 100 carrés (gratuit : jusqu'à 20)",
+    "topUp": "Recharger →"
+  },
+  "UserProfile": {
+    "notFound": "Utilisateur introuvable.",
+    "loading": "Chargement…",
+    "badges": "Badges",
+    "incrementalBadges": "Jalons de recherche",
+    "plantBadges": "Plantes étudiées",
+    "pairBadges": "Paires étudiées",
+    "noBadges": "Pas encore de badges.",
+    "plantsResearched": "{count} plantes",
+    "pairsResearched": "{count} paires"
+  },
+  "Leaderboard": {
+    "title": "Classement des recherches",
+    "allTime": "Tout le temps",
+    "yearly": "Cette année",
+    "monthly": "Ce mois-ci",
+    "weekly": "Cette semaine",
+    "daily": "Aujourd'hui",
+    "rank": "Rang",
+    "researcher": "Chercheur",
+    "researches": "Recherches",
+    "badge": "Badge",
+    "community": "Communauté",
+    "noData": "Pas encore de données pour cette période.",
+    "fundedBy": "financé par la cagnotte communautaire"
   }
 }

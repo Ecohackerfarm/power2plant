@@ -11,13 +11,17 @@ type CropRow = {
   isNitrogenFixer: boolean
 }
 
+type ReasonRow = { type: string; explanation: string }
+
 type CompanionRow = CropRow & {
   relationshipId: string
   type: string
-  reason: string | null
+  reasons: ReasonRow[]
   confidence: number
   notes: string | null
   direction: string
+  conflict: boolean
+  unreviewed: boolean
 }
 
 type GenusRow = { id: string; botanicalName: string; name: string }
@@ -44,14 +48,25 @@ export async function GET(
   const directCompanions = await prisma.$queryRaw<CompanionRow[]>`
     SELECT
       c.id, c.name, c."botanicalName", c."commonNames", c."minTempC", c."isNitrogenFixer",
-      cr.id AS "relationshipId", cr.type, cr.reason, cr.confidence, cr.notes, cr.direction
+      cr.id AS "relationshipId", cr.type, cr.confidence, cr.notes, cr.direction,
+      cr.conflict,
+      NOT EXISTS (
+        SELECT 1 FROM "ReviewCheck" rc
+        JOIN "RelationshipSource" rs ON rs.id = rc."sourceId"
+        WHERE rs."relationshipId" = cr.id
+      ) AS unreviewed,
+      COALESCE((
+        SELECT json_agg(json_build_object('type', rr.mechanism, 'explanation', rr.explanation))
+        FROM "RelationshipClaim" rr WHERE rr."relationshipId" = cr.id
+      ), '[]'::json) AS reasons
     FROM "CropRelationship" cr
     JOIN "Crop" c ON (
       CASE WHEN cr."cropAId" = ${id} THEN cr."cropBId" ELSE cr."cropAId" END = c.id
     )
     WHERE
       (cr."cropAId" = ${id} OR cr."cropBId" = ${id})
-      AND cr.type IN ('COMPANION', 'ATTRACTS', 'NURSE', 'TRAP_CROP')
+      AND cr.type = 'COMPANION'
+      AND cr."deletedAt" IS NULL
     ORDER BY cr.confidence DESC
   `
 
@@ -74,14 +89,25 @@ export async function GET(
       const genusCompanions = await prisma.$queryRaw<CompanionRow[]>`
         SELECT
           c.id, c.name, c."botanicalName", c."commonNames", c."minTempC", c."isNitrogenFixer",
-          cr.id AS "relationshipId", cr.type, cr.reason, cr.confidence, cr.notes, cr.direction
+          cr.id AS "relationshipId", cr.type, cr.confidence, cr.notes, cr.direction,
+          cr.conflict,
+          NOT EXISTS (
+            SELECT 1 FROM "ReviewCheck" rc
+            JOIN "RelationshipSource" rs ON rs.id = rc."sourceId"
+            WHERE rs."relationshipId" = cr.id
+          ) AS unreviewed,
+          COALESCE((
+            SELECT json_agg(json_build_object('type', rr.mechanism, 'explanation', rr.explanation))
+            FROM "RelationshipClaim" rr WHERE rr."relationshipId" = cr.id
+          ), '[]'::json) AS reasons
         FROM "CropRelationship" cr
         JOIN "Crop" c ON (
           CASE WHEN cr."cropAId" = ${genusId} THEN cr."cropBId" ELSE cr."cropAId" END = c.id
         )
         WHERE
           (cr."cropAId" = ${genusId} OR cr."cropBId" = ${genusId})
-          AND cr.type IN ('COMPANION', 'ATTRACTS', 'NURSE', 'TRAP_CROP')
+          AND cr.type = 'COMPANION'
+          AND cr."deletedAt" IS NULL
         ORDER BY cr.confidence DESC
       `
 

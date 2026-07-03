@@ -10,7 +10,22 @@
     "pleaseWait": "Por favor espera…",
     "noAccount": "¿Sin cuenta? Regístrate",
     "haveAccount": "¿Ya tienes cuenta? Inicia sesión",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "checkYourEmail": "Revisa tu correo",
+    "verifyEmailSent": "Te enviamos un enlace de verificación. Haz clic en él para activar tu cuenta.",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "resetPasswordTitle": "Restablecer contraseña",
+    "sendResetLink": "Enviar enlace de restablecimiento",
+    "resetLinkSent": "Revisa tu correo electrónico para obtener un enlace de restablecimiento.",
+    "resendVerification": "Reenviar correo de verificación",
+    "verificationResent": "¡Correo de verificación enviado!",
+    "newPassword": "Nueva contraseña",
+    "confirmPassword": "Confirmar contraseña",
+    "setPassword": "Establecer nueva contraseña",
+    "passwordResetSuccess": "¡Contraseña restablecida! Ahora puedes iniciar sesión.",
+    "passwordMismatch": "Las contraseñas no coinciden",
+    "invalidResetToken": "Este enlace es inválido o ha expirado.",
+    "backToSignIn": "Volver al inicio de sesión"
   },
   "Home": {
     "subtitle": "Recomendaciones de plantas compañeras para tus bancales.",
@@ -25,20 +40,43 @@
     "addAtLeast2": "Añade al menos 2 plantas a tu lista de deseos."
   },
   "Landing": {
-    "title": "power2plant",
-    "subtitle": "Planificador de huerto para plantas compañeras",
-    "lookupTitle": "Buscar planta compañera",
-    "lookupDesc": "Encuentra compañeras y antagonistas para cualquier planta",
-    "planTitle": "Planificar bancales",
-    "planDesc": "Sabe qué quieres cultivar — encuentra qué va junto",
-    "gardenTitle": "Mi huerto",
-    "gardenDesc": "Ve cómo conviven las plantas de tus bancales"
+    "eyebrow": "Choose your path",
+    "learnMore": "Learn more",
+    "previous": "Previous",
+    "next": "Next",
+    "slides": {
+      "explore": {
+        "tab": "Explore Companion Plants",
+        "heading": "Find who your plants love.",
+        "description": "Search any plant to discover its best companions — and the ones to keep apart. Backed by traditional knowledge and community observations.",
+        "cta": "Start exploring"
+      },
+      "plan": {
+        "tab": "Plan Garden Beds",
+        "heading": "Know what fits together.",
+        "description": "Map out your beds with plants that support each other. Catch conflicts before they happen and make the most of every square metre.",
+        "cta": "Plan your beds"
+      },
+      "evaluate": {
+        "tab": "Evaluate Your Garden",
+        "heading": "See how your beds get along.",
+        "description": "Check the health of your existing garden layout. Get suggestions to improve harmony, yield, and soil over time.",
+        "cta": "Evaluate now"
+      },
+      "community": {
+        "tab": "Join Community to Research",
+        "heading": "Be part of the science.",
+        "description": "Collaborate with researchers and curious growers worldwide. Share your own garden observations, add useful sources you discover, or help fund the collection of peer-reviewed research through advanced scientific research AI. Every contribution strengthens our shared understanding of companion planting.",
+        "cta": "Join the community"
+      }
+    }
   },
   "Nav": {
     "lookup": "Buscar planta compañera",
     "plan": "Planificar bancales",
     "garden": "Mi huerto",
-    "admin": "Administración"
+    "admin": "Administración",
+    "leaderboard": "Clasificación"
   },
   "ZoneDetector": {
     "title": "Paso 1 — Tu zona de cultivo",
@@ -87,6 +125,7 @@
     "acceptSaving": "Guardando…",
     "planSaved": "¡Plan guardado en el huerto!",
     "bedSaved": "¡\"{name}\" guardado en el huerto!",
+    "viewGarden": "Ver jardín →",
     "noBeds": "No hay bancales con plantas que guardar.",
     "gardenFull": "Huerto lleno — máximo 20 bancales.",
     "overflow": "Desbordamiento — sin espacio en bancales ({count} {count, plural, one {planta} other {plantas}})",
@@ -94,14 +133,14 @@
     "conflicts": "Conflictos — plantas incompatibles en el mismo bancal",
     "conflictItem": "{a} y {b} no deben compartir bancal",
     "conflictsHint": "Añade más bancales para separar estas plantas.",
-    "noDataTitle": "Aún no tenemos datos para estos pares",
+    "noDataTitle": "Aún no tenemos datos para estos pares — pero puedes votar o financiar la investigación",
     "requestResearch": "Solicitar investigación →"
   },
   "Relationships": {
     "title": "Observaciones de la comunidad",
     "backHome": "← Inicio",
     "searchPlaceholder": "Buscar por nombre de cultivo…",
-    "noObservations": "Aún no hay observaciones",
+    "noObservations": "Aún no hay hallazgos",
     "loadMore": "Cargar más",
     "loading": "Cargando…",
     "companion": "Compañera",
@@ -111,7 +150,7 @@
     "sourceCount": "{count, plural, one {# fuente} other {# fuentes}}",
     "companions": "Compañeras",
     "antagonists": "Antagonistas",
-    "contributeObservation": "Añadir una observación →",
+    "contributeObservation": "Añadir un hallazgo →",
     "COMPANION": "Compañera",
     "AVOID": "Evitar",
     "PEST_CONTROL": "Control de plagas",
@@ -124,7 +163,18 @@
     "TRADITIONAL": "tradicional",
     "OBSERVED": "observado",
     "PEER_REVIEWED": "revisado por pares",
-    "loadError": "Error al cargar las relaciones. Inténtalo de nuevo."
+    "loadError": "Error al cargar las relaciones. Inténtalo de nuevo.",
+    "noData": "No data yet",
+    "voteForResearch": "Vote for research",
+    "voted": "Voted",
+    "signInToVote": "Sign in to vote",
+    "noResults": "No plants found",
+    "plantHasNoData": "No companion data yet for this plant",
+    "ATTRACTS": "Attracts",
+    "NURSE": "Nurse crop",
+    "TRAP_CROP": "Trap crop",
+    "conflicting": "Contradictorio",
+    "unreviewed": "Sin revisar"
   },
   "Contribute": {
     "title": "Contribuir una observación",
@@ -135,7 +185,7 @@
     "success": "¡Gracias! Tu observación ha sido registrada.",
     "rateLimit": "Ya enviaste una relación para este par hoy.",
     "error": "Algo salió mal. Inténtalo de nuevo.",
-    "newObservation": "Nueva observación",
+    "newObservation": "Nuevo hallazgo",
     "plantA": "Planta A",
     "plantB": "Planta B",
     "relationship": "Relación",
@@ -210,7 +260,9 @@
     "inheritedFrom": "vía {genus}",
     "wikiReadMore": "Wikipedia →",
     "wikiAttribution": "Fuente: Wikipedia (CC BY-SA)",
-    "contributeObservation": "Añadir una observación →"
+    "contributeObservation": "Añadir un hallazgo →",
+    "conflicting": "Contradictorio",
+    "unreviewed": "Sin revisar"
   },
   "RelationshipPage": {
     "back": "← Volver",
@@ -260,16 +312,23 @@
     "RESEARCH": "Investigación",
     "link": "enlace",
     "genusLevelBanner": "Relación definida a nivel de género ({genusA} ↔ {genusB}) — se aplica a todas las especies de {genus}.",
-    "appliesToAllSpecies": "Se aplica a todas las especies de {genus}."
+    "appliesToAllSpecies": "Se aplica a todas las especies de {genus}.",
+    "genusLevelEvidence": "Evidencia a nivel de género",
+    "fundedBy": "Investigación financiada por",
+    "community": "Comunidad",
+    "unknownUser": "Anónimo",
+    "conflicting": "Evidencia contradictoria",
+    "unreviewed": "Sin revisar",
+    "uncertain": "Incierto"
   },
   "GardenPage": {
-    "backHome": "← power2plant",
+    "backHome": "← {brand}",
     "title": "Mi huerto",
     "subtitle": "Gestiona tus bancales guardados.",
     "signInPrompt": "Inicia sesión para gestionar tus bancales."
   },
   "SharePage": {
-    "backHome": "← power2plant",
+    "backHome": "← {brand}",
     "title": "Plan de huerto compartido",
     "subtitle": "Esta es una instantánea de solo lectura. Válida hasta {date}.",
     "emptyBed": "Bancal vacío"
@@ -352,5 +411,49 @@
     "error": "Algo salió mal. Inténtalo de nuevo.",
     "drawAnnotation": "Arrastra para resaltar el área problemática.",
     "screenshotCapturing": "Capturando pantalla…"
+  },
+  "Plan": {
+    "step": "Paso {n} de 4",
+    "back": "← Atrás",
+    "continue": "Continuar →",
+    "skip": "Omitir",
+    "getRecommendations": "Obtener recomendaciones",
+    "recompute": "Recalcular",
+    "calculating": "Calculando…",
+    "detectZoneFirst": "Detecta tu zona primero.",
+    "addAtLeast2": "Añade al menos 2 plantas.",
+    "addingToGarden": "Añadiendo a tu jardín existente.",
+    "startFresh": "Empezar de nuevo"
+  },
+  "PaidFeatures": {
+    "title": "Desbloquea más con una recarga",
+    "moreBeds": "Hasta 100 bancales (gratuito: hasta 20)",
+    "topUp": "Recargar →"
+  },
+  "UserProfile": {
+    "notFound": "Usuario no encontrado.",
+    "loading": "Cargando…",
+    "badges": "Insignias",
+    "incrementalBadges": "Hitos de investigación",
+    "plantBadges": "Plantas investigadas",
+    "pairBadges": "Pares investigados",
+    "noBadges": "Aún sin insignias.",
+    "plantsResearched": "{count} plantas",
+    "pairsResearched": "{count} pares"
+  },
+  "Leaderboard": {
+    "title": "Clasificación de investigación",
+    "allTime": "Todo el tiempo",
+    "yearly": "Este año",
+    "monthly": "Este mes",
+    "weekly": "Esta semana",
+    "daily": "Hoy",
+    "rank": "Rango",
+    "researcher": "Investigador",
+    "researches": "Investigaciones",
+    "badge": "Insignia",
+    "community": "Comunidad",
+    "noData": "Todavía no hay datos para este período.",
+    "fundedBy": "financiado por el fondo comunitario"
   }
 }

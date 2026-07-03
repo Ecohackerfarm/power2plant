@@ -2,9 +2,12 @@ import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { detectRank, extractGenusWord } from '@/lib/crop-rank'
 
+type ReasonRow = { type: string; explanation: string }
+
 type RelRow = {
-  relId: string; type: string; reason: string | null; reasons: string[]; confidence: number
+  relId: string; type: string; reasons: ReasonRow[]; confidence: number
   notes: string | null; direction: string
+  conflict: boolean; unreviewed: boolean
   cropAId: string; cropAName: string; cropABotanical: string; cropACommonNames: string[]
   cropANitrogen: boolean
   cropBId: string; cropBName: string; cropBBotanical: string; cropBCommonNames: string[]
@@ -14,10 +17,19 @@ type RelRow = {
 type GenusRow = { id: string; botanicalName: string }
 
 async function findRelationship(cropAId: string, cropBId: string): Promise<RelRow | null> {
-  const [a, b] = cropAId < cropBId ? [cropAId, cropBId] : [cropBId, cropAId]
   const rows = await prisma.$queryRaw<RelRow[]>`
     SELECT
-      cr.id AS "relId", cr.type, cr.reason, cr.reasons, cr.confidence, cr.notes, cr.direction,
+      cr.id AS "relId", cr.type, cr.confidence, cr.notes, cr.direction,
+      cr.conflict,
+      NOT EXISTS (
+        SELECT 1 FROM "ReviewCheck" rc
+        JOIN "RelationshipSource" rs ON rs.id = rc."sourceId"
+        WHERE rs."relationshipId" = cr.id
+      ) AS unreviewed,
+      COALESCE((
+        SELECT json_agg(json_build_object('type', rr.mechanism, 'explanation', rr.explanation))
+        FROM "RelationshipClaim" rr WHERE rr."relationshipId" = cr.id
+      ), '[]'::json) AS reasons,
       ca.id AS "cropAId", ca.name AS "cropAName", ca."botanicalName" AS "cropABotanical",
       ca."commonNames" AS "cropACommonNames", ca."isNitrogenFixer" AS "cropANitrogen",
       cb.id AS "cropBId", cb.name AS "cropBName", cb."botanicalName" AS "cropBBotanical",
@@ -25,7 +37,9 @@ async function findRelationship(cropAId: string, cropBId: string): Promise<RelRo
     FROM "CropRelationship" cr
     JOIN "Crop" ca ON cr."cropAId" = ca.id
     JOIN "Crop" cb ON cr."cropBId" = cb.id
-    WHERE cr."cropAId" = ${a} AND cr."cropBId" = ${b}
+    WHERE ((cr."cropAId" = ${cropAId} AND cr."cropBId" = ${cropBId})
+       OR (cr."cropAId" = ${cropBId} AND cr."cropBId" = ${cropAId}))
+      AND cr."deletedAt" IS NULL
   `
   return rows[0] ?? null
 }
@@ -41,10 +55,11 @@ async function findGenusCrop(botanicalName: string): Promise<GenusRow | null> {
 }
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string; companionId: string }> },
 ) {
   const { id, companionId } = await params
+  const locale = new URL(req.url).searchParams.get('locale') ?? 'en'
 
   // Try direct relationship
   const directRel = await findRelationship(id, companionId)
@@ -92,6 +107,23 @@ export async function GET(
     orderBy: { attemptedAt: 'desc' },
   })
 
+  // Find completed research queue entry for this pair
+  const queueEntry = await prisma.researchQueue.findFirst({
+    where: { cropAId: cA, cropBId: cB, status: 'DONE' },
+    include: {
+      funders: {
+        include: { user: { select: { id: true, name: true } } },
+        orderBy: { createdAt: 'asc' },
+      },
+    },
+  })
+
+  const funders = queueEntry?.funders.map(f => ({
+    userId: f.userId,
+    name: f.user?.name ?? null,
+    source: f.source,
+  })) ?? []
+
   if (!rel) {
     if (researchAttempts.length === 0) {
       return NextResponse.json({ error: 'relationship not found' }, { status: 404 })
@@ -100,12 +132,13 @@ export async function GET(
       relationship: null,
       sources: [],
       researchAttempts: researchAttempts.map(a => ({ ...a, attemptedAt: a.attemptedAt.toISOString() })),
+      funders,
     })
   }
 
   const rawSources = await prisma.relationshipSource.findMany({
     where: { relationshipId: rel.relId },
-    select: { source: true, sourceType: true, confidence: true, position: true, url: true, notes: true, fetchedAt: true, userId: true },
+    select: { source: true, sourceType: true, confidence: true, url: true, notes: true, fetchedAt: true, userId: true },
     orderBy: { confidence: 'desc' },
   })
 
@@ -152,7 +185,6 @@ export async function GET(
     ...other.map(s => ({
       source: s.source,
       confidence: s.confidence,
-      position: s.position,
       url: s.url,
       notes: s.notes,
       fetchedAt: s.fetchedAt.toISOString(),
@@ -161,12 +193,64 @@ export async function GET(
     ...groupedCommunity,
   ]
 
+  // Fetch genus sources for species relationships (case: direct rel exists but genus also has sources)
+  let genusSources: typeof sources = []
+  if (!resolvedToGenus && rel) {
+    const cropRows2 = await prisma.$queryRaw<Array<{ id: string; botanicalName: string }>>`
+      SELECT id, "botanicalName" FROM "Crop" WHERE id IN (${rel.cropAId}, ${rel.cropBId})
+    `
+    const cA2 = cropRows2.find(r => r.id === rel!.cropAId)
+    const cB2 = cropRows2.find(r => r.id === rel!.cropBId)
+    if (
+      cA2 && cB2 &&
+      detectRank(cA2.botanicalName) === 'species' &&
+      detectRank(cB2.botanicalName) === 'species'
+    ) {
+      const [gA, gB] = await Promise.all([findGenusCrop(cA2.botanicalName), findGenusCrop(cB2.botanicalName)])
+      if (gA && gB) {
+        const genusRel = await findRelationship(gA.id, gB.id)
+        if (genusRel && genusRel.relId !== rel.relId) {
+          const genusSrcRaw = await prisma.relationshipSource.findMany({
+            where: { relationshipId: genusRel.relId },
+            select: { source: true, sourceType: true, confidence: true, url: true, notes: true, fetchedAt: true },
+            orderBy: { confidence: 'desc' },
+          })
+          const existingUrls = new Set(
+            sources.flatMap(s => ('urls' in s ? s.urls.map(u => u.url) : s.url ? [s.url] : [])),
+          )
+          genusSources = genusSrcRaw
+            .filter(s => !s.url || !existingUrls.has(s.url))
+            .map(s => ({
+              source: s.source,
+              confidence: s.confidence,
+              url: s.url,
+              notes: s.notes,
+              fetchedAt: s.fetchedAt.toISOString(),
+              sourceType: s.sourceType,
+            }))
+        }
+      }
+    }
+  }
+
+  if (locale !== 'en') {
+    const translations = await prisma.cropTranslation.findMany({
+      where: { cropId: { in: [rel.cropAId, rel.cropBId] }, locale },
+      select: { cropId: true, commonNames: true },
+    })
+    const tMap = new Map(translations.filter(t => t.commonNames.length > 0).map(t => [t.cropId, t.commonNames]))
+    if (tMap.has(rel.cropAId)) rel = { ...rel, cropACommonNames: tMap.get(rel.cropAId)! }
+    if (tMap.has(rel.cropBId)) rel = { ...rel, cropBCommonNames: tMap.get(rel.cropBId)! }
+  }
+
   return NextResponse.json({
     relationship: {
       ...rel,
       ...(resolvedToGenus ? { resolvedToGenus: true, genusA, genusB } : {}),
     },
     sources,
+    genusSources,
     researchAttempts: researchAttempts.map(a => ({ ...a, attemptedAt: a.attemptedAt.toISOString() })),
+    funders,
   })
 }

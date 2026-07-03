@@ -1,7 +1,7 @@
 'use client'
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
-import { Link } from '@/i18n/navigation'
+import { Link, useRouter } from '@/i18n/navigation'
 import { ArrowRight } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -47,6 +47,7 @@ interface RecommendationDisplayProps {
 export function RecommendationDisplay({ result, alternatives = [], onAccepted }: RecommendationDisplayProps) {
   const t = useTranslations('Recommendations')
   const locale = useLocale()
+  const router = useRouter()
   const { data: session } = useSession()
   const [accepting, setAccepting] = useState(false)
   const [acceptError, setAcceptError] = useState<string | null>(null)
@@ -136,7 +137,9 @@ export function RecommendationDisplay({ result, alternatives = [], onAccepted }:
         }),
       })
       if (!res.ok) throw new Error('Failed to save plan')
-      toast.success(t('planSaved'))
+      toast.success(t('planSaved'), {
+        action: { label: t('viewGarden'), onClick: () => router.push('/garden') },
+      })
       onAccepted?.()
     } catch (e) {
       setAcceptError(e instanceof Error ? e.message : 'Unknown error')
@@ -178,7 +181,9 @@ export function RecommendationDisplay({ result, alternatives = [], onAccepted }:
         body: JSON.stringify({ beds: allBeds }),
       })
       if (!postRes.ok) throw new Error('Failed to save bed')
-      toast.success(t('bedSaved', { name: newBed.name }))
+      toast.success(t('bedSaved', { name: newBed.name }), {
+        action: { label: t('viewGarden'), onClick: () => router.push('/garden') },
+      })
       setPendingBedKey(null)
       onAccepted?.()
     } catch (e) {
@@ -255,20 +260,20 @@ export function RecommendationDisplay({ result, alternatives = [], onAccepted }:
                         {bed.hints.length > 0 && (
                           <ul className="mt-2 space-y-1 border-t pt-2">
                             {bed.hints.map((hint, i) => (
-                              <li key={i}>
-                                <Link
-                                  href={`/plants/${hint.cropAId}/companions/${hint.cropBId}`}
-                                  className="flex items-center justify-between gap-2 text-xs rounded px-1 py-0.5 -mx-1 hover:bg-muted group"
-                                >
-                                  <span>
-                                    <span className="font-medium">{hint.pairLabel}</span>
-                                    <span className="text-muted-foreground ml-1">
-                                      —{hint.details && ` ${hint.details} ·`}{' '}
-                                      <ConfidenceBadge level={hint.confidenceLevel} />
-                                    </span>
+                              <li key={i} className="relative flex items-center justify-between gap-2 text-xs rounded px-1 py-0.5 -mx-1 hover:bg-muted group">
+                                <span>
+                                  <Link
+                                    href={`/plants/${hint.cropAId}/companions/${hint.cropBId}`}
+                                    className="font-medium hover:underline after:absolute after:inset-0 after:rounded"
+                                  >
+                                    {hint.pairLabel}
+                                  </Link>
+                                  <span className="relative z-10 text-muted-foreground ml-1">
+                                    —{hint.details && ` ${hint.details} ·`}{' '}
+                                    <ConfidenceBadge level={hint.confidenceLevel} />
                                   </span>
-                                  <ArrowRight className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-                                </Link>
+                                </span>
+                                <ArrowRight className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                               </li>
                             ))}
                           </ul>
@@ -285,12 +290,7 @@ export function RecommendationDisplay({ result, alternatives = [], onAccepted }:
                                     href={`/research-requests?a=${encodeURIComponent(pair.cropAId)}&b=${encodeURIComponent(pair.cropBId)}`}
                                     className="flex items-center justify-between gap-2 text-xs rounded px-1 py-0.5 -mx-1 hover:bg-muted group"
                                   >
-                                    <span>
-                                      <span className="font-medium">{pair.pairLabel}</span>
-                                      <span className="text-muted-foreground ml-1">
-                                        — {t('requestResearch')}
-                                      </span>
-                                    </span>
+                                    <span className="font-medium">{pair.pairLabel}</span>
                                     <ArrowRight className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                                   </Link>
                                 </li>
@@ -332,8 +332,10 @@ export function RecommendationDisplay({ result, alternatives = [], onAccepted }:
                                 </Button>
                               </div>
                             ) : (
-                              <button
-                                className="text-xs text-muted-foreground hover:text-foreground underline"
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-7 text-xs"
                                 onClick={() => {
                                   setPendingBedKey(key)
                                   setPendingBedName(defaultName)
@@ -341,7 +343,7 @@ export function RecommendationDisplay({ result, alternatives = [], onAccepted }:
                                 disabled={animPhase !== 'idle'}
                               >
                                 {t('addToGarden')}
-                              </button>
+                              </Button>
                             )}
                           </div>
                         )}
@@ -357,7 +359,7 @@ export function RecommendationDisplay({ result, alternatives = [], onAccepted }:
 
       {session && (
         <div className="pt-4">
-          <Button size="lg" onClick={handleAccept} disabled={accepting || animPhase !== 'idle'}>
+          <Button variant="outline" size="lg" onClick={handleAccept} disabled={accepting || animPhase !== 'idle'}>
             {accepting ? t('acceptSaving') : t('acceptPlan')}
           </Button>
           {acceptError && <p className="text-red-600 mt-2">{acceptError}</p>}

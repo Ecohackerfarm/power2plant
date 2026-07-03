@@ -15,12 +15,24 @@ export function getDisplayName(crop: Pick<CropInput, 'name' | 'botanicalName' | 
   return toTitleCase(raw)
 }
 
+/** Merge locale-translated commonNames into a list of crops. Pure — no DB access. */
+export function applyTranslations<T extends Pick<CropInput, 'id' | 'commonNames'>>(
+  crops: T[],
+  tMap: Map<string, string[]>,
+): T[] {
+  if (tMap.size === 0) return crops
+  return crops.map(c => {
+    const translated = tMap.get(c.id)
+    return translated && translated.length > 0 ? { ...c, commonNames: translated } : c
+  })
+}
+
 export type RelationshipInput = {
   cropAId: string
   cropBId: string
   type: 'COMPANION' | 'AVOID' | 'ATTRACTS' | 'REPELS' | 'NURSE' | 'TRAP_CROP'
   confidence: number
-  reason?: string | null
+  reasons?: Array<{ type: string; explanation: string }>
   notes?: string | null
 }
 
@@ -89,8 +101,10 @@ function buildHint(rel: RelationshipInput): { details: string; confidenceLevel: 
   const parts: string[] = []
   const typeLabel = TYPE_LABELS[rel.type]
   if (typeLabel) parts.push(typeLabel)
-  const reasonLabel = rel.reason ? REASON_LABELS[rel.reason] : null
-  if (reasonLabel) parts.push(reasonLabel)
+  for (const r of rel.reasons ?? []) {
+    const label = REASON_LABELS[r.type]
+    if (label) { parts.push(label); break }
+  }
   return { details: parts.join(' · '), confidenceLevel: confidenceLabel(rel.confidence) }
 }
 

@@ -12,7 +12,6 @@ type RelRow = {
   id: string
   type: string
   confidence: number
-  reason: string | null
   cropAId: string
   cropBId: string
   cropAName: string
@@ -47,7 +46,7 @@ export async function GET() {
 
     const rels = await prisma.$queryRaw<RelRow[]>`
       SELECT
-        cr.id, cr.type, cr.confidence, cr.reason,
+        cr.id, cr.type, cr.confidence,
         cr."cropAId", cr."cropBId",
         ca.name AS "cropAName", cb.name AS "cropBName"
       FROM "CropRelationship" cr

@@ -21,8 +21,10 @@ type CropRow = {
 }
 
 type CompanionRow = CropRow & {
-  relationshipId: string; type: string; reason: string | null
+  relationshipId: string; type: string
+  reasons: Array<{ type: string; explanation: string }>
   confidence: number; notes: string | null; direction: string
+  conflict: boolean; unreviewed: boolean
   inheritedFrom?: { id: string; botanicalName: string }
 }
 
@@ -198,12 +200,20 @@ export default function PlantPage() {
                               {t(c.type as 'ATTRACTS' | 'NURSE' | 'TRAP_CROP')}
                             </Badge>
                           )}
-                          {c.reason && ['PEST_CONTROL', 'POLLINATION', 'NUTRIENT', 'SHADE', 'ALLELOPATHY'].includes(c.reason) && (
-                            <Badge variant="outline" className="text-xs">
-                              {t(c.reason as 'PEST_CONTROL' | 'POLLINATION' | 'NUTRIENT' | 'SHADE' | 'ALLELOPATHY')}
-                            </Badge>
+                          {(c.reasons ?? []).slice(0, 2).map((r: { type: string }) =>
+                            ['PEST_CONTROL', 'POLLINATION', 'NUTRIENT', 'SHADE', 'ALLELOPATHY'].includes(r.type) && (
+                              <Badge key={r.type} variant="outline" className="text-xs">
+                                {t(r.type as 'PEST_CONTROL' | 'POLLINATION' | 'NUTRIENT' | 'SHADE' | 'ALLELOPATHY')}
+                              </Badge>
+                            )
                           )}
                         </div>
+                        {c.conflict && (
+                          <Badge variant="destructive" className="text-xs">{t('conflicting')}</Badge>
+                        )}
+                        {c.unreviewed && (
+                          <Badge variant="outline" className="text-xs text-muted-foreground">{t('unreviewed')}</Badge>
+                        )}
                         {c.notes && (
                           <p className="text-xs text-muted-foreground mt-1">{c.notes}</p>
                         )}

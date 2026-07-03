@@ -31,8 +31,13 @@ function stripAuthor(botanicalName: string): string | null {
 
 async function main() {
   const dryRun = process.argv.includes('--dry-run')
+  const cropFlagIdx = process.argv.indexOf('--crop')
+  const cropFilter = cropFlagIdx !== -1 ? process.argv[cropFlagIdx + 1] : undefined
+
+  if (cropFilter) console.log(`[--crop] Filtering to crops matching: "${cropFilter}"`)
 
   const crops = await prisma.crop.findMany({
+    where: cropFilter ? { botanicalName: { contains: cropFilter, mode: 'insensitive' } } : undefined,
     select: { id: true, botanicalName: true, canonicalName: true },
   })
 

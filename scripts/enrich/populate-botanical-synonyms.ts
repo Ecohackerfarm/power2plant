@@ -27,15 +27,23 @@ interface UsdaRawData {
 
 async function main() {
   const dryRun = process.argv.includes('--dry-run')
+  const cropFlagIdx = process.argv.indexOf('--crop')
+  const cropFilter = cropFlagIdx !== -1 ? process.argv[cropFlagIdx + 1] : undefined
+
+  if (cropFilter) console.log(`[--crop] Filtering to crops matching: "${cropFilter}"`)
 
   const sources = await prisma.cropSource.findMany({
     where: { source: 'USDA' },
-    select: { cropId: true, rawData: true },
+    select: { cropId: true, rawData: true, crop: { select: { botanicalName: true } } },
   })
+
+  const filteredSources = cropFilter
+    ? sources.filter(s => s.crop.botanicalName.toLowerCase().includes(cropFilter.toLowerCase()))
+    : sources
 
   // Build symbol → cropId map from all USDA sources
   const symbolToCropId = new Map<string, string>()
-  for (const s of sources) {
+  for (const s of filteredSources) {
     const d = s.rawData as UsdaRawData
     if (d.Symbol) symbolToCropId.set(d.Symbol, s.cropId)
   }
@@ -43,7 +51,7 @@ async function main() {
   let created = 0
   let skipped = 0
 
-  for (const s of sources) {
+  for (const s of filteredSources) {
     const d = s.rawData as UsdaRawData
     const symbol         = d.Symbol ?? ''
     const acceptedSymbol = d['Accepted Symbol'] ?? ''

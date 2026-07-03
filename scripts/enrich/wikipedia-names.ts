@@ -63,7 +63,14 @@ function mergeNames(existing: string[], newNames: string[]): string[] {
 }
 
 async function main(): Promise<void> {
-  const crops = await prisma.crop.findMany()
+  const cropFlagIdx = process.argv.indexOf('--crop')
+  const cropFilter = cropFlagIdx !== -1 ? process.argv[cropFlagIdx + 1] : undefined
+
+  if (cropFilter) console.log(`[--crop] Filtering to crops matching: "${cropFilter}"`)
+
+  const crops = await prisma.crop.findMany({
+    where: cropFilter ? { botanicalName: { contains: cropFilter, mode: 'insensitive' } } : undefined,
+  })
 
   const filtered = crops.filter(c => !c.commonNames || c.commonNames.length < 2)
   console.log(`Found ${filtered.length} crops to process`)
