@@ -147,6 +147,15 @@ export default function AdminResearchQueuePage() {
 
   useEffect(() => { load() }, [load])
 
+  // Auto-refresh while any item is still being processed, so the worker's
+  // PENDING → IN_PROGRESS → DONE transitions show without a manual reload.
+  useEffect(() => {
+    const active = queue.some(q => q.status === 'PENDING' || q.status === 'IN_PROGRESS')
+    if (!active) return
+    const timer = setTimeout(load, 10_000)
+    return () => clearTimeout(timer)
+  }, [queue, load])
+
   async function enqueue() {
     if (!cropA || !cropB) return
     setEnqueuing(true)

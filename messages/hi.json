@@ -134,7 +134,9 @@
     "conflictItem": "{a} और {b} एक ही क्यारी में नहीं होने चाहिए",
     "conflictsHint": "इन पौधों को अलग करने के लिए अधिक क्यारियां जोड़ें।",
     "noDataTitle": "इन जोड़ों के लिए अभी तक डेटा नहीं है — लेकिन आप शोध के लिए वोट या फंड कर सकते हैं",
-    "requestResearch": "शोध का अनुरोध करें →"
+    "requestResearch": "शोध का अनुरोध करें →",
+    "researchInProgressTitle": "Secondary research in progress",
+    "researchedNoDataTitle": "Secondary research done — no studies found"
   },
   "Relationships": {
     "title": "समुदाय के अवलोकन",
@@ -354,7 +356,9 @@
     "companions": "{count, plural, one {# साथी जोड़ा} other {# साथी जोड़े}}",
     "antagonists": "{count, plural, one {# विवाद} other {# विवाद}}",
     "unknownPairs": "{count, plural, one {# अज्ञात जोड़ा} other {# अज्ञात जोड़े}}",
-    "addMoreForAnalysis": "संबंध देखने के लिए अधिक पौधे जोड़ें।"
+    "addMoreForAnalysis": "संबंध देखने के लिए अधिक पौधे जोड़ें।",
+    "researchInProgressPairs": "{count} pair{count, plural, one {} other {s}} · secondary research in progress",
+    "researchedNoDataPairs": "{count} pair{count, plural, one {} other {s}} · researched, no studies found"
   },
   "AddBedForm": {
     "title": "क्यारी जोड़ें",
@@ -389,7 +393,8 @@
     "empty": "अभी तक कोई शोध अनुरोध नहीं। जब किसी पौधे जोड़े का डेटा मिस होगा, तो यहां दिखेगा।",
     "loginToVote": "जिन जोड़ों पर शोध चाहते हैं उन्हें वोट करने के लिए साइन इन करें।",
     "vote": "वोट करें",
-    "voted": "वोट दिया गया"
+    "voted": "वोट दिया गया",
+    "singlePlantUnavailable": "Single-plant research not yet available"
   },
   "FeedbackButton": {
     "label": "समस्या की रिपोर्ट करें",

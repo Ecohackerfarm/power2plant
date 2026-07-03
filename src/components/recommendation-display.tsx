@@ -298,6 +298,34 @@ export function RecommendationDisplay({ result, alternatives = [], onAccepted }:
                             </ul>
                           </div>
                         )}
+                        {bed.researchInProgressPairs.length > 0 && (
+                          <div className="mt-2 border-t pt-2">
+                            <p className="text-xs font-medium text-muted-foreground mb-1">
+                              {t('researchInProgressTitle')}
+                            </p>
+                            <ul className="space-y-1">
+                              {bed.researchInProgressPairs.map((pair) => (
+                                <li key={`${pair.cropAId}-${pair.cropBId}`} className="text-xs text-muted-foreground px-1 py-0.5">
+                                  {pair.pairLabel}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {bed.researchedNoDataPairs.length > 0 && (
+                          <div className="mt-2 border-t pt-2">
+                            <p className="text-xs font-medium text-muted-foreground mb-1">
+                              {t('researchedNoDataTitle')}
+                            </p>
+                            <ul className="space-y-1">
+                              {bed.researchedNoDataPairs.map((pair) => (
+                                <li key={`${pair.cropAId}-${pair.cropBId}`} className="text-xs text-muted-foreground px-1 py-0.5">
+                                  {pair.pairLabel}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                         {session && (
                           <div className="mt-3 border-t pt-3">
                             {isPending ? (

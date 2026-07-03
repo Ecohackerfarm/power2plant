@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { Prisma } from '@prisma/client'
 import prisma from '@/lib/prisma'
-import { recommend, recommendAlternatives, applyTranslations, type RelationshipInput, type CropInput } from '@/lib/recommend'
+import { recommend, recommendAlternatives, applyTranslations, pairKey, type RelationshipInput, type CropInput, type ResearchStateMap, type ResearchStatus } from '@/lib/recommend'
 
 interface RecommendBody {
   cropIds: string[]
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
 
   const allIds = [...new Set([...cropIds, ...(existingBeds ?? []).flat()])]
   const idList = Prisma.join(allIds.map(id => Prisma.sql`${id}`))
-  const [rawCrops, relationships, tMapRows] = await Promise.all([
+  const [rawCrops, relationships, tMapRows, queueRows] = await Promise.all([
     prisma.$queryRaw<CropInput[]>`
       SELECT id, name, "botanicalName", "minTempC", "commonNames"
       FROM "Crop" WHERE id IN (${idList})
@@ -75,7 +75,22 @@ export async function POST(request: Request) {
           select: { cropId: true, commonNames: true },
         })
       : Promise.resolve([]),
+    // Secondary-research state for in-bed pairs, so surfaces don't re-offer research
+    // for pairs already researched (or in flight). ResearchQueue is uniquely indexed
+    // on (cropAId, cropBId); this is one small extra query.
+    prisma.researchQueue.findMany({
+      where: { cropAId: { in: allIds }, cropBId: { in: allIds } },
+      select: { cropAId: true, cropBId: true, status: true },
+    }),
   ])
+
+  // FAILED is intentionally excluded — a failed job stays re-offerable.
+  const researchState: ResearchStateMap = new Map()
+  for (const q of queueRows) {
+    if (q.status === 'PENDING' || q.status === 'IN_PROGRESS' || q.status === 'DONE') {
+      researchState.set(pairKey(q.cropAId, q.cropBId), q.status as ResearchStatus)
+    }
+  }
 
   const tMap = new Map(
     tMapRows.filter(r => r.commonNames.length > 0).map(r => [r.cropId, r.commonNames])
@@ -98,7 +113,7 @@ export async function POST(request: Request) {
   // With locked beds, skip alternative generation — alternatives don't make sense
   // when some beds are already fixed by existingBeds.
   if (existingBeds) {
-    const result = recommend(crops, relInputs, bedCount, bedCapacity, minTempC, existingBeds)
+    const result = recommend(crops, relInputs, bedCount, bedCapacity, minTempC, existingBeds, researchState)
     return NextResponse.json({ ...result, alternatives: [] })
   }
 
@@ -108,6 +123,7 @@ export async function POST(request: Request) {
     bedCount,
     bedCapacity,
     minTempC,
+    researchState,
   )
 
   return NextResponse.json({ ...primary, alternatives })

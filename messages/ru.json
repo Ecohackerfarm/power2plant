@@ -134,7 +134,9 @@
     "conflictItem": "{a} и {b} нельзя размещать на одной грядке",
     "conflictsHint": "Добавьте грядки, чтобы разделить эти растения.",
     "noDataTitle": "Данных по этим парам пока нет — но вы можете проголосовать или финансировать исследование",
-    "requestResearch": "Запросить исследование →"
+    "requestResearch": "Запросить исследование →",
+    "researchInProgressTitle": "Secondary research in progress",
+    "researchedNoDataTitle": "Secondary research done — no studies found"
   },
   "Relationships": {
     "title": "Наблюдения сообщества",
@@ -354,7 +356,9 @@
     "companions": "{count, plural, one {# пара компаньонов} few {# пары компаньонов} other {# пар компаньонов}}",
     "antagonists": "{count, plural, one {# конфликт} few {# конфликта} other {# конфликтов}}",
     "unknownPairs": "{count, plural, one {# неизвестная пара} few {# неизвестные пары} other {# неизвестных пар}}",
-    "addMoreForAnalysis": "Добавьте растения, чтобы увидеть отношения."
+    "addMoreForAnalysis": "Добавьте растения, чтобы увидеть отношения.",
+    "researchInProgressPairs": "{count} pair{count, plural, one {} other {s}} · secondary research in progress",
+    "researchedNoDataPairs": "{count} pair{count, plural, one {} other {s}} · researched, no studies found"
   },
   "AddBedForm": {
     "title": "Добавить грядку",
@@ -389,7 +393,8 @@
     "empty": "Запросов на исследование пока нет. Когда данных о паре растений нет, она появится здесь.",
     "loginToVote": "Войдите, чтобы голосовать за пары, которые хотите исследовать.",
     "vote": "Голосовать",
-    "voted": "Проголосовано"
+    "voted": "Проголосовано",
+    "singlePlantUnavailable": "Single-plant research not yet available"
   },
   "FeedbackButton": {
     "label": "Сообщить о проблеме",

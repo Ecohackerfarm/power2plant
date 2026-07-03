@@ -136,7 +136,9 @@
     "conflictItem": "{a} und {b} sollten nicht im selben Beet stehen",
     "conflictsHint": "Mehr Beete hinzufügen, um diese Pflanzen zu trennen.",
     "noDataTitle": "Für diese Paare haben wir noch keine Daten — aber Sie können die Forschung unterstützen oder finanzieren",
-    "requestResearch": "Forschung anfragen →"
+    "requestResearch": "Forschung anfragen →",
+    "researchInProgressTitle": "Secondary research in progress",
+    "researchedNoDataTitle": "Secondary research done — no studies found"
   },
   "Relationships": {
     "title": "Community-Ergebnisse",
@@ -396,7 +398,9 @@
     "searchPlants": "Pflanzen suchen…",
     "searching": "Suche läuft…",
     "alreadyAdded": "Hinzugefügt",
-    "mustHaveOnePlant": "Ein Beet muss mindestens 1 Pflanze haben."
+    "mustHaveOnePlant": "Ein Beet muss mindestens 1 Pflanze haben.",
+    "researchInProgressPairs": "{count} pair{count, plural, one {} other {s}} · secondary research in progress",
+    "researchedNoDataPairs": "{count} pair{count, plural, one {} other {s}} · researched, no studies found"
   },
   "AddBedForm": {
     "title": "Beet hinzufügen",
@@ -431,7 +435,8 @@
     "empty": "Noch keine Forschungsanfragen. Fehlende Daten für ein Pflanzenpaar erscheinen hier.",
     "loginToVote": "Melde dich an, um für die gewünschten Paare abzustimmen.",
     "vote": "Abstimmen",
-    "voted": "Abgestimmt"
+    "voted": "Abgestimmt",
+    "singlePlantUnavailable": "Single-plant research not yet available"
   },
   "FeedbackButton": {
     "label": "Problem melden",

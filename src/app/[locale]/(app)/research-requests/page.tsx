@@ -35,9 +35,10 @@ type ResearchRequestItem = {
   hasVoted: boolean
   queueId: string | null
   queueStatus: QueueStatus | null
+  hasStudies: boolean
 }
 
-function QueueBadge({ queueId, initialStatus }: { queueId: string; initialStatus: QueueStatus | null }) {
+function QueueBadge({ queueId, initialStatus, hasStudies }: { queueId: string; initialStatus: QueueStatus | null; hasStudies: boolean }) {
   const [info, setInfo] = useState<QueueStatusInfo | null>(null)
 
   useEffect(() => {
@@ -65,7 +66,12 @@ function QueueBadge({ queueId, initialStatus }: { queueId: string; initialStatus
   const status = info?.status ?? initialStatus
   if (!status) return null
 
-  if (status === 'DONE') return <Badge variant="secondary" className="text-green-600">Researched</Badge>
+  if (status === 'DONE') {
+    // A DONE job with no relationship means secondary research found no studies.
+    return hasStudies
+      ? <Badge variant="secondary" className="text-green-600">Researched</Badge>
+      : <Badge variant="secondary" className="text-muted-foreground">Researched · no studies found</Badge>
+  }
   if (status === 'FAILED') return <Badge variant="destructive">Research failed</Badge>
   if (status === 'IN_PROGRESS') return <Badge variant="secondary" className="animate-pulse">Researching…</Badge>
 
@@ -130,6 +136,10 @@ function PairCard({
             {item.cropA.botanicalName}
             {item.cropB && <> × {item.cropB.botanicalName}</>}
           </p>
+          {/* Single-plant requests can't be processed by the pair-only worker yet. */}
+          {!item.cropB && (
+            <p className="text-xs text-muted-foreground mt-1">{t('singlePlantUnavailable')}</p>
+          )}
         </div>
         <div className="flex items-center gap-3 shrink-0">
           <Badge variant="secondary" className="tabular-nums">
@@ -137,7 +147,7 @@ function PairCard({
             {item.voteCount}
           </Badge>
           {item.queueId && (
-            <QueueBadge queueId={item.queueId} initialStatus={item.queueStatus} />
+            <QueueBadge queueId={item.queueId} initialStatus={item.queueStatus} hasStudies={item.hasStudies} />
           )}
           {item.cropB && !item.funded && (
             <ResearchFundButton

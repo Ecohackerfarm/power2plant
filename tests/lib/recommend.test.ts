@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { recommend, minTempCToZoneName, type CropInput, type RelationshipInput } from '@/lib/recommend'
+import { recommend, minTempCToZoneName, pairKey, type CropInput, type RelationshipInput, type ResearchStateMap } from '@/lib/recommend'
 
 const makeCrop = (id: string, minTempC: number | null = null): CropInput => ({
   id,
@@ -271,6 +271,36 @@ describe('relMap dominant-type selection', () => {
     expect(result.conflicts).toHaveLength(0)
     const filledBeds = result.beds.filter(b => b.crops.length > 0)
     expect(filledBeds).toHaveLength(2)
+  })
+})
+
+describe('recommend() secondary-research state', () => {
+  // Two crops with no relationship, forced into one bed → the pair is a "no data" pair.
+  const crops = [makeCrop('a'), makeCrop('b')]
+  const key = pairKey('a', 'b')
+
+  it('with no research state, an unknown pair is offered for research (noDataPairs)', () => {
+    const bed = recommend(crops, [], 1, 2, 0).beds.find(b => b.crops.length === 2)!
+    expect(bed.noDataPairs).toHaveLength(1)
+    expect(bed.researchedNoDataPairs).toHaveLength(0)
+    expect(bed.researchInProgressPairs).toHaveLength(0)
+  })
+
+  it('DONE moves the pair to researchedNoDataPairs (no longer offered)', () => {
+    const state: ResearchStateMap = new Map([[key, 'DONE']])
+    const bed = recommend(crops, [], 1, 2, 0, undefined, state).beds.find(b => b.crops.length === 2)!
+    expect(bed.noDataPairs).toHaveLength(0)
+    expect(bed.researchedNoDataPairs).toHaveLength(1)
+    expect(bed.researchInProgressPairs).toHaveLength(0)
+  })
+
+  it('PENDING and IN_PROGRESS move the pair to researchInProgressPairs', () => {
+    for (const status of ['PENDING', 'IN_PROGRESS'] as const) {
+      const state: ResearchStateMap = new Map([[key, status]])
+      const bed = recommend(crops, [], 1, 2, 0, undefined, state).beds.find(b => b.crops.length === 2)!
+      expect(bed.noDataPairs).toHaveLength(0)
+      expect(bed.researchInProgressPairs).toHaveLength(1)
+    }
   })
 })
 

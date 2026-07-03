@@ -134,7 +134,9 @@
     "conflictItem": "{a} e {b} não devem compartilhar um canteiro",
     "conflictsHint": "Adicione mais canteiros para separar essas plantas.",
     "noDataTitle": "Ainda não temos dados para esses pares — mas você pode votar ou financiar a pesquisa",
-    "requestResearch": "Solicitar pesquisa →"
+    "requestResearch": "Solicitar pesquisa →",
+    "researchInProgressTitle": "Secondary research in progress",
+    "researchedNoDataTitle": "Secondary research done — no studies found"
   },
   "Relationships": {
     "title": "Observações da comunidade",
@@ -354,7 +356,9 @@
     "companions": "{count, plural, one {# par companheiro} other {# pares companheiros}}",
     "antagonists": "{count, plural, one {# conflito} other {# conflitos}}",
     "unknownPairs": "{count, plural, one {# par desconhecido} other {# pares desconhecidos}}",
-    "addMoreForAnalysis": "Adicione mais plantas para ver as relações."
+    "addMoreForAnalysis": "Adicione mais plantas para ver as relações.",
+    "researchInProgressPairs": "{count} pair{count, plural, one {} other {s}} · secondary research in progress",
+    "researchedNoDataPairs": "{count} pair{count, plural, one {} other {s}} · researched, no studies found"
   },
   "AddBedForm": {
     "title": "Adicionar um canteiro",
@@ -389,7 +393,8 @@
     "empty": "Ainda não há solicitações de pesquisa. Quando nossos dados estiverem faltando para um par de plantas, aparecerá aqui.",
     "loginToVote": "Entre para votar nos pares que deseja pesquisar.",
     "vote": "Votar",
-    "voted": "Votado"
+    "voted": "Votado",
+    "singlePlantUnavailable": "Single-plant research not yet available"
   },
   "FeedbackButton": {
     "label": "Reportar um problema",

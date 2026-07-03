@@ -39,6 +39,23 @@ export async function GET() {
 
   const bedsWithPairs = garden.beds.filter(b => b.plantings.length >= 2)
 
+  // Secondary-research state for every in-bed pair, keyed by sorted "a:b". Loaded once
+  // across all beds so the per-bed loop can split unknown pairs without extra queries.
+  const allCropIds = [...new Set(bedsWithPairs.flatMap(b => b.plantings.map(p => p.cropId)))]
+  const queueRows = allCropIds.length > 0
+    ? await prisma.researchQueue.findMany({
+        where: { cropAId: { in: allCropIds }, cropBId: { in: allCropIds } },
+        select: { cropAId: true, cropBId: true, status: true },
+      })
+    : []
+  // FAILED excluded — a failed job stays re-offerable.
+  const queueStatusByPair = new Map<string, string>()
+  for (const q of queueRows) {
+    if (q.status === 'PENDING' || q.status === 'IN_PROGRESS' || q.status === 'DONE') {
+      queueStatusByPair.set([q.cropAId, q.cropBId].sort().join(':'), q.status)
+    }
+  }
+
   const results = await Promise.all(bedsWithPairs.map(async bed => {
     const ids = bed.plantings.map(p => p.cropId)
     const cropNameMap = new Map(bed.plantings.map(p => [p.cropId, p.crop.commonNames?.[0] ?? p.crop.name]))
@@ -61,17 +78,26 @@ export async function GET() {
     const companions = rels.filter(r => companionTypes.has(r.type))
     const antagonists = rels.filter(r => r.type === 'AVOID')
 
-    const unknownPairs: { cropAId: string; cropBId: string; cropAName: string; cropBName: string }[] = []
+    type Pair = { cropAId: string; cropBId: string; cropAName: string; cropBName: string }
+    const unknownPairs: Pair[] = []
+    // No relationship + secondary research already DONE but found nothing.
+    const researchedNoDataPairs: Pair[] = []
+    // No relationship + secondary research queued/running.
+    const researchInProgressPairs: Pair[] = []
     for (let i = 0; i < ids.length; i++) {
       for (let j = i + 1; j < ids.length; j++) {
         const pairKey = [ids[i], ids[j]].sort().join(':')
         if (!knownPairIds.has(pairKey)) {
-          unknownPairs.push({
+          const pair: Pair = {
             cropAId: ids[i],
             cropBId: ids[j],
             cropAName: cropNameMap.get(ids[i]) ?? ids[i],
             cropBName: cropNameMap.get(ids[j]) ?? ids[j],
-          })
+          }
+          const state = queueStatusByPair.get(pairKey)
+          if (state === 'DONE') researchedNoDataPairs.push(pair)
+          else if (state === 'PENDING' || state === 'IN_PROGRESS') researchInProgressPairs.push(pair)
+          else unknownPairs.push(pair)
         }
       }
     }
@@ -81,6 +107,8 @@ export async function GET() {
       companions: companions.map(r => ({ id: r.id, cropAId: r.cropAId, cropBId: r.cropBId, cropAName: r.cropAName, cropBName: r.cropBName, confidence: r.confidence })),
       antagonists: antagonists.map(r => ({ id: r.id, cropAId: r.cropAId, cropBId: r.cropBId, cropAName: r.cropAName, cropBName: r.cropBName })),
       unknownPairs,
+      researchedNoDataPairs,
+      researchInProgressPairs,
     }
   }))
 
