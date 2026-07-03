@@ -32,13 +32,6 @@
     "enrich:translate-names": "tsx scripts/enrich/translate-names.ts",
     "enrich:populate-canonical-names": "tsx scripts/enrich/populate-canonical-names.ts",
     "enrich:populate-botanical-synonyms": "tsx scripts/enrich/populate-botanical-synonyms.ts",
-    "orchestrate:status": "NODE_PATH=/home/agent/.local/share/pnpm/global/5/node_modules tsx autodev/scripts/index.ts status",
-    "orchestrate:run": "NODE_PATH=/home/agent/.local/share/pnpm/global/5/node_modules tsx autodev/scripts/index.ts run",
-    "orchestrate:retry": "NODE_PATH=/home/agent/.local/share/pnpm/global/5/node_modules tsx autodev/scripts/index.ts retry",
-    "orchestrate:logs": "NODE_PATH=/home/agent/.local/share/pnpm/global/5/node_modules tsx autodev/scripts/index.ts logs",
-    "orchestrate:start": "NODE_PATH=/home/agent/.local/share/pnpm/global/5/node_modules tsx autodev/scripts/index.ts start",
-    "orchestrate:release": "NODE_PATH=/home/agent/.local/share/pnpm/global/5/node_modules tsx autodev/scripts/index.ts release",
-    "orchestrate:continue": "NODE_PATH=/home/agent/.local/share/pnpm/global/5/node_modules tsx autodev/scripts/index.ts continue",
     "worker:research": "tsx workers/research-worker.ts"
   },
   "dependencies": {
