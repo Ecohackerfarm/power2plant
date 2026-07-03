@@ -136,36 +136,32 @@ for (const locale of routing.locales) {
           waitUntil: 'domcontentloaded',
           timeout: 45_000,
         })
-        // Wait for the first link to render rather than for a specific chrome
-        // element — the landing page has no site header, app pages do.
-        await page.locator('a').first().waitFor({ state: 'attached', timeout: 15000 })
+        // Gate on the header's right-corner control, which the redesigned header
+        // renders on every page (landing + app). The old "wait for the first <a>"
+        // gate broke on app pages, whose body can be link-free until the menu is
+        // opened, so it timed out waiting for an anchor that never exists closed.
+        await page
+          .locator('div.fixed.right-0.top-0')
+          .first()
+          .waitFor({ state: 'attached', timeout: 15000 })
         // Let client hydration settle (auth panel renders null while pending).
         // Bounded: some pages keep a connection open (toasts, fonts) and never
         // reach true network-idle, so cap the wait instead of burning the budget.
         await page.waitForLoadState('networkidle', { timeout: 3000 }).catch(() => {})
         await page.waitForTimeout(300)
 
-        // --- Pass A: header controls (the area users reported as broken) ---
-        // The site header (banner) only exists on app pages, not the landing
-        // page. When present, these controls live in the top bar and are the
-        // most likely to collide on a narrow screen. The user account control is
-        // either a "sign in" button (logged out) or an avatar menu (logged in);
-        // accept whichever renders.
-        const header = page.getByRole('banner')
-        const hasHeader = (await header.count()) > 0
-        const toggle = header.getByRole('button', { name: /toggle menu/i })
-        if (hasHeader) {
-          const headerControls: Record<string, Locator> = {
-            hamburger: toggle,
-            logo: header.getByRole('link', { name: /power2plant/i }).first(),
-            language: header.getByLabel(/language/i),
-            feedback: header.getByRole('button').filter({ hasText: /feedback/i }).first(),
-          }
-          for (const [name, ctrl] of Object.entries(headerControls)) {
-            if (!(await ctrl.isVisible().catch(() => false))) continue
-            const offence = await inspect(page, ctrl, `header:${name}`)
-            if (offence) offences.push(offence.detail)
-          }
+        // --- Pass A: header controls, menu CLOSED ---
+        // The redesigned header has no <header role="banner">; it renders two
+        // fixed corner controls on every page — a menu toggle (left) and the
+        // account button (right). These are the most likely to collide on a narrow
+        // screen, so check they're on-screen and tappable.
+        const toggle = page.getByRole('button', { name: /toggle menu/i })
+        const account = page.locator('div.fixed.right-0.top-0').getByRole('button').first()
+        const headerControls: Record<string, Locator> = { menu: toggle, account }
+        for (const [name, ctrl] of Object.entries(headerControls)) {
+          if (!(await ctrl.isVisible().catch(() => false))) continue
+          const offence = await inspect(page, ctrl, `header:${name}`)
+          if (offence) offences.push(offence.detail)
         }
 
         // --- Pass B: all body links, menu CLOSED ---
@@ -174,15 +170,20 @@ for (const locale of routing.locales) {
         // overlapping cards, off-screen content, etc.
         offences.push(...(await inspectAll(page, page.locator('a:visible'))))
 
-        // --- Pass C: nav links, menu OPEN ---
-        // The primary nav (Find Companions / Plan Beds / My Garden, +admin) lives
-        // inside the hamburger dropdown and only exists in the DOM when open.
-        if (hasHeader && (await toggle.isVisible().catch(() => false))) {
+        // --- Pass C: nav links + utilities, menu OPEN ---
+        // The primary nav (Lookup / Plan / Garden / Leaderboard, +admin), the
+        // language <select> and the feedback button live inside the dropdown,
+        // which only enters the DOM once the toggle is opened.
+        if (await toggle.isVisible().catch(() => false)) {
           await toggle.click()
-          // The dropdown is a positioned panel right after the toggle button.
-          const menu = header.locator('div.absolute')
+          const menu = page.locator('div.fixed.left-0.top-0 div.absolute')
           await expect(menu.first()).toBeVisible()
           offences.push(...(await inspectAll(page, menu.getByRole('link'))))
+          const language = menu.getByLabel(/language/i)
+          if (await language.isVisible().catch(() => false)) {
+            const offence = await inspect(page, language, 'menu:language')
+            if (offence) offences.push(offence.detail)
+          }
         }
 
         expect(
