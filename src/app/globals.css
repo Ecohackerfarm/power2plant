@@ -179,7 +179,11 @@
   html {
     @apply font-sans;
   }
-  /* The faded centerpiece can exceed the viewport width on mobile (full-bleed) */
+  /* The faded centerpiece can exceed the viewport width on mobile (full-bleed).
+     Clamp on both html and body: clamping body alone leaves the overflow on the
+     html scroll container, which RTL surfaces as a sideways shift of the fixed
+     header chrome (links then read as clipped off the left edge). */
+  html,
   body {
     overflow-x: hidden;
   }
