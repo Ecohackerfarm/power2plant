@@ -1,4 +1,8 @@
 import { defineConfig, devices } from '@playwright/test'
+// Load .env into the test-runner process so local runs pick up secrets like
+// KOFI_VERIFICATION_TOKEN without a manual export. dotenv ships transitively with
+// next (always present); does NOT override vars already set, so CI's job env wins.
+import 'dotenv/config'
 
 const chromiumOptions = {
   ...devices['Desktop Chrome'],
